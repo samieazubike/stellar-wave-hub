@@ -4,6 +4,26 @@ const HORIZON_URL =
   process.env.STELLAR_HORIZON_URL || "https://horizon.stellar.org";
 const server = new Horizon.Server(HORIZON_URL);
 
+type PaymentRecord = {
+  id: string;
+  type: string;
+  created_at: string;
+  amount?: string;
+  asset_type?: string;
+  asset_code?: string;
+  from?: string;
+  to?: string;
+  transaction_hash?: string;
+};
+
+type OperationRecord = {
+  id: string;
+  type: string;
+  created_at: string;
+  function?: string;
+  transaction_hash?: string;
+};
+
 export async function getAccountSummary(accountId: string) {
   const account = await server.loadAccount(accountId);
   return {
@@ -25,8 +45,7 @@ export async function getRecentTransactions(accountId: string, limit = 20) {
     .order("desc")
     .call();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return payments.records.map((r: any) => ({
+  return (payments.records as PaymentRecord[]).map((r) => ({
     id: r.id,
     type: r.type,
     created_at: r.created_at,
@@ -47,10 +66,9 @@ export async function getContractInvocations(accountId: string, limit = 20) {
     .order("desc")
     .call();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ops.records
-    .filter((r: any) => r.type === "invoke_host_function")
-    .map((r: any) => ({
+  return (ops.records as OperationRecord[])
+    .filter((r) => r.type === "invoke_host_function")
+    .map((r) => ({
       id: r.id,
       type: r.type,
       created_at: r.created_at,

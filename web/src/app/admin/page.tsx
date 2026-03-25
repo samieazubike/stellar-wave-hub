@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useEffectEvent, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import Link from "next/link";
 
@@ -22,15 +22,8 @@ export default function AdminPage() {
 	const [loading, setLoading] = useState(true);
 	const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-	useEffect(() => {
-		if (!token) {
-			setLoading(false);
-			return;
-		}
-		fetchPending();
-	}, [token]);
-
-	const fetchPending = async () => {
+	const fetchPending = useEffectEvent(async () => {
+		if (!token) return;
 		try {
 			const res = await fetch("/api/projects/pending", {
 				headers: {Authorization: `Bearer ${token}`},
@@ -41,7 +34,13 @@ export default function AdminPage() {
 			}
 		} catch {}
 		setLoading(false);
-	};
+	});
+
+	useEffect(() => {
+		if (!token) return;
+
+		void fetchPending();
+	}, [token]);
 
 	const handleAction = async (
 		projectId: number,

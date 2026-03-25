@@ -141,13 +141,15 @@ cargo install --locked stellar-cli --features opt
 ### Next.js App Setup
 
 ```bash
-cd frontend
+cd web
 
 # Install dependencies
 npm install
 
-# Create local environment file and add the variables below
-touch .env.local
+# Create local environment file
+copy .env.example .env
+
+# Add your real Supabase + JWT values to .env
 
 # Start development server
 npm run dev
@@ -161,10 +163,12 @@ The web app will be available at `http://localhost:3000`.
 
 All backend endpoints are served from the same Next.js app under `http://localhost:3000/api/*`.
 
-**First admin account:** Register normally, then manually update the `role` column in the SQLite database:
+**First admin account:** Register normally, then update the role in Supabase:
 
 ```sql
-UPDATE users SET role = 'admin' WHERE email = 'your@email.com';
+update public.users
+set role = 'admin'
+where email = 'your@email.com';
 ```
 
 ### Smart Contract Setup
@@ -202,6 +206,52 @@ stellar contract deploy \
 | `STELLAR_NETWORK`     | `public`                      | `public` or `testnet`                                                |
 | `DB_PATH`             | `./data/stellar_wave_hub.db`  | SQLite database file path                                            |
 | `NEXT_PUBLIC_APP_URL` | —                             | Public app URL (e.g., `http://localhost:3000`)                       |
+
+---
+
+## Maintainer Verification Flow
+
+For the current `web/` app, use these runtime variables in `web/.env`:
+
+| Variable | Description |
+| -------- | ----------- |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key |
+| `JWT_SECRET` | JWT signing secret |
+| `STELLAR_HORIZON_URL` | Horizon endpoint |
+
+Recommended verification flow:
+
+1. `cd web`
+2. `copy .env.example .env`
+3. Fill `web/.env` with real Supabase credentials and a `JWT_SECRET`
+4. Run `web/data/supabase/schema.sql` in Supabase SQL Editor
+5. Optionally run `web/data/supabase/rls.sql`
+6. Run `npm install`
+7. Run `npm run dev`
+8. Open `http://localhost:3000/register` and create a contributor account
+9. Promote that account to admin in Supabase if approval testing is needed
+10. Open `http://localhost:3000/submit`
+11. Paste the data from `web/data/submissions/facilpay-usdc-project.json`
+12. Submit and confirm it appears in `My Projects`
+13. Open `/admin`, approve the project, and verify it appears on `/explore`
+14. Open the project detail page and confirm the Asset Research, Trading Pairs, and Verification Sources sections render correctly
+
+API-only verification:
+
+1. Log in through the UI
+2. Copy the bearer token from the browser
+3. POST `web/data/submissions/facilpay-usdc-project.json` to `/api/projects`
+4. Include `Authorization: Bearer <token>` and `Content-Type: application/json`
+5. Confirm the created record via `/api/projects/my` and the project detail page
+
+Local checks completed in this workspace:
+
+```bash
+cd web
+npm run lint
+npm run build
+```
 
 ---
 

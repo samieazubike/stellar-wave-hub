@@ -2,6 +2,10 @@ import { projectsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
+type ProjectRow = {
+  numericId: number;
+};
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -23,7 +27,8 @@ export async function PUT(
 
     await ref.update({ status, featured, updated_at: new Date().toISOString() });
     const updated = await ref.get();
-    return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
+    const project = updated.data() as ProjectRow & Record<string, unknown>;
+    return Response.json({ project: { ...project, id: project.numericId } });
   } catch (err) {
     console.error("Approve error:", err);
     return Response.json({ error: "Internal server error" }, { status: 500 });

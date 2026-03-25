@@ -31,17 +31,27 @@ export default function MyProjectsPage() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (!token) {
-			setLoading(false);
-			return;
-		}
-		fetch("/api/projects/my", {
-			headers: {Authorization: `Bearer ${token}`},
-		})
-			.then((r) => r.json())
-			.then((data) => setProjects(data.projects || []))
-			.catch(() => {})
-			.finally(() => setLoading(false));
+		let cancelled = false;
+
+		if (!token) return;
+
+		void (async () => {
+			try {
+				const res = await fetch("/api/projects/my", {
+					headers: {Authorization: `Bearer ${token}`},
+				});
+				const data = await res.json();
+				if (!cancelled) setProjects(data.projects || []);
+			} catch {
+				// Ignore fetch failures and fall back to the empty state.
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
 	}, [token]);
 
 	if (!user) {

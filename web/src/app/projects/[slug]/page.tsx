@@ -11,6 +11,17 @@ interface Project {
 	slug: string;
 	description: string;
 	category: string;
+	asset_focus?: string;
+	asset_type?: string;
+	issuance_model?: string;
+	compliance_model?: string;
+	audit_status?: string;
+	issuer_account_id?: string;
+	stellar_toml_url?: string;
+	supported_markets?: string;
+	trading_pairs?: string;
+	on_chain_volume?: string;
+	verification_sources?: string;
 	status: string;
 	featured: number;
 	stellar_account_id?: string;
@@ -161,6 +172,29 @@ export default function ProjectDetailPage({
 	}
 
 	const tags = project.tags ? project.tags.split(",") : [];
+	const tradingPairs = project.trading_pairs
+		? project.trading_pairs
+				.split(/\r?\n|,/)
+				.map((pair) => pair.trim())
+				.filter(Boolean)
+		: [];
+	const verificationSources = project.verification_sources
+		? project.verification_sources
+				.split(/\r?\n/)
+				.map((source) => source.trim())
+				.filter(Boolean)
+		: [];
+	const assetDetails = [
+		{label: "Asset focus", value: project.asset_focus},
+		{label: "Asset type", value: project.asset_type},
+		{label: "Issuance model", value: project.issuance_model},
+		{label: "Compliance", value: project.compliance_model},
+		{label: "Audit status", value: project.audit_status},
+		{label: "Issuer account", value: project.issuer_account_id},
+		{label: "stellar.toml", value: project.stellar_toml_url},
+		{label: "Supported markets", value: project.supported_markets},
+		{label: "On-chain volume", value: project.on_chain_volume},
+	].filter((item) => item.value);
 
 	return (
 		<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -299,6 +333,79 @@ export default function ProjectDetailPage({
 								{project.description}
 							</p>
 						</div>
+
+						{assetDetails.length > 0 && (
+							<div className="glass rounded-2xl p-8">
+								<h2 className="font-semibold text-lg text-starlight mb-6">
+									Asset Research
+								</h2>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									{assetDetails.map((item) => (
+										<div
+											key={item.label}
+											className="rounded-2xl border border-dust/20 bg-stardust/20 p-5"
+										>
+											<p className="text-xs uppercase tracking-[0.18em] text-ash mb-2">
+												{item.label}
+											</p>
+											{item.label === "stellar.toml" ? (
+												<a
+													href={item.value as string}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="text-sm text-plasma-bright break-all hover:text-nova-bright transition-colors"
+												>
+													{item.value}
+												</a>
+											) : (
+												<p className="text-sm text-moonlight/90 whitespace-pre-wrap break-words">
+													{item.value}
+												</p>
+											)}
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+
+						{tradingPairs.length > 0 && (
+							<div className="glass rounded-2xl p-8">
+								<h2 className="font-semibold text-lg text-starlight mb-4">
+									Trading Pairs
+								</h2>
+								<div className="flex flex-wrap gap-2">
+									{tradingPairs.map((pair) => (
+										<span
+											key={pair}
+											className="px-3 py-1.5 rounded-lg bg-stardust/80 text-moonlight text-sm font-medium"
+										>
+											{pair}
+										</span>
+									))}
+								</div>
+							</div>
+						)}
+
+						{verificationSources.length > 0 && (
+							<div className="glass rounded-2xl p-8">
+								<h2 className="font-semibold text-lg text-starlight mb-4">
+									Verification Sources
+								</h2>
+								<div className="space-y-3">
+									{verificationSources.map((source) => (
+										<a
+											key={source}
+											href={source}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="block rounded-2xl border border-dust/20 bg-stardust/20 px-5 py-4 text-sm text-plasma-bright break-all hover:text-nova-bright transition-colors"
+										>
+											{source}
+										</a>
+									))}
+								</div>
+							</div>
+						)}
 
 						{tags.length > 0 && (
 							<div className="glass rounded-2xl p-8">

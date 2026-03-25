@@ -2,6 +2,10 @@ import { projectsCol, ratingsCol, nextId } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
+type ProjectRow = {
+  user_id: number;
+};
+
 export async function POST(request: Request) {
   const auth = getAuthUser(request);
   if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,7 +20,8 @@ export async function POST(request: Request) {
 
     const pDoc = await projectsCol.ref.doc(String(project_id)).get();
     if (!pDoc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
-    if (pDoc.data()!.user_id === auth.userId) {
+    const project = pDoc.data() as ProjectRow;
+    if (project.user_id === auth.userId) {
       return Response.json({ error: "Cannot rate your own project" }, { status: 400 });
     }
 

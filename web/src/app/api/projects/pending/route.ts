@@ -2,6 +2,10 @@ import { projectsCol, usersCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
+type UserRow = {
+  username?: string;
+};
+
 export async function GET(request: Request) {
   const auth = getAuthUser(request);
   if (!auth || auth.role !== "admin") {
@@ -19,7 +23,9 @@ export async function GET(request: Request) {
       let username = null;
       if (p.user_id) {
         const uDoc = await usersCol.ref.doc(String(p.user_id)).get();
-        username = uDoc.exists ? uDoc.data()!.username : null;
+        username = uDoc.exists
+          ? ((uDoc.data() as UserRow).username ?? null)
+          : null;
       }
       return { ...p, id: p.numericId, username };
     })

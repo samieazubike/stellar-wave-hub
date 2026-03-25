@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState, useCallback} from "react";
+import {useEffect, useState} from "react";
 import ProjectCard from "@/components/ProjectCard";
 
 const CATEGORIES = [
@@ -57,29 +57,37 @@ export default function ExplorePage() {
 	const [sort, setSort] = useState("newest");
 	const [loading, setLoading] = useState(true);
 
-	const fetchProjects = useCallback(async () => {
-		setLoading(true);
-		const params = new URLSearchParams();
-		if (category !== "All") params.set("category", category.toLowerCase());
-		if (search) params.set("search", search);
-		params.set("sort", sort);
-		params.set("page", String(pagination.page));
-		params.set("limit", "12");
-
-		try {
-			const res = await fetch(`/api/projects?${params}`);
-			const data = await res.json();
-			setProjects(data.projects || []);
-			setPagination((prev) => ({...prev, ...data.pagination}));
-		} catch {
-			setProjects([]);
-		}
-		setLoading(false);
-	}, [category, search, sort, pagination.page]);
-
 	useEffect(() => {
-		fetchProjects();
-	}, [fetchProjects]);
+		let cancelled = false;
+
+		void (async () => {
+			setLoading(true);
+			const params = new URLSearchParams();
+			if (category !== "All") {
+				params.set("category", category.toLowerCase());
+			}
+			if (search) params.set("search", search);
+			params.set("sort", sort);
+			params.set("page", String(pagination.page));
+			params.set("limit", "12");
+
+			try {
+				const res = await fetch(`/api/projects?${params}`);
+				const data = await res.json();
+				if (cancelled) return;
+				setProjects(data.projects || []);
+				setPagination((prev) => ({...prev, ...data.pagination}));
+			} catch {
+				if (!cancelled) setProjects([]);
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [category, search, sort, pagination.page]);
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

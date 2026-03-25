@@ -2,6 +2,17 @@ import { usersCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
+type UserRow = {
+  numericId: number;
+  username?: string;
+  email?: string | null;
+  role?: string;
+  stellar_address?: string | null;
+  github_url?: string | null;
+  bio?: string | null;
+  created_at?: string;
+};
+
 export async function GET(request: Request) {
   const auth = getAuthUser(request);
   if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -9,7 +20,7 @@ export async function GET(request: Request) {
   const doc = await usersCol.ref.doc(String(auth.userId)).get();
   if (!doc.exists) return Response.json({ error: "User not found" }, { status: 404 });
 
-  const u = doc.data()!;
+  const u = doc.data() as UserRow;
   return Response.json({
     user: {
       id: u.numericId,
@@ -45,7 +56,7 @@ export async function PUT(request: Request) {
     await ref.update(updates);
 
     const updated = await ref.get();
-    const u = updated.data()!;
+    const u = updated.data() as UserRow;
     return Response.json({
       user: {
         id: u.numericId,

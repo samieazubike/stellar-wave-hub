@@ -28,6 +28,17 @@ export default function SubmitPage() {
 		name: "",
 		description: "",
 		category: "",
+		asset_focus: "",
+		asset_type: "",
+		issuance_model: "",
+		compliance_model: "",
+		audit_status: "",
+		issuer_account_id: "",
+		stellar_toml_url: "",
+		supported_markets: "",
+		trading_pairs: "",
+		on_chain_volume: "",
+		verification_sources: "",
 		stellar_account_id: "",
 		stellar_contract_id: "",
 		tags: "",
@@ -191,6 +202,161 @@ export default function SubmitPage() {
 
 					<div>
 						<label className="block text-sm font-medium text-moonlight mb-2">
+							Asset Focus
+						</label>
+						<input
+							type="text"
+							className="input-field"
+							placeholder="USDC settlement rail, tokenized real estate, gold-backed token"
+							value={form.asset_focus}
+							onChange={(e) => update("asset_focus", e.target.value)}
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Asset Type
+						</label>
+						<input
+							type="text"
+							className="input-field"
+							placeholder="Fiat-backed stablecoin"
+							value={form.asset_type}
+							onChange={(e) => update("asset_type", e.target.value)}
+						/>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Issuance Model
+						</label>
+						<textarea
+							rows={3}
+							className="input-field resize-none"
+							placeholder="Describe whether the asset is issued natively on Stellar, bridged, fiat-backed, redeemable, or used as a settlement asset."
+							value={form.issuance_model}
+							onChange={(e) =>
+								update("issuance_model", e.target.value)
+							}
+						/>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Regulatory Compliance
+						</label>
+						<textarea
+							rows={3}
+							className="input-field resize-none"
+							placeholder="Summarize reserve backing, attestations, licensing, KYC/AML, or issuer compliance obligations."
+							value={form.compliance_model}
+							onChange={(e) =>
+								update("compliance_model", e.target.value)
+							}
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Audit / Attestation Status
+						</label>
+						<input
+							type="text"
+							className="input-field"
+							placeholder="Monthly reserve attestations disclosed"
+							value={form.audit_status}
+							onChange={(e) => update("audit_status", e.target.value)}
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Asset Issuer Account ID
+						</label>
+						<input
+							type="text"
+							className="input-field font-mono text-sm"
+							placeholder="G..."
+							value={form.issuer_account_id}
+							onChange={(e) =>
+								update("issuer_account_id", e.target.value)
+							}
+						/>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							stellar.toml URL
+						</label>
+						<input
+							type="url"
+							className="input-field"
+							placeholder="https://issuer-domain/.well-known/stellar.toml"
+							value={form.stellar_toml_url}
+							onChange={(e) =>
+								update("stellar_toml_url", e.target.value)
+							}
+						/>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Supported Markets
+						</label>
+						<textarea
+							rows={2}
+							className="input-field resize-none"
+							placeholder="DEX venues, corridor markets, or geographies where the asset is actively used."
+							value={form.supported_markets}
+							onChange={(e) =>
+								update("supported_markets", e.target.value)
+							}
+						/>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Trading Pairs
+						</label>
+						<textarea
+							rows={2}
+							className="input-field resize-none"
+							placeholder="USDC/XLM, USDC/EURC, USDC/NGNT"
+							value={form.trading_pairs}
+							onChange={(e) => update("trading_pairs", e.target.value)}
+						/>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							On-chain Volume
+						</label>
+						<textarea
+							rows={2}
+							className="input-field resize-none"
+							placeholder="Summarize current supply, payments volume, trustlines, and trade activity from public on-chain sources."
+							value={form.on_chain_volume}
+							onChange={(e) => update("on_chain_volume", e.target.value)}
+						/>
+					</div>
+
+					<div className="md:col-span-2">
+						<label className="block text-sm font-medium text-moonlight mb-2">
+							Verification Sources
+						</label>
+						<textarea
+							rows={4}
+							className="input-field resize-none"
+							placeholder="Paste one public source URL per line"
+							value={form.verification_sources}
+							onChange={(e) =>
+								update("verification_sources", e.target.value)
+							}
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-moonlight mb-2">
 							Stellar Account ID
 						</label>
 						<input
@@ -277,8 +443,10 @@ export default function SubmitPage() {
 				</div>
 
 				<p className="text-xs text-ash">
-					Your project will be reviewed by an admin before appearing
-					publicly.
+					For stablecoin or tokenized-asset projects, include the
+					issuer account, compliance notes, market data, and public
+					verification links so the reviewer can confirm everything
+					quickly.
 				</p>
 			</form>
 		</div>

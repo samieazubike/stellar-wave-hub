@@ -1,6 +1,11 @@
 import { projectsCol, usersCol, ratingsCol } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
+type UserRow = {
+  username?: string;
+  github_url?: string | null;
+};
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -31,8 +36,9 @@ export async function GET(
   if (uid) {
     const uDoc = await usersCol.ref.doc(String(uid)).get();
     if (uDoc.exists) {
-      projectData.username = uDoc.data()!.username;
-      projectData.user_github = uDoc.data()!.github_url;
+      const user = uDoc.data() as UserRow;
+      projectData.username = user.username ?? null;
+      projectData.user_github = user.github_url ?? null;
     }
   }
 
@@ -48,7 +54,10 @@ export async function GET(
       let username = "unknown";
       if (r.user_id) {
         const u = await usersCol.ref.doc(String(r.user_id)).get();
-        if (u.exists) username = u.data()!.username;
+        if (u.exists) {
+          const user = u.data() as UserRow;
+          username = user.username ?? "unknown";
+        }
       }
       return { ...r, id: r.numericId ?? d.id, username };
     })

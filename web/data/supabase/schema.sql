@@ -26,6 +26,17 @@ create table if not exists public.projects (
   slug text not null,
   description text not null,
   category text not null,
+  asset_focus text,
+  asset_type text,
+  issuance_model text,
+  compliance_model text,
+  audit_status text,
+  issuer_account_id text,
+  stellar_toml_url text,
+  supported_markets text,
+  trading_pairs text,
+  on_chain_volume text,
+  verification_sources text,
   status text not null default 'submitted',
   stellar_account_id text,
   stellar_contract_id text,
@@ -49,6 +60,18 @@ create index if not exists projects_status_idx on public.projects (status);
 create index if not exists projects_category_idx on public.projects (category);
 create index if not exists projects_created_at_idx on public.projects (created_at desc);
 create index if not exists projects_user_id_idx on public.projects (user_id);
+
+alter table public.projects add column if not exists asset_focus text;
+alter table public.projects add column if not exists asset_type text;
+alter table public.projects add column if not exists issuance_model text;
+alter table public.projects add column if not exists compliance_model text;
+alter table public.projects add column if not exists audit_status text;
+alter table public.projects add column if not exists issuer_account_id text;
+alter table public.projects add column if not exists stellar_toml_url text;
+alter table public.projects add column if not exists supported_markets text;
+alter table public.projects add column if not exists trading_pairs text;
+alter table public.projects add column if not exists on_chain_volume text;
+alter table public.projects add column if not exists verification_sources text;
 
 create table if not exists public.ratings (
   "numericId" bigint primary key,
