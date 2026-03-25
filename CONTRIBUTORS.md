@@ -60,7 +60,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
     </td>
      <td align="center">
       <a href="https://github.com/Chigybillionz">
-        <img src="https://github.com/OkorieChigozieJehoshaphat.png" width="80" alt="OkorieChigozieJehoshaphat" style="border-radius:50%" />
+        <img src="https://github.com/Chigybillionz.png" width="80" alt="OkorieChigozieJehoshaphat" style="border-radius:50%" />
         <br />
         <sub><b>Okorie Chigozie Jehoshaphat</b></sub>
       </a>
