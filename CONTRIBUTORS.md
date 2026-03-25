@@ -14,13 +14,26 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 ```html
 <td align="center">
   <a href="https://github.com/YOUR_GITHUB_USERNAME">
-    <img src="https://github.com/YOUR_GITHUB_USERNAME.png" width="80" alt="Your Name" style="border-radius:50%" />
+    <img
+      src="https://github.com/YOUR_GITHUB_USERNAME.png"
+      width="80"
+      alt="Your Name"
+      style="border-radius:50%"
+    />
     <br />
     <sub><b>Your Name</b></sub>
   </a>
   <br />
-  <a href="https://github.com/YOUR_GITHUB_USERNAME"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-  <a href="https://x.com/YOUR_X_HANDLE"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <a href="https://github.com/YOUR_GITHUB_USERNAME"
+    ><img
+      src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+      alt="GitHub"
+  /></a>
+  <a href="https://x.com/YOUR_X_HANDLE"
+    ><img
+      src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+      alt="X"
+  /></a>
   <br />
   <sub>Role — What you contributed</sub>
 </td>
@@ -44,6 +57,19 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
       <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
       <br />
       <sub>Maintainer — Project creator</sub>
+    </td>
+     <td align="center">
+      <a href="https://github.com/Chigybillionz">
+        <img src="https://github.com/OkorieChigozieJehoshaphat.png" width="80" alt="OkorieChigozieJehoshaphat" style="border-radius:50%" />
+        <br />
+        <sub><b>Okorie Chigozie Jehoshaphat</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/Chigybillionz"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <a href="https://x.com/ChigoziOkorie"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+      <a href="https://www.linkedin.com/in/okorie-chigozie-jehoshaphat-4b255526b"><img src="https://img.shields.io/badge/-LinkedIn-0A66C2?logo=linkedin&logoColor=white&style=flat-square" alt="LinkedIn" /></a>
+      <br />
+  <sub>Research & Upload a Stellar Wave Stablecoin or Asset Issuance Project</sub>
     </td>
     <!-- Add your <td> above this line -->
   </tr>
