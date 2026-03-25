@@ -30,6 +30,10 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
 
 ## Contributors List
 
+- Name: Purity-Euphemia
+- GitHub: Purity-Euphemia
+- Contribution: Added emerging market project research
+
 <!-- CONTRIBUTORS-START -->
 <table>
   <tr>
