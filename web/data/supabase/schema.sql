@@ -26,7 +26,7 @@ create table if not exists public.projects (
   slug text not null,
   description text not null,
   category text not null,
-  status text not null default 'submitted',
+  status text not null default 'pending',
   stellar_account_id text,
   stellar_contract_id text,
   tags text,

@@ -88,7 +88,7 @@ create policy projects_owner_insert
       auth.jwt() ->> 'app_user_id'
     ) is not null
     and user_id = (auth.jwt() ->> 'app_user_id')::bigint
-    and status = 'submitted'
+    and status in ('pending', 'submitted')
   );
 
 create policy projects_owner_update

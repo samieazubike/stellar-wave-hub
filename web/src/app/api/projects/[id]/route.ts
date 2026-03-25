@@ -1,4 +1,6 @@
 import { projectsCol, usersCol, ratingsCol } from "@/lib/db";
+import { getAuthUser } from "@/lib/auth";
+import { isPublicProjectStatus, normalizeProjectStatus } from "@/lib/projects";
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -6,6 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const auth = getAuthUser(_request);
 
   // Lookup by numeric ID or slug
   const isNumeric = /^\d+$/.test(id);
@@ -25,6 +28,17 @@ export async function GET(
   if (!projectData) {
     return Response.json({ error: "Project not found" }, { status: 404 });
   }
+
+  const normalizedStatus = normalizeProjectStatus(projectData.status);
+  const canViewPrivateProject =
+    isPublicProjectStatus(normalizedStatus) ||
+    (auth &&
+      ((projectData.user_id as number) === auth.userId || auth.role === "admin"));
+
+  if (!canViewPrivateProject) {
+    return Response.json({ error: "Project not found" }, { status: 404 });
+  }
+  projectData.status = normalizedStatus;
 
   // Fetch user info
   const uid = projectData.user_id as number;

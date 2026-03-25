@@ -1,5 +1,12 @@
 import {projectsCol, usersCol, ratingsCol, nextId} from "@/lib/db";
 import {getAuthUser} from "@/lib/auth";
+import {
+	isAllowedProjectCategory,
+	normalizeProjectCategory,
+	normalizeProjectTags,
+	normalizeProjectText,
+	normalizeProjectStatus,
+} from "@/lib/projects";
 import slugify from "slugify";
 export const dynamic = "force-dynamic";
 
@@ -22,13 +29,14 @@ export async function GET(request: Request) {
 		]);
 
 		if (category) {
-			query = query.where("category", "==", category);
+			query = query.where("category", "==", normalizeProjectCategory(category));
 		}
 
 		const snap = await query.get();
 		let projects: Record<string, unknown>[] = snap.docs.map((d) => ({
 			...d.data(),
 			id: d.data().numericId,
+			status: normalizeProjectStatus(d.data().status),
 		}));
 
 		// Client-side search filtering (Firestore doesn't support LIKE)
@@ -135,6 +143,36 @@ export async function POST(request: Request) {
 			);
 		}
 
+		if (!isAllowedProjectCategory(category)) {
+			return Response.json(
+				{
+					error: "Category must be one of: defi, payments, identity, infrastructure, or other",
+				},
+				{status: 400},
+			);
+		}
+
+		const normalizedDescription = String(description).trim();
+		if (normalizedDescription.length < 200) {
+			return Response.json(
+				{
+					error: "Description must be at least 200 characters for a comprehensive submission",
+				},
+				{status: 400},
+			);
+		}
+
+		const normalizedAccountId = normalizeProjectText(stellar_account_id);
+		const normalizedContractId = normalizeProjectText(stellar_contract_id);
+		if (!normalizedAccountId && !normalizedContractId) {
+			return Response.json(
+				{
+					error: "Provide at least one Stellar account ID or Soroban contract ID",
+				},
+				{status: 400},
+			);
+		}
+
 		let slug = slugify(name, {lower: true, strict: true});
 		const existing = await projectsCol.ref
 			.where("slug", "==", slug)
@@ -146,17 +184,17 @@ export async function POST(request: Request) {
 		const now = new Date().toISOString();
 		const project = {
 			numericId,
-			name,
+			name: String(name).trim(),
 			slug,
-			description,
-			category,
-			status: "submitted",
-			stellar_account_id: stellar_account_id || null,
-			stellar_contract_id: stellar_contract_id || null,
-			tags: tags || null,
-			website_url: website_url || null,
-			github_url: github_url || null,
-			logo_url: logo_url || null,
+			description: normalizedDescription,
+			category: normalizeProjectCategory(category),
+			status: "pending",
+			stellar_account_id: normalizedAccountId,
+			stellar_contract_id: normalizedContractId,
+			tags: normalizeProjectTags(tags),
+			website_url: normalizeProjectText(website_url),
+			github_url: normalizeProjectText(github_url),
+			logo_url: normalizeProjectText(logo_url),
 			user_id: auth.userId,
 			featured: 0,
 			rejection_reason: null,

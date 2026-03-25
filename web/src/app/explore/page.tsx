@@ -78,7 +78,11 @@ export default function ExplorePage() {
 	}, [category, search, sort, pagination.page]);
 
 	useEffect(() => {
-		fetchProjects();
+		const loadProjects = async () => {
+			await fetchProjects();
+		};
+
+		void loadProjects();
 	}, [fetchProjects]);
 
 	return (
@@ -111,16 +115,16 @@ export default function ExplorePage() {
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
 					</svg>
-					<input
-						type="text"
+						<input
+							type="text"
 						placeholder="Search projects..."
 						className="input-field !pl-11"
 						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-							setPagination((p) => ({...p, page: 1}));
-						}}
-					/>
+							onChange={(e) => {
+								setSearch(e.target.value);
+								setPagination((p) => ({...p, page: 1}));
+							}}
+						/>
 				</div>
 
 				{/* Sort */}

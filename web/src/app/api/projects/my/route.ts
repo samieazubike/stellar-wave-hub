@@ -1,5 +1,6 @@
 import { projectsCol, ratingsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { normalizeProjectStatus } from "@/lib/projects";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
     return {
       ...p,
       id: p.numericId,
+      status: normalizeProjectStatus(p.status),
       avg_rating: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null,
       rating_count: scores.length,
     };

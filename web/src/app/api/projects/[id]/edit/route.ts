@@ -1,5 +1,11 @@
 import { projectsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import {
+	isAllowedProjectCategory,
+	normalizeProjectCategory,
+	normalizeProjectTags,
+	normalizeProjectText,
+} from "@/lib/projects";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -24,8 +30,71 @@ export async function PUT(
     const allowed = ["name", "description", "category", "stellar_account_id", "stellar_contract_id", "tags", "website_url", "github_url", "logo_url"];
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
+    if (body.category !== undefined && !isAllowedProjectCategory(body.category)) {
+      return Response.json(
+        { error: "Invalid category" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      body.description !== undefined &&
+      String(body.description).trim().length < 200
+    ) {
+      return Response.json(
+        { error: "Description must be at least 200 characters" },
+        { status: 400 }
+      );
+    }
+
     for (const key of allowed) {
-      if (body[key] !== undefined) updates[key] = body[key];
+      if (body[key] === undefined) continue;
+
+      if (key === "category") {
+        updates[key] = normalizeProjectCategory(body[key]);
+        continue;
+      }
+
+      if (key === "tags") {
+        updates[key] = normalizeProjectTags(body[key]);
+        continue;
+      }
+
+      if (
+        key === "website_url" ||
+        key === "github_url" ||
+        key === "logo_url" ||
+        key === "stellar_account_id" ||
+        key === "stellar_contract_id"
+      ) {
+        updates[key] = normalizeProjectText(body[key]);
+        continue;
+      }
+
+      if (key === "name" || key === "description") {
+        updates[key] = String(body[key]).trim();
+        continue;
+      }
+
+      updates[key] = body[key];
+    }
+
+    const nextAccountId =
+      updates.stellar_account_id !== undefined
+        ? updates.stellar_account_id
+        : project.stellar_account_id;
+    const nextContractId =
+      updates.stellar_contract_id !== undefined
+        ? updates.stellar_contract_id
+        : project.stellar_contract_id;
+
+    if (!nextAccountId && !nextContractId) {
+      return Response.json(
+        {
+          error: "Provide at least one Stellar account ID or Soroban contract ID",
+        },
+        { status: 400 }
+      );
     }
 
     if (Object.keys(updates).length <= 1) {

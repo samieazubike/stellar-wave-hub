@@ -19,11 +19,16 @@ interface Project {
 }
 
 const statusStyles: Record<string, string> = {
+	pending: "tag-solar",
 	submitted: "tag-solar",
 	approved: "tag-aurora",
 	featured: "tag-aurora",
 	rejected: "tag-supernova",
 };
+
+function formatProjectStatus(status: string) {
+	return status === "submitted" ? "pending" : status;
+}
 
 export default function MyProjectsPage() {
 	const {user, token} = useAuth();
@@ -32,7 +37,6 @@ export default function MyProjectsPage() {
 
 	useEffect(() => {
 		if (!token) {
-			setLoading(false);
 			return;
 		}
 		fetch("/api/projects/my", {
@@ -115,7 +119,7 @@ export default function MyProjectsPage() {
 									<span
 										className={`tag ${statusStyles[project.status] || "tag-nova"}`}
 									>
-										{project.status}
+										{formatProjectStatus(project.status)}
 									</span>
 									{project.featured === 1 && (
 										<span className="tag tag-solar">
@@ -133,7 +137,7 @@ export default function MyProjectsPage() {
 									</p>
 								)}
 								<p className="text-xs text-dust mt-2">
-									Submitted{" "}
+									Created{" "}
 									{new Date(
 										project.created_at,
 									).toLocaleDateString()}

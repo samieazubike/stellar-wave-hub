@@ -8,12 +8,7 @@ import Link from "next/link";
 const CATEGORIES = [
 	"DeFi",
 	"Payments",
-	"NFT",
 	"Infrastructure",
-	"Gaming",
-	"Social",
-	"Tools",
-	"DAO",
 	"Identity",
 	"Other",
 ];
@@ -42,6 +37,15 @@ export default function SubmitPage() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError("");
+		if (
+			!form.stellar_account_id.trim() &&
+			!form.stellar_contract_id.trim()
+		) {
+			setError(
+				"Add at least one Stellar account ID or Soroban contract ID before submitting.",
+			);
+			return;
+		}
 		setLoading(true);
 
 		try {
@@ -106,9 +110,9 @@ export default function SubmitPage() {
 				<h1 className="font-display font-bold text-3xl text-starlight mb-2">
 					Submit a Project
 				</h1>
-				<p className="text-ash">
-					Share your Stellar Wave project with the community
-				</p>
+					<p className="text-ash">
+					Share a verified Stellar Wave project with the community
+					</p>
 			</div>
 
 			<form
@@ -143,8 +147,9 @@ export default function SubmitPage() {
 						<textarea
 							required
 							rows={4}
+							minLength={200}
 							className="input-field resize-none"
-							placeholder="What does your project do? What problem does it solve?"
+							placeholder="Write a comprehensive description of at least 200 characters covering the project's mission, technology, and role in the Wave ecosystem."
 							value={form.description}
 							onChange={(e) =>
 								update("description", e.target.value)
@@ -191,7 +196,7 @@ export default function SubmitPage() {
 
 					<div>
 						<label className="block text-sm font-medium text-moonlight mb-2">
-							Stellar Account ID
+							Stellar Account ID *
 						</label>
 						<input
 							type="text"
@@ -206,7 +211,7 @@ export default function SubmitPage() {
 
 					<div>
 						<label className="block text-sm font-medium text-moonlight mb-2">
-							Soroban Contract ID
+							Soroban Contract ID *
 						</label>
 						<input
 							type="text"
@@ -217,6 +222,9 @@ export default function SubmitPage() {
 								update("stellar_contract_id", e.target.value)
 							}
 						/>
+						<p className="text-xs text-ash mt-2">
+							Provide at least one on-chain identifier: a Stellar account ID or a Soroban contract ID.
+						</p>
 					</div>
 
 					<div>

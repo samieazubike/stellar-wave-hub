@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import Link from "next/link";
 
@@ -16,21 +16,19 @@ interface Project {
 	created_at: string;
 }
 
+function formatProjectStatus(status: string) {
+	return status === "submitted" ? "pending" : status;
+}
+
 export default function AdminPage() {
 	const {user, token} = useAuth();
 	const [pending, setPending] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-	useEffect(() => {
-		if (!token) {
-			setLoading(false);
-			return;
-		}
-		fetchPending();
-	}, [token]);
+	const fetchPending = useCallback(async () => {
+		if (!token) return;
 
-	const fetchPending = async () => {
 		try {
 			const res = await fetch("/api/projects/pending", {
 				headers: {Authorization: `Bearer ${token}`},
@@ -41,7 +39,18 @@ export default function AdminPage() {
 			}
 		} catch {}
 		setLoading(false);
-	};
+	}, [token]);
+
+	useEffect(() => {
+		if (!token) {
+			return;
+		}
+		const timer = window.setTimeout(() => {
+			void fetchPending();
+		}, 0);
+
+		return () => window.clearTimeout(timer);
+	}, [fetchPending, token]);
 
 	const handleAction = async (
 		projectId: number,
@@ -152,6 +161,9 @@ export default function AdminPage() {
 											</h3>
 											<span className="tag tag-nova">
 												{project.category}
+											</span>
+											<span className="tag tag-solar">
+												{formatProjectStatus(project.status)}
 											</span>
 										</div>
 										<p className="text-sm text-moonlight/80 mb-2 line-clamp-2">
