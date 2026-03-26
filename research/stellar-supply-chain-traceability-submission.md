@@ -144,3 +144,26 @@ Live API submission was completed successfully on March 26, 2026.
 - **Slug:** `loam-regenerative-agriculture-supply-chain`
 - **Submitted by:** `kiro-contributor` (user id: 16)
 - **Tags used:** `supply-chain,traceability,transparency,agriculture,soroban,stellar-wave,sustainability,provenance,certification`
+
+
+## Validation Results
+
+All required fields verified via live API query on March 26, 2026:
+
+| Check | Result |
+|---|---|
+| name | PASS |
+| description ≥ 200 words | PASS (376 words) |
+| category | PASS |
+| stellar_account_id | PASS |
+| stellar_contract_id | PASS |
+| tags present | PASS |
+| supply-chain tag | PASS |
+| traceability tag | PASS |
+| transparency tag | PASS |
+| website_url | PASS |
+| github_url | PASS |
+| status = submitted | PASS |
+| project id = 17 | PASS |
+
+Project is live at: `https://usestellarwavehub.vercel.app/projects/loam-regenerative-agriculture-supply-chain`
