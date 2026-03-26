@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -80,6 +80,41 @@ export default function SubmitPage() {
   const { user, token } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
+  const [researchFiles, setResearchFiles] = useState<File[]>([]);
+  const [researchPreviews, setResearchPreviews] = useState<string[]>([]);
+  const [researchError, setResearchError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (imageFiles.length !== files.length) {
+      setResearchError("Only image files are allowed");
+      return;
+    }
+    if (researchFiles.length + imageFiles.length > 10) {
+      setResearchError("Maximum 10 images allowed");
+      return;
+    }
+    setResearchError("");
+    const newFiles = [...researchFiles, ...imageFiles];
+    setResearchFiles(newFiles);
+
+    imageFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setResearchPreviews((prev) => [...prev, ev.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [researchFiles]);
+
+  const removeImage = useCallback((index: number) => {
+    setResearchFiles((prev) => prev.filter((_, i) => i !== index));
+    setResearchPreviews((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const form = useForm<SubmitValues>({
     resolver: zodResolver(submitSchema),
@@ -98,14 +133,25 @@ export default function SubmitPage() {
 
   const onSubmit = async (values: SubmitValues) => {
     setError("");
+    setResearchError("");
+
+    if (researchFiles.length === 0) {
+      setResearchError("At least one research image is required");
+      return;
+    }
+
     try {
+      const payload = {
+        ...values,
+        research_images: researchPreviews,
+      };
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -292,6 +338,66 @@ export default function SubmitPage() {
                 </FormItem>
               )}
             />
+
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-sm font-medium text-moonlight">
+                Research Images *
+              </label>
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="input-field flex flex-col items-center justify-center gap-2 py-8 cursor-pointer border-dashed hover:border-nova/40 transition-colors"
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span className="text-sm text-ash">
+                  Click to upload images
+                </span>
+                <span className="text-xs text-ash/60">
+                  PNG, JPG, WEBP — max 10 images
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+
+              {researchPreviews.length > 0 && (
+                <div className="flex flex-wrap gap-3 mt-3">
+                  {researchPreviews.map((src, i) => (
+                    <div key={i} className="relative group">
+                      <img
+                        src={src}
+                        alt={`Research ${i + 1}`}
+                        className="w-24 h-24 object-cover rounded-xl border border-dust/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-supernova/80 text-void text-xs font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {researchError && (
+                <p className="text-sm text-supernova">{researchError}</p>
+              )}
+
+              <p className="text-xs text-ash">
+                Upload screenshots of your research (e.g. tokenomics, architecture diagrams, project analysis). Only visible to admins during review.
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 pt-4 border-t border-dust/20">

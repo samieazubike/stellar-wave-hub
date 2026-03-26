@@ -16,7 +16,12 @@ interface User {
   role: string;
   stellar_address?: string;
   github_url?: string;
+  twitter_url?: string;
+  discord_username?: string;
+  telegram_url?: string;
+  website_url?: string;
   bio?: string;
+  created_at?: string;
 }
 
 interface AuthContextType {
