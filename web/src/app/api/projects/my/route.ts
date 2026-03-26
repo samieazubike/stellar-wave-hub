@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   const projects = snap.docs.map((d) => {
     const p = d.data();
-    const scores = ratingsByProject.get(p.numericId) || [];
+    const scores = ratingsByProject.get(p.numericId as number) || [];
     return {
       ...p,
       id: p.numericId,

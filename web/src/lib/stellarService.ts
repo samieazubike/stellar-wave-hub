@@ -25,17 +25,20 @@ export async function getRecentTransactions(accountId: string, limit = 20) {
     .order("desc")
     .call();
 
-  return payments.records.map((r: Record<string, unknown>) => ({
-    id: r.id,
-    type: r.type,
-    created_at: r.created_at,
-    amount: r.amount,
-    asset_type: r.asset_type,
-    asset_code: r.asset_code,
-    from: r.from,
-    to: r.to,
-    transaction_hash: r.transaction_hash,
-  }));
+  return payments.records.map((record) => {
+    const r = record as unknown as Record<string, unknown>;
+    return {
+      id: r.id,
+      type: r.type,
+      created_at: r.created_at,
+      amount: r.amount,
+      asset_type: r.asset_type,
+      asset_code: r.asset_code,
+      from: r.from,
+      to: r.to,
+      transaction_hash: r.transaction_hash,
+    };
+  });
 }
 
 export async function getContractInvocations(accountId: string, limit = 20) {
@@ -47,12 +50,18 @@ export async function getContractInvocations(accountId: string, limit = 20) {
     .call();
 
   return ops.records
-    .filter((r: Record<string, unknown>) => r.type === "invoke_host_function")
-    .map((r: Record<string, unknown>) => ({
-      id: r.id,
-      type: r.type,
-      created_at: r.created_at,
-      function: r.function,
-      transaction_hash: r.transaction_hash,
-    }));
+    .filter((record) => {
+      const r = record as unknown as Record<string, unknown>;
+      return r.type === "invoke_host_function";
+    })
+    .map((record) => {
+      const r = record as unknown as Record<string, unknown>;
+      return {
+        id: r.id,
+        type: r.type,
+        created_at: r.created_at,
+        function: r.function,
+        transaction_hash: r.transaction_hash,
+      };
+    });
 }

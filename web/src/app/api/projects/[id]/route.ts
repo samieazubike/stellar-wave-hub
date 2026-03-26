@@ -48,7 +48,7 @@ export async function GET(
       let username = "unknown";
       if (r.user_id) {
         const u = await usersCol.ref.doc(String(r.user_id)).get();
-        if (u.exists) username = u.data()!.username;
+        if (u.exists) username = u.data()!.username as string;
       }
       return { ...r, id: r.numericId ?? d.id, username };
     })
