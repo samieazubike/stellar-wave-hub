@@ -45,6 +45,17 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
       <br />
       <sub>Maintainer — Project creator</sub>
     </td>
+    <td align="center">
+      <a href="https://github.com/antigravity">
+        <img src="https://github.com/antigravity.png" width="80" alt="Antigravity" style="border-radius:50%" />
+        <br />
+        <sub><b>Antigravity</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/antigravity"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Uploaded Franklin Templeton BENJI RWA project</sub>
+    </td>
     <!-- Add your <td> above this line -->
   </tr>
 </table>
