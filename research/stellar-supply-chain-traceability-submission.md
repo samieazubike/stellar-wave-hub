@@ -133,4 +133,14 @@ the growing demand for verified sustainability credentials in international comm
 
 - **Category:** Infrastructure
 - **Tags:** supply-chain, traceability, transparency, agriculture, soroban, stellar-wave,
-  sustainability, provenance, nft, certification
+  sustainability, provenance, certification
+
+## Submission Result
+
+Live API submission was completed successfully on March 26, 2026.
+
+- **Hub endpoint:** `https://usestellarwavehub.vercel.app/api/projects`
+- **Result:** Created project with `id: 17`, `status: submitted`
+- **Slug:** `loam-regenerative-agriculture-supply-chain`
+- **Submitted by:** `kiro-contributor` (user id: 16)
+- **Tags used:** `supply-chain,traceability,transparency,agriculture,soroban,stellar-wave,sustainability,provenance,certification`
