@@ -22,14 +22,6 @@ export default function AdminPage() {
 	const [loading, setLoading] = useState(true);
 	const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-	useEffect(() => {
-		if (!token) {
-			setLoading(false);
-			return;
-		}
-		fetchPending();
-	}, [token]);
-
 	const fetchPending = async () => {
 		try {
 			const res = await fetch("/api/projects/pending", {
@@ -42,6 +34,16 @@ export default function AdminPage() {
 		} catch {}
 		setLoading(false);
 	};
+
+	useEffect(() => {
+		if (!token) {
+			setLoading(false);
+			return;
+		}
+		fetchPending();
+		// fetchPending is stable within this effect scope; token is the real dependency
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [token]);
 
 	const handleAction = async (
 		projectId: number,

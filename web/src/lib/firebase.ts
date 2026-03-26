@@ -134,7 +134,7 @@ class DocRef {
 class QueryDocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any>,
+		private readonly row: Record<string, unknown>,
 	) {}
 
 	get id(): string {
@@ -142,7 +142,7 @@ class QueryDocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> {
+	data(): Record<string, unknown> {
 		return this.row;
 	}
 }
@@ -150,7 +150,7 @@ class QueryDocumentSnapshot {
 class DocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any> | null,
+		private readonly row: Record<string, unknown> | null,
 	) {}
 
 	get exists(): boolean {
@@ -163,7 +163,7 @@ class DocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> | undefined {
+	data(): Record<string, unknown> | undefined {
 		return this.row ?? undefined;
 	}
 }

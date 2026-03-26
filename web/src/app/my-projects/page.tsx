@@ -32,7 +32,8 @@ export default function MyProjectsPage() {
 
 	useEffect(() => {
 		if (!token) {
-			setLoading(false);
+			// Use a microtask to avoid synchronous setState in effect body
+			Promise.resolve().then(() => setLoading(false));
 			return;
 		}
 		fetch("/api/projects/my", {

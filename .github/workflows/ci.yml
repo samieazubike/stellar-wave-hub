@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "feat/**", "fix/**", "research/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: web
+
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: web
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+        working-directory: web

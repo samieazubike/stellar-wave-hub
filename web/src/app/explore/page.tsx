@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState, useCallback} from "react";
+import {useEffect, useState} from "react";
 import ProjectCard from "@/components/ProjectCard";
 
 const CATEGORIES = [
@@ -57,8 +57,8 @@ export default function ExplorePage() {
 	const [sort, setSort] = useState("newest");
 	const [loading, setLoading] = useState(true);
 
-	const fetchProjects = useCallback(async () => {
-		setLoading(true);
+	useEffect(() => {
+		let cancelled = false;
 		const params = new URLSearchParams();
 		if (category !== "All") params.set("category", category.toLowerCase());
 		if (search) params.set("search", search);
@@ -66,20 +66,24 @@ export default function ExplorePage() {
 		params.set("page", String(pagination.page));
 		params.set("limit", "12");
 
-		try {
-			const res = await fetch(`/api/projects?${params}`);
-			const data = await res.json();
-			setProjects(data.projects || []);
-			setPagination((prev) => ({...prev, ...data.pagination}));
-		} catch {
-			setProjects([]);
-		}
-		setLoading(false);
-	}, [category, search, sort, pagination.page]);
+		fetch(`/api/projects?${params}`)
+			.then((res) => res.json())
+			.then((data) => {
+				if (cancelled) return;
+				setLoading(false);
+				setProjects(data.projects || []);
+				setPagination((prev) => ({...prev, ...data.pagination}));
+			})
+			.catch(() => {
+				if (cancelled) return;
+				setLoading(false);
+				setProjects([]);
+			});
 
-	useEffect(() => {
-		fetchProjects();
-	}, [fetchProjects]);
+		return () => {
+			cancelled = true;
+		};
+	}, [category, search, sort, pagination.page]);
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
