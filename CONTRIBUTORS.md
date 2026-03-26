@@ -64,23 +64,6 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
   <br />
   <sub>Researcher — Added Finclusive Stellar Anchor profile (verified SEP-24, stellar.toml, and on-chain account)</sub>
 </td>
-
-<td align="center">
-  <a href="https://github.com/codewithzubair07">
-    <img src="https://github.com/codewithzubair07.png" width="80" alt="Juber Quraishi" style="border-radius:50%" />
-    <br />
-    <sub><b>Juber Quraishi</b></sub>
-  </a>
-  <br />
-  <a href="https://github.com/codewithzubair07">
-    <img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" />
-  </a>
-  <a href="https://x.com/Zubair_57">
-    <img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" />
-  </a>
-  <br />
-  <sub>Researcher — Added OFFER-HUB Identity project (Soroban-based user registry, SEP-10/SEP-9, access control)</sub>
-</td>
     <!-- Add your <td> above this line -->
   </tr>
 </table>
