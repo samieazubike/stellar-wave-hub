@@ -145,7 +145,7 @@ export async function POST(request: Request) {
 
 		const numericId = await nextId("projects");
 		const now = new Date().toISOString();
-		const project = {
+		const project: Record<string, unknown> = {
 			numericId,
 			name,
 			slug,
@@ -158,7 +158,6 @@ export async function POST(request: Request) {
 			website_url: website_url || null,
 			github_url: github_url || null,
 			logo_url: logo_url || null,
-			research_images: Array.isArray(research_images) ? research_images : [],
 			user_id: auth.userId,
 			featured: 0,
 			rejection_reason: null,
@@ -166,9 +165,26 @@ export async function POST(request: Request) {
 			updated_at: now,
 		};
 
-		await projectsCol.ref.doc(String(numericId)).set(project);
+		// Include research_images if provided; fall back gracefully if column doesn't exist
+		const projectWithImages = {
+			...project,
+			research_images: Array.isArray(research_images) ? research_images : [],
+		};
+
+		try {
+			await projectsCol.ref.doc(String(numericId)).set(projectWithImages);
+		} catch (colErr: unknown) {
+			// If the column doesn't exist in the DB, retry without research_images
+			const msg = colErr instanceof Error ? colErr.message : String(colErr);
+			if (msg.includes("research_images") || msg.includes("column")) {
+				await projectsCol.ref.doc(String(numericId)).set(project);
+			} else {
+				throw colErr;
+			}
+		}
+
 		return Response.json(
-			{project: {...project, id: numericId}},
+			{project: {...projectWithImages, id: numericId}},
 			{status: 201},
 		);
 	} catch (err) {

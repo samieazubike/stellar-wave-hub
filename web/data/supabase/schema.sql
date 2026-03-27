@@ -33,6 +33,7 @@ create table if not exists public.projects (
   website_url text,
   github_url text,
   logo_url text,
+  research_images jsonb not null default '[]'::jsonb,
   user_id bigint not null,
   featured integer not null default 0,
   rejection_reason text,
