@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [-] 1. Create Git branch and write research document
+- [x] 1. Create Git branch and write research document
   - Checkout a new branch `feat/privacy-security-tss-submission` from main
   - Create `research/tss-turing-signing-server.md` documenting the Turing Signing Server project
   - Include: project overview, privacy mechanisms (threshold signing, distributed key management), threat model, on-chain verification via Horizon API, and Stellar account ID
@@ -11,7 +11,7 @@
   - Validate that the research file contains a Stellar account/contract ID pattern and a verification URL
   - **Validates: Requirements 5.2**
 
-- [ ] 2. Write submission validation utilities and tests
+- [x] 2. Write submission validation utilities and tests
   - Create `scripts/validate-submission.ts` with helper functions: `countWords(description)` and `hasRequiredTags(tags)`
   - These utilities will be used by the submission script and tests
   - _Requirements: 3.2, 3.3_
@@ -26,7 +26,7 @@
   - Use fast-check to generate arbitrary tag strings and verify only those containing "privacy" and "security" pass `hasRequiredTags`
   - **Validates: Requirements 3.3**
 
-- [ ] 3. Write and execute the project submission script
+- [-] 3. Write and execute the project submission script
   - Create `scripts/submit-tss-project.ts` that: registers/logs in to the Hub, POSTs the TSS project profile with 200+ word description, privacy/security tags, and verified Stellar account ID
   - Run the script against `https://usestellarwavehub.vercel.app/api/projects`
   - Log and save the response (project ID and status)

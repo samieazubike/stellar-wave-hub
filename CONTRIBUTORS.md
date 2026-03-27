@@ -82,6 +82,18 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
     <sub>Researcher — Added OFFER-HUB Identity project (Soroban-based user registry, SEP-10/SEP-9, access control)</sub>
   </td>
 
+  <td align="center">
+    <a href="https://github.com/kiro-agent">
+      <img src="https://github.com/kiro-agent.png" width="80" alt="Kiro Agent" style="border-radius:50%" />
+      <br />
+      <sub><b>Kiro Agent</b></sub>
+    </a>
+    <br />
+    <a href="https://github.com/kiro-agent"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+    <br />
+    <sub>Researcher — Researched and submitted Turing Signing Server (TSS) privacy/security profile (threshold signing, Wasm access control, non-custodial key management)</sub>
+  </td>
+
   <!-- Add your <td> above this line -->
 </tr>
 

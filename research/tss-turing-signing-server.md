@@ -107,9 +107,25 @@ The distributed trust model means that even a fully compromised turret operator 
 
 ## Submission to Stellar Wave Hub
 
-Live API submission was performed against `https://usestellarwavehub.vercel.app/api/projects`.
+Submission was attempted against `https://usestellarwavehub.vercel.app/api/projects`.
+
+During submission, a bug was discovered in the live deployment: the `projects` table in the Supabase database is missing the `research_images` column that the POST `/api/projects` route always tries to insert. This causes a 500 Internal Server Error for all project submissions.
+
+**Bug fix committed:** `web/src/app/api/projects/route.ts` was updated to gracefully handle the missing column by retrying the upsert without `research_images` if a column error occurs. A schema migration (`web/data/supabase/migrations/001_add_research_images.sql`) was also added to add the column to existing deployments.
+
+**Submission payload (ready to submit once fix is deployed):**
 
 - **Hub endpoint:** `https://usestellarwavehub.vercel.app/api/projects`
-- **Category:** Security
+- **Name:** Turing Signing Server (TSS)
+- **Category:** Infrastructure
+- **Stellar Account ID:** `GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN`
 - **Tags:** `privacy,security,key-management,threshold-signing,wasm,soroban,stellar-wave,non-custodial`
-- **Result:** _(updated after submission — see scripts/submit-tss-project.ts output)_
+- **Website:** https://tss.stellar.org
+- **GitHub:** https://github.com/stellar/turing-signing-server
+- **Description word count:** 380 words (exceeds 200-word minimum)
+
+The submission script is available at `scripts/submit-tss-project.ts` and can be run once the fix is deployed:
+
+```bash
+npx tsx scripts/submit-tss-project.ts
+```
