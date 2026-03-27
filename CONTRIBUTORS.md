@@ -259,6 +259,52 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — KindFi</sub>
 	</div>
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Obiajulu-gif">
+			<img
+				src="https://github.com/Obiajulu-gif.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Obiajulu-gif"
+			/>
+			<br />
+			<sub><b>Obiajulu-gif</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Obiajulu-gif"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — FxDAO</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Obiajulu-gif">
+			<img
+				src="https://github.com/Obiajulu-gif.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Obiajulu-gif"
+			/>
+			<br />
+			<sub><b>Obiajulu-gif</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Obiajulu-gif"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Slender</sub>
+	</div>
+
 	<!-- Add your <div> above this line -->
 </div>
 <!-- CONTRIBUTORS-END -->
