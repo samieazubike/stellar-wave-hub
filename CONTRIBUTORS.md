@@ -14,13 +14,26 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 ```html
 <td align="center">
   <a href="https://github.com/YOUR_GITHUB_USERNAME">
-    <img src="https://github.com/YOUR_GITHUB_USERNAME.png" width="80" alt="Your Name" style="border-radius:50%" />
+    <img
+      src="https://github.com/YOUR_GITHUB_USERNAME.png"
+      width="80"
+      alt="Your Name"
+      style="border-radius:50%"
+    />
     <br />
     <sub><b>Your Name</b></sub>
   </a>
   <br />
-  <a href="https://github.com/YOUR_GITHUB_USERNAME"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-  <a href="https://x.com/YOUR_X_HANDLE"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <a href="https://github.com/YOUR_GITHUB_USERNAME"
+    ><img
+      src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+      alt="GitHub"
+  /></a>
+  <a href="https://x.com/YOUR_X_HANDLE"
+    ><img
+      src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+      alt="X"
+  /></a>
   <br />
   <sub>Role — What you contributed</sub>
 </td>
@@ -80,6 +93,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
     </a>
     <br />
     <sub>Researcher — Added OFFER-HUB Identity project (Soroban-based user registry, SEP-10/SEP-9, access control)</sub>
+
   </td>
 
   <!-- Add your <td> above this line -->
@@ -100,11 +114,23 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
     </td>
 
     <!-- Add your <td> above this line -->
+
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/belzabeem">
+        <img src="https://github.com/belzabeem.png" width="80" alt="Belzabeem" style="border-radius:50%" />
+        <br />
+        <sub><b>Belzabeem</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/belzabeem"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Researched and submitted StellarX DEX profile with comparative analysis</sub>
+    </td>
   </tr>
 </table>
 <!-- CONTRIBUTORS-END -->
-
-
 
 ## Roles
 
