@@ -126,6 +126,7 @@ export async function POST(request: Request) {
 			website_url,
 			github_url,
 			logo_url,
+			research_images,
 		} = body;
 
 		if (!name || !description || !category) {
@@ -157,6 +158,7 @@ export async function POST(request: Request) {
 			website_url: website_url || null,
 			github_url: github_url || null,
 			logo_url: logo_url || null,
+			research_images: Array.isArray(research_images) ? research_images : [],
 			user_id: auth.userId,
 			featured: 0,
 			rejection_reason: null,

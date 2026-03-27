@@ -33,17 +33,70 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
 <!-- CONTRIBUTORS-START -->
 <table>
   <tr>
+    <tr>
+  <td align="center">
+    <a href="https://github.com/samieazubike">
+      <img src="https://github.com/samieazubike.png" width="80" alt="samieazubike" style="border-radius:50%" />
+      <br />
+      <sub><b>samieazubike</b></sub>
+    </a>
+    <br />
+    <a href="https://github.com/samieazubike"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+    <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+    <br />
+    <sub>Maintainer — Project creator</sub>
+  </td>
+
+  <td align="center">
+    <a href="https://github.com/codewithzubair07">
+      <img src="https://github.com/codewithzubair07.png" width="80" alt="Juber Quraishi" style="border-radius:50%" />
+      <br />
+      <sub><b>Juber Quraishi</b></sub>
+    </a>
+    <br />
+    <a href="https://github.com/codewithzubair07">
+      <img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" />
+    </a>
+    <a href="https://x.com/Zubair_57">
+      <img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" />
+    </a>
+    <br />
+    <sub>Researcher — Added Finclusive Stellar Anchor profile (verified SEP-24, stellar.toml, and on-chain account)</sub>
+  </td>
+
+  <td align="center">
+    <a href="https://github.com/codewithzubair07">
+      <img src="https://github.com/codewithzubair07.png" width="80" alt="Juber Quraishi" style="border-radius:50%" />
+      <br />
+
+      <sub><b>Juber Quraishi</b></sub>
+    </a>
+    <br />
+    <a href="https://github.com/codewithzubair07">
+      <img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" />
+    </a>
+    <a href="https://x.com/Zubair_57">
+      <img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" />
+    </a>
+    <br />
+    <sub>Researcher — Added OFFER-HUB Identity project (Soroban-based user registry, SEP-10/SEP-9, access control)</sub>
+  </td>
+
+  <!-- Add your <td> above this line -->
+</tr>
+
+      <sub>Maintainer — Project creator</sub>
+    </td>
     <td align="center">
-      <a href="https://github.com/samieazubike">
-        <img src="https://github.com/samieazubike.png" width="80" alt="samieazubike" style="border-radius:50%" />
+      <a href="https://github.com/sudo-robi">
+        <img src="https://github.com/sudo-robi.png" width="80" alt="sudo-robi" style="border-radius:50%" />
         <br />
-        <sub><b>samieazubike</b></sub>
+        <sub><b>sudo-robi</b></sub>
       </a>
       <br />
-      <a href="https://github.com/samieazubike"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-      <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+      <a href="https://github.com/sudo-robi"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
       <br />
-      <sub>Maintainer — Project creator</sub>
+      <sub>Researcher — Researched and submitted Tansu Soroban Wave project profile</sub>
     </td>
     <td align="center">
       <a href="https://github.com/Obiajulu-gif">
@@ -60,6 +113,8 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
   </tr>
 </table>
 <!-- CONTRIBUTORS-END -->
+
+
 
 ## Roles
 

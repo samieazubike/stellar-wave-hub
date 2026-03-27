@@ -47,6 +47,29 @@ interface FinancialSummary {
 	balances: {asset_code: string; balance: string}[];
 }
 
+const STELLAR_EXPLORER = "https://stellar.expert/explorer/public";
+
+function StellarAddressLink({address, type}: {address: string; type: "account" | "contract"}) {
+	const path = type === "account" ? "account" : "contract";
+	const href = `${STELLAR_EXPLORER}/${path}/${address}`;
+	return (
+		<a
+			href={href}
+			target="_blank"
+			rel="noopener noreferrer"
+			className="tag tag-plasma font-mono text-[11px] inline-flex items-center gap-1.5 cursor-pointer hover:bg-plasma/20 transition-all group"
+			title={`View on Stellar Expert: ${address}`}
+		>
+			<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+				<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+				<polyline points="15 3 21 3 21 9" />
+				<line x1="10" y1="14" x2="21" y2="3" />
+			</svg>
+			{address.slice(0, 8)}...{address.slice(-4)}
+		</a>
+	);
+}
+
 export default function ProjectDetailPage({
 	params,
 }: {
@@ -115,7 +138,6 @@ export default function ProjectDetailPage({
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error);
 			setRatingMsg("Rating submitted!");
-			// Refresh
 			const refresh = await fetch(`/api/projects/${slug}`);
 			const rd = await refresh.json();
 			setRatings(rd.ratings || []);
@@ -259,16 +281,59 @@ export default function ProjectDetailPage({
 						</a>
 					)}
 					{project.stellar_account_id && (
-						<span className="tag tag-plasma font-mono text-[11px]">
-							{project.stellar_account_id.slice(0, 8)}...
-							{project.stellar_account_id.slice(-4)}
-						</span>
+						<StellarAddressLink address={project.stellar_account_id} type="account" />
+					)}
+					{project.stellar_contract_id && (
+						<StellarAddressLink address={project.stellar_contract_id} type="contract" />
 					)}
 				</div>
 			</div>
 
+			{/* Website Preview */}
+			{project.website_url && (
+				<div className="mb-8 animate-in animate-in-delay-1">
+					<div className="glass rounded-2xl overflow-hidden">
+						<div className="flex items-center gap-2 px-5 py-3 border-b border-dust/20">
+							<div className="flex gap-1.5">
+								<div className="w-3 h-3 rounded-full bg-supernova/40" />
+								<div className="w-3 h-3 rounded-full bg-solar/40" />
+								<div className="w-3 h-3 rounded-full bg-aurora/40" />
+							</div>
+							<div className="flex-1 mx-3">
+								<div className="bg-nebula/80 rounded-lg px-3 py-1.5 text-xs text-ash font-mono truncate">
+									{project.website_url}
+								</div>
+							</div>
+							<a
+								href={project.website_url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-xs text-ash hover:text-nova-bright transition-colors flex items-center gap-1"
+							>
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+									<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+									<polyline points="15 3 21 3 21 9" />
+									<line x1="10" y1="14" x2="21" y2="3" />
+								</svg>
+								Open
+							</a>
+						</div>
+						<div className="relative bg-nebula">
+							<iframe
+								src={project.website_url}
+								title={`${project.name} website preview`}
+								className="w-full h-[400px] sm:h-[500px] border-0"
+								sandbox="allow-scripts allow-same-origin allow-popups"
+								loading="lazy"
+							/>
+							<div className="absolute inset-0 pointer-events-none border border-dust/10 rounded-b-2xl" />
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Tabs */}
-			<div className="flex gap-1 mb-8 border-b border-dust/20 animate-in animate-in-delay-1">
+			<div className="flex gap-1 mb-8 border-b border-dust/20 animate-in animate-in-delay-2">
 				{(["overview", "ratings", "financials"] as const).map((tab) => (
 					<button
 						key={tab}
@@ -288,7 +353,7 @@ export default function ProjectDetailPage({
 			</div>
 
 			{/* Tab content */}
-			<div className="animate-in animate-in-delay-2">
+			<div className="animate-in animate-in-delay-3">
 				{activeTab === "overview" && (
 					<div className="space-y-8">
 						<div className="glass rounded-2xl p-8">
@@ -299,6 +364,53 @@ export default function ProjectDetailPage({
 								{project.description}
 							</p>
 						</div>
+
+						{/* Stellar addresses section */}
+						{(project.stellar_account_id || project.stellar_contract_id) && (
+							<div className="glass rounded-2xl p-8">
+								<h2 className="font-semibold text-lg text-starlight mb-4">
+									On-Chain Details
+								</h2>
+								<div className="space-y-4">
+									{project.stellar_account_id && (
+										<div>
+											<p className="text-xs text-ash uppercase tracking-wider mb-2">Stellar Account</p>
+											<a
+												href={`${STELLAR_EXPLORER}/account/${project.stellar_account_id}`}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
+											>
+												{project.stellar_account_id}
+												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
+													<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+													<polyline points="15 3 21 3 21 9" />
+													<line x1="10" y1="14" x2="21" y2="3" />
+												</svg>
+											</a>
+										</div>
+									)}
+									{project.stellar_contract_id && (
+										<div>
+											<p className="text-xs text-ash uppercase tracking-wider mb-2">Soroban Contract</p>
+											<a
+												href={`${STELLAR_EXPLORER}/contract/${project.stellar_contract_id}`}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
+											>
+												{project.stellar_contract_id}
+												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
+													<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+													<polyline points="15 3 21 3 21 9" />
+													<line x1="10" y1="14" x2="21" y2="3" />
+												</svg>
+											</a>
+										</div>
+									)}
+								</div>
+							</div>
+						)}
 
 						{tags.length > 0 && (
 							<div className="glass rounded-2xl p-8">
@@ -598,9 +710,19 @@ export default function ProjectDetailPage({
 									<h2 className="font-semibold text-lg text-starlight mb-2">
 										Stellar Account
 									</h2>
-									<p className="font-mono text-sm text-plasma-bright break-all">
+									<a
+										href={`${STELLAR_EXPLORER}/account/${project.stellar_account_id}`}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
+									>
 										{project.stellar_account_id}
-									</p>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
+											<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+											<polyline points="15 3 21 3 21 9" />
+											<line x1="10" y1="14" x2="21" y2="3" />
+										</svg>
+									</a>
 								</div>
 							</>
 						)}

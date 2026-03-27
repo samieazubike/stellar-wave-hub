@@ -1,31 +1,55 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+
+const registerSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be under 30 characters")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Only letters, numbers, hyphens, and underscores"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters"),
+});
+
+type RegisterValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { register, connectWallet } = useAuth();
+  const { register: authRegister, connectWallet } = useAuth();
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [walletLoading, setWalletLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<RegisterValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { username: "", email: "", password: "" },
+  });
+
+  const onSubmit = async (values: RegisterValues) => {
     setError("");
-    setLoading(true);
     try {
-      await register(username, email, password);
+      await authRegister(values.username, values.email, values.password);
       router.push("/explore");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     }
-    setLoading(false);
   };
 
   const handleWallet = async () => {
@@ -92,31 +116,64 @@ export default function RegisterPage() {
           </div>
 
           {/* Email form */}
-          <form onSubmit={handleSubmit} className="glass rounded-2xl p-8 space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-moonlight mb-2">Username</label>
-              <input type="text" required className="input-field" placeholder="stellarbuilder" value={username} onChange={(e) => setUsername(e.target.value)} />
-            </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="glass rounded-2xl p-8 space-y-5">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input type="text" placeholder="stellarbuilder" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div>
-              <label className="block text-sm font-medium text-moonlight mb-2">Email</label>
-              <input type="email" required className="input-field" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="you@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div>
-              <label className="block text-sm font-medium text-moonlight mb-2">Password</label>
-              <input type="password" required minLength={6} className="input-field" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="At least 6 characters" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <button type="submit" disabled={loading} className="btn-nova w-full !py-3 text-center disabled:opacity-50">
-              {loading ? "Creating account..." : "Create Account"}
-            </button>
+              <button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="btn-nova w-full !py-3 text-center disabled:opacity-50"
+              >
+                {form.formState.isSubmitting ? "Creating account..." : "Create Account"}
+              </button>
 
-            <p className="text-center text-sm text-ash">
-              Already have an account?{" "}
-              <Link href="/login" className="text-nova-bright hover:underline font-medium">Sign in</Link>
-            </p>
-          </form>
+              <p className="text-center text-sm text-ash">
+                Already have an account?{" "}
+                <Link href="/login" className="text-nova-bright hover:underline font-medium">Sign in</Link>
+              </p>
+            </form>
+          </Form>
         </div>
       </div>
     </div>

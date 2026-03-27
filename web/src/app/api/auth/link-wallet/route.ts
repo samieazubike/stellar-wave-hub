@@ -1,12 +1,15 @@
 import { Keypair, TransactionBuilder, Networks } from "@stellar/stellar-sdk";
 import firestore from "@/lib/firebase";
-import { usersCol, nextId } from "@/lib/db";
-import { signToken } from "@/lib/auth";
+import { usersCol } from "@/lib/db";
+import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 function challengesCol() { return firestore.collection("auth_challenges"); }
 
 export async function POST(request: Request) {
+  const auth = getAuthUser(request);
+  if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { publicKey, signedXdr } = await request.json();
 
@@ -27,12 +30,7 @@ export async function POST(request: Request) {
     }
 
     // Parse the signed transaction and verify the user's signature
-    const transaction = TransactionBuilder.fromXDR(
-      signedXdr,
-      Networks.TESTNET
-    );
-
-    // Check that the transaction contains the user's signature
+    const transaction = TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET);
     const keypair = Keypair.fromPublicKey(publicKey);
     const txHash = transaction.hash();
 
@@ -51,60 +49,32 @@ export async function POST(request: Request) {
     // Clean up used challenge
     await challengesCol().doc(publicKey).delete();
 
-    // Find or create user by stellar_address
-    let user;
+    // Check if another user already has this wallet linked
     const existingSnap = await usersCol.ref
       .where("stellar_address", "==", publicKey)
       .limit(1)
       .get();
 
     if (!existingSnap.empty) {
-      const userData = existingSnap.docs[0].data();
-      user = {
-        id: userData.numericId,
-        username: userData.username,
-        email: userData.email,
-        role: userData.role,
-        stellar_address: userData.stellar_address,
-        github_url: userData.github_url,
-        bio: userData.bio,
-      };
-    } else {
-      const numericId = await nextId("users");
-      const shortKey = publicKey.slice(0, 8);
-      const username = `stellar_${shortKey.toLowerCase()}`;
-
-      const newUser = {
-        numericId,
-        username,
-        email: null,
-        password_hash: null,
-        role: "contributor",
-        stellar_address: publicKey,
-        github_url: null,
-        bio: null,
-        auth_method: "wallet",
-        created_at: new Date().toISOString(),
-      };
-
-      await usersCol.ref.doc(String(numericId)).set(newUser);
-
-      user = {
-        id: numericId,
-        username,
-        email: null,
-        role: "contributor",
-        stellar_address: publicKey,
-        github_url: null,
-        bio: null,
-      };
+      const existingUser = existingSnap.docs[0].data();
+      if (existingUser.numericId !== auth.userId) {
+        return Response.json(
+          { error: "This wallet is already linked to another account" },
+          { status: 409 },
+        );
+      }
+      // Already linked to this user
+      return Response.json({ success: true, stellar_address: publicKey });
     }
 
-    const token = signToken({ userId: user.id as number, role: user.role as string });
+    // Link wallet to the authenticated user
+    await usersCol.ref.doc(String(auth.userId)).update({
+      stellar_address: publicKey,
+    });
 
-    return Response.json({ token, user });
+    return Response.json({ success: true, stellar_address: publicKey });
   } catch (err) {
-    console.error("Wallet auth error:", err);
-    return Response.json({ error: "Authentication failed" }, { status: 500 });
+    console.error("Link wallet error:", err);
+    return Response.json({ error: "Failed to link wallet" }, { status: 500 });
   }
 }
