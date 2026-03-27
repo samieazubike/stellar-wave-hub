@@ -17,10 +17,39 @@ export default function Submit() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    const tags = form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+    const longDescriptionWords = form.long_description.trim().split(/\s+/).filter(Boolean).length;
+    const stellarAccountPattern = /^G[A-Z2-7]{55}$/;
+
+    if (!form.stellar_account_id.trim()) {
+      setError('Stellar Account ID is required.');
+      setLoading(false);
+      return;
+    }
+
+    if (!stellarAccountPattern.test(form.stellar_account_id.trim())) {
+      setError('Stellar Account ID must be a valid Stellar public key (starts with G and 56 chars).');
+      setLoading(false);
+      return;
+    }
+
+    if (tags.length === 0) {
+      setError('Please provide at least one tag.');
+      setLoading(false);
+      return;
+    }
+
+    if (longDescriptionWords < 200) {
+      setError('Full description should be at least 200 words.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const payload = {
         ...form,
-        tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+        tags,
       };
       await api.post('/projects', payload);
       navigate('/my-submissions');
@@ -50,8 +79,14 @@ export default function Submit() {
           <input type="text" required maxLength={200} {...field('description')} className="input" />
         </div>
         <div>
-          <label className="label">Full Description</label>
-          <textarea rows={5} {...field('long_description')} className="input resize-none" />
+          <label className="label">Full Description * (min 200 words)</label>
+          <textarea
+            rows={7}
+            required
+            {...field('long_description')}
+            className="input resize-none"
+            placeholder="Describe the target emerging market, financial inclusion impact, and Stellar integration in detail."
+          />
         </div>
         <div>
           <label className="label">Category *</label>
@@ -72,8 +107,14 @@ export default function Submit() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="label">Stellar Account ID</label>
-            <input type="text" placeholder="G..." {...field('stellar_account_id')} className="input" />
+            <label className="label">Stellar Account ID *</label>
+            <input
+              type="text"
+              required
+              placeholder="G..."
+              {...field('stellar_account_id')}
+              className="input"
+            />
           </div>
           <div>
             <label className="label">Soroban Contract ID</label>
@@ -81,8 +122,14 @@ export default function Submit() {
           </div>
         </div>
         <div>
-          <label className="label">Tags (comma-separated)</label>
-          <input type="text" placeholder="defi, yield, xlm" {...field('tags')} className="input" />
+          <label className="label">Tags (comma-separated) *</label>
+          <input
+            type="text"
+            required
+            placeholder="defi, yield, xlm"
+            {...field('tags')}
+            className="input"
+          />
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

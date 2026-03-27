@@ -119,6 +119,7 @@ export async function POST(request: Request) {
 		const {
 			name,
 			description,
+			long_description,
 			category,
 			stellar_account_id,
 			stellar_contract_id,
@@ -129,9 +130,39 @@ export async function POST(request: Request) {
 			research_images,
 		} = body;
 
-		if (!name || !description || !category) {
+		if (!name || !description || !category || !stellar_account_id || !tags) {
 			return Response.json(
-				{error: "Name, description, and category are required"},
+				{error: "Name, description, category, stellar_account_id, and tags are required"},
+				{status: 400},
+			);
+		}
+
+		const stellarKeyRegex = /^G[A-Z2-7]{55}$/;
+		if (!stellarKeyRegex.test(stellar_account_id.trim())) {
+			return Response.json(
+				{error: "stellar_account_id must be a valid Stellar account public key (starts with G and 56 chars)"},
+				{status: 400},
+			);
+		}
+
+		const parsedTags = Array.isArray(tags)
+			? tags
+			: typeof tags === 'string'
+			? tags.split(',').map((t) => t.trim()).filter(Boolean)
+			: [];
+		if (!parsedTags.length) {
+			return Response.json(
+				{error: "tags must be a non-empty array or comma-separated string"},
+				{status: 400},
+			);
+		}
+
+		const wordCount = long_description
+			? long_description.trim().split(/\s+/).filter(Boolean).length
+			: 0;
+		if (wordCount < 200) {
+			return Response.json(
+				{error: "long_description must be at least 200 words"},
 				{status: 400},
 			);
 		}
@@ -150,11 +181,12 @@ export async function POST(request: Request) {
 			name,
 			slug,
 			description,
+			long_description,
 			category,
 			status: "submitted",
 			stellar_account_id: stellar_account_id || null,
 			stellar_contract_id: stellar_contract_id || null,
-			tags: tags || null,
+			tags: parsedTags,
 			website_url: website_url || null,
 			github_url: github_url || null,
 			logo_url: logo_url || null,

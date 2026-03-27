@@ -159,8 +159,23 @@ router.post('/', authenticate, (req, res) => {
     stellar_account_id, tags,
   } = req.body;
 
-  if (!name || !description || !category) {
-    return res.status(400).json({ error: 'name, description, and category are required' });
+  if (!name || !description || !category || !stellar_account_id || !tags) {
+    return res.status(400).json({ error: 'name, description, category, stellar_account_id, and tags are required' });
+  }
+
+  const stellarPublicKeyRegex = /^G[A-Z2-7]{55}$/;
+  if (!stellarPublicKeyRegex.test(stellar_account_id.trim())) {
+    return res.status(400).json({ error: 'stellar_account_id must be a valid Stellar account public key (56 chars, starts with G).' });
+  }
+
+  const parsedTags = Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map((t) => t.trim()).filter(Boolean) : []);
+  if (!Array.isArray(parsedTags) || parsedTags.length === 0) {
+    return res.status(400).json({ error: 'tags must be a non-empty array or a comma-separated string.' });
+  }
+
+  const longDescriptionWordCount = long_description ? long_description.trim().split(/\s+/).filter(Boolean).length : 0;
+  if (longDescriptionWordCount < 200) {
+    return res.status(400).json({ error: 'long_description must be at least 200 words for comprehensive market context.' });
   }
 
   const validCategories = ['defi', 'payments', 'infrastructure', 'tooling', 'nft', 'dao', 'social', 'gaming', 'rwa', 'other'];
@@ -182,7 +197,7 @@ router.post('/', authenticate, (req, res) => {
     name, slug, description, long_description || null, category,
     repo_url || null, live_url || null, logo_url || null, banner_url || null,
     stellar_contract_id || null, stellar_account_id || null,
-    tags ? JSON.stringify(tags) : null, req.user.id
+    parsedTags.length > 0 ? JSON.stringify(parsedTags) : null, req.user.id
   );
 
   const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(result.lastInsertRowid);
@@ -237,6 +252,26 @@ router.put('/:id', authenticate, (req, res) => {
     stellar_account_id, tags,
   } = req.body;
 
+  if (stellar_account_id) {
+    const stellarPublicKeyRegex = /^G[A-Z2-7]{55}$/;
+    if (!stellarPublicKeyRegex.test(stellar_account_id.trim())) {
+      return res.status(400).json({ error: 'stellar_account_id must be a valid Stellar account public key (56 chars, starts with G).' });
+    }
+  }
+
+  let normalizedTags = null;
+  if (tags) {
+    normalizedTags = Array.isArray(tags)
+      ? tags.filter((t) => typeof t === 'string' && t.trim())
+      : typeof tags === 'string'
+      ? tags.split(',').map((t) => t.trim()).filter(Boolean)
+      : null;
+
+    if (normalizedTags && normalizedTags.length === 0) {
+      return res.status(400).json({ error: 'tags must not be empty.' });
+    }
+  }
+
   db.prepare(`
     UPDATE projects SET
       name = COALESCE(?, name),
@@ -256,7 +291,7 @@ router.put('/:id', authenticate, (req, res) => {
     name, description, long_description, category,
     repo_url, live_url, logo_url, banner_url,
     stellar_contract_id, stellar_account_id,
-    tags ? JSON.stringify(tags) : null, req.params.id
+    normalizedTags ? JSON.stringify(normalizedTags) : null, req.params.id
   );
 
   const updated = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
