@@ -23,4 +23,15 @@ api.interceptors.response.use(
   }
 );
 
+// Convenience methods for assignment-focused endpoints
+api.createProject = (project) => api.post('/projects', project);
+api.getProject = (slugOrId) => api.get(`/projects/${slugOrId}`);
+api.updateProject = (id, updates) => api.put(`/projects/${id}`, updates);
+api.approveProject = (id, options = {}) => api.put(`/projects/${id}/approve`, options);
+api.rejectProject = (id, reason) => api.put(`/projects/${id}/reject`, { reason });
+
+api.getFinancialsSummary = (projectId) => api.get(`/financials/${projectId}/summary`);
+api.getFinancialsTransactions = (projectId) => api.get(`/financials/${projectId}/transactions`);
+api.getFinancialsContractOps = (projectId) => api.get(`/financials/${projectId}/contract-ops`);
+
 export default api;
