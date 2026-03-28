@@ -89,3 +89,21 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 - **Reviewer** — Rated and reviewed submitted projects
 - **Developer** — Contributed code to the platform
 - **Maintainer** — Core team maintaining the project
+$content = Get-Content CONTRIBUTORS.md -Raw
+$newEntry = @'
+
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/spiffamani">
+    <img src="https://github.com/spiffamani.png" width="80" style="border-radius:50%" alt="spiffamani" />
+    <br />
+    <sub><b>spiffamani</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/spiffamani"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <br />
+  <sub>Researcher — Soroban-ZK-Std</sub>
+</div>
+
+'@
+$content = $content -replace '<!-- CONTRIBUTORS-END -->', "$newEntry<!-- CONTRIBUTORS-END -->"
+Set-Content CONTRIBUTORS.md $content
