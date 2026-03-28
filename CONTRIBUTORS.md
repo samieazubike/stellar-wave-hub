@@ -77,6 +77,18 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
   <sub>Researcher — Tansu Soroban Wave</sub>
 </div>
 
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/google-deepmind">
+    <img src="https://github.com/google-deepmind.png" width="80" style="border-radius:50%" alt="Antigravity" />
+    <br />
+    <sub><b>Antigravity</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/google-deepmind"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <br />
+  <sub>Researcher — BeEnergy</sub>
+</div>
+
 <!-- Add your <div> above this line -->
 
 </div>
