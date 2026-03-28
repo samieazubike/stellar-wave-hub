@@ -51,17 +51,6 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <br />
       <sub>Maintainer — Project creator</sub>
     </td>
-    <td align="center">
-      <a href="https://github.com/barry01-hash">
-        <img src="https://github.com/barry01-hash.png" width="80" alt="barry01-hash" style="border-radius:50%" />
-        <br />
-        <sub><b>barry01-hash</b></sub>
-      </a>
-      <br />
-      <a href="https://github.com/barry01-hash"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-      <br />
-      <sub>Researcher - Researched and uploaded the Neko Protocol project profile</sub>
-    </td>
     <!-- Add your <td> above this line -->
   </tr>
 </table>
@@ -103,6 +92,18 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
   <a href="https://github.com/sudo-robi"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
   <br />
   <sub>Researcher — Tansu Soroban Wave</sub>
+</div>
+
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/barry01-hash">
+    <img src="https://github.com/barry01-hash.png" width="80" style="border-radius:50%" alt="Barry E." />
+    <br />
+    <sub><b>Barry E.</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/barry01-hash"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <br />
+  <sub>Researcher â€” Neko Protocol, BeEnergy</sub>
 </div>
 
 <!-- Add your <div> above this line -->
