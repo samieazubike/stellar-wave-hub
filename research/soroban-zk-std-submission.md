@@ -115,3 +115,12 @@ building on Stellar.
 - **Hub endpoint:** https://usestellarwavehub.vercel.app/api/projects
 - **Category:** Infrastructure
 - **Tags:** `zk, groth16, bn254, soroban, cryptography, no_std, stellar-wave, privacy, infrastructure`
+
+## Submission Confirmed
+
+Live submission completed successfully on March 28, 2026.
+
+- **Hub URL:** https://usestellarwavehub.vercel.app
+- **Status:** SUBMITTED (pending admin approval)
+- **Account:** spiffamani
+- **Submitted:** 28/03/2026
