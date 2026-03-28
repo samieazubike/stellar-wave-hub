@@ -33,6 +33,9 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
 - Name: Purity-Euphemia
 - GitHub: Purity-Euphemia
 - Contribution: Added emerging market project research
+ - Name: Euphemia
+ - GitHub: Purity_Euphemia
+ - Contribution: Contributor in the stellar wave project
 
 <!-- CONTRIBUTORS-START -->
 <table>
@@ -48,6 +51,17 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
       <a href="https://x.com/twinkle purity"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
       <br />
       <sub>Contributor</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Purity_Euphemia">
+        <img src="https://github.com/Purity_Euphemia.png" width="80" alt="Euphemia" style="border-radius:50%" />
+        <br />
+        <sub><b>Euphemia</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/Purity_Euphemia"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Contributor — Contributor in the stellar wave project</sub>
     </td>
     <!-- Add your <td> above this line -->
   </tr>
