@@ -12,9 +12,9 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 **Template:**
 
 ```html
-<td align="center">
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
   <a href="https://github.com/YOUR_GITHUB_USERNAME">
-    <img src="https://github.com/YOUR_GITHUB_USERNAME.png" width="80" alt="Your Name" style="border-radius:50%" />
+    <img src="https://github.com/YOUR_GITHUB_USERNAME.png" width="80" style="border-radius:50%" alt="Your Name" />
     <br />
     <sub><b>Your Name</b></sub>
   </a>
@@ -22,11 +22,17 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
   <a href="https://github.com/YOUR_GITHUB_USERNAME"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
   <a href="https://x.com/YOUR_X_HANDLE"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
   <br />
-  <sub>Role — What you contributed</sub>
-</td>
+  <sub>Role — Project 1, Project 2</sub>
+</div>
 ```
 
-Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contribution line. Remove the X badge if you don't have one.
+Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/projects line. List all the projects you contributed (comma-separated). Remove the X badge if you don't have one.
+
+**Example:**
+
+```
+<sub>Researcher — StellarPay, LumenSwap, AquaDEX</sub>
+```
 
 ## Contributors List
 
@@ -38,35 +44,51 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
  - Contribution: Contributor in the stellar wave project
 
 <!-- CONTRIBUTORS-START -->
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/Purity-Euphemia">
-        <img src="https://github.com/Purity-Euphemia.png" width="80" alt="Purity-Euphemia" style="border-radius:50%" />
-        <br />
-        <sub><b>Purity-Euphemia</b></sub>
-      </a>
-      <br />
-      <a href="https://github.com/Purity-Euphemia"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-      <a href="https://x.com/twinkle purity"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
-      <br />
-      <sub>Contributor</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/Purity_Euphemia">
-        <img src="https://github.com/Purity_Euphemia.png" width="80" alt="Euphemia" style="border-radius:50%" />
-        <br />
-        <sub><b>Euphemia</b></sub>
-      </a>
-      <br />
-      <a href="https://github.com/Purity_Euphemia"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-      <br />
-      <sub>Contributor — Contributor in the stellar wave project</sub>
-    </td>
-    <!-- Add your <td> above this line -->
-  </tr>
-</table>
+<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/samieazubike">
+    <img src="https://github.com/samieazubike.png" width="80" style="border-radius:50%" alt="samieazubike" />
+    <br />
+    <sub><b>samieazubike</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/samieazubike"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <br />
+  <sub>Maintainer — Stellar Wave Hub</sub>
+</div>
+
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/codewithzubair07">
+    <img src="https://github.com/codewithzubair07.png" width="80" style="border-radius:50%" alt="Juber Quraishi" />
+    <br />
+    <sub><b>Juber Quraishi</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/codewithzubair07"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <a href="https://x.com/Zubair_57"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <br />
+  <sub>Researcher — Finclusive Stellar Anchor, OFFER-HUB Identity</sub>
+</div>
+
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/sudo-robi">
+    <img src="https://github.com/sudo-robi.png" width="80" style="border-radius:50%" alt="sudo-robi" />
+    <br />
+    <sub><b>sudo-robi</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/sudo-robi"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <br />
+  <sub>Researcher — Tansu Soroban Wave</sub>
+</div>
+
+<!-- Add your <div> above this line -->
+
+</div>
 <!-- CONTRIBUTORS-END -->
+
 
 ## Roles
 

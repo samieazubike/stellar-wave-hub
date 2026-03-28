@@ -73,14 +73,17 @@ export default function Navbar() {
 							<div className="w-20 h-8 skeleton" />
 						) : user ? (
 							<div className="flex items-center gap-3">
-								<div className="flex items-center gap-2">
-									<div className="w-8 h-8 rounded-full bg-gradient-to-br from-nova to-comet flex items-center justify-center text-xs font-bold text-white">
-										{user.username[0].toUpperCase()}
-									</div>
-									<span className="text-sm font-medium text-moonlight">
-										{user.username}
-									</span>
+								<Link
+								href="/profile"
+								className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+							>
+								<div className="w-8 h-8 rounded-full bg-gradient-to-br from-nova to-comet flex items-center justify-center text-xs font-bold text-white">
+									{user.username[0].toUpperCase()}
 								</div>
+								<span className="text-sm font-medium text-moonlight">
+									{user.username}
+								</span>
+							</Link>
 								<button
 									onClick={logout}
 									className="btn-ghost text-sm !py-1.5 !px-3"
@@ -149,6 +152,13 @@ export default function Navbar() {
 					</Link>
 					{user ? (
 						<>
+							<Link
+								href="/profile"
+								className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+								onClick={() => setMobileOpen(false)}
+							>
+								Profile
+							</Link>
 							<Link
 								href="/submit"
 								className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
