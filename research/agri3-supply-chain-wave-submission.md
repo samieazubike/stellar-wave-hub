@@ -76,5 +76,8 @@ End consumers can scan a QR code on product packaging that resolves to the on-ch
 Research document created on March 28, 2026. API submission to Stellar Wave Hub performed via `POST /api/projects`.
 
 - **Hub endpoint:** `https://usestellarwavehub.vercel.app/api/projects`
+- **Result:** Created project with `id: 62`, `slug: agri3`, `status: submitted`
 - **Tags used:** `supply-chain, traceability, transparency, agritech, soroban, stellar-wave, food-safety, provenance`
 - **Category:** Infrastructure
+- **Project URL:** `https://usestellarwavehub.vercel.app/projects/agri3`
+- **Submitted at:** 2026-03-28T10:01:32.603Z
