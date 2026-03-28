@@ -13,20 +13,20 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 
 ```html
 <div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
-  <a href="https://github.com/YOUR_GITHUB_USERNAME">
-    <img src="https://github.com/YOUR_GITHUB_USERNAME.png" width="80" style="border-radius:50%" alt="Your Name" />
+  <a href="https://github.com/Henrichy">
+    <img src="https://github.com/Henrichy.png" width="80" style="border-radius:50%" alt="Your Name" />
     <br />
     <sub><b>Your Name</b></sub>
   </a>
   <br />
-  <a href="https://github.com/YOUR_GITHUB_USERNAME"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <a href="https://github.com/Henrichy"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
   <a href="https://x.com/YOUR_X_HANDLE"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
   <br />
   <sub>Role — Project 1, Project 2</sub>
 </div>
 ```
 
-Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/projects line. List all the projects you contributed (comma-separated). Remove the X badge if you don't have one.
+Replace `Henrichy`, `Your Name`, `YOUR_X_HANDLE`, and the role/projects line. List all the projects you contributed (comma-separated). Remove the X badge if you don't have one.
 
 **Example:**
 
@@ -75,6 +75,18 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
   <a href="https://github.com/sudo-robi"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
   <br />
   <sub>Researcher — Tansu Soroban Wave</sub>
+</div>
+
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/researcher-zeeboys">
+    <img src="https://github.com/researcher-zeeboys.png" width="80" style="border-radius:50%" alt="Researcher" />
+    <br />
+    <sub><b>Researcher</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/researcher-zeeboys"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <br />
+  <sub>Researcher — Zeeboys Education</sub>
 </div>
 
 <!-- Add your <div> above this line -->
