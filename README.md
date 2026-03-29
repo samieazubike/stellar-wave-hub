@@ -323,6 +323,11 @@ We welcome contributions from everyone! See [CONTRIBUTING.md](CONTRIBUTING.md) f
 
 See the [Contributors](CONTRIBUTORS.md) list for everyone who has helped build this project.
 
+## Research Submissions
+
+- [QuickEx — Stellar Wave Privacy Research Submission](research/quickex-privacy-security-submission.md)
+- [Tansu — Stellar Wave Soroban Research Submission](research/tansu-soroban-wave-submission.md)
+
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
