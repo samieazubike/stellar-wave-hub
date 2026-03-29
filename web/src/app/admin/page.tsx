@@ -28,6 +28,7 @@ interface Project {
   featured: number;
   username: string;
   stellar_account_id?: string;
+  stellar_network?: string;
   website_url?: string;
   github_url?: string;
   avg_rating?: number;
@@ -317,6 +318,11 @@ function PendingCard({
               {project.name}
             </h3>
             <span className="tag tag-nova text-xs">{project.category}</span>
+            {project.stellar_network && (
+              <span className={`tag text-xs ${project.stellar_network === "testnet" ? "bg-solar/10 text-solar-bright border border-solar/20" : "bg-aurora/10 text-aurora-bright border border-aurora/20"}`}>
+                {project.stellar_network}
+              </span>
+            )}
           </div>
           <p className="text-sm text-moonlight/80 mb-3 line-clamp-2">
             {project.description}

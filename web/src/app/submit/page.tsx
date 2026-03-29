@@ -58,6 +58,7 @@ const submitSchema = z.object({
     .string()
     .regex(/^C[A-Z2-7]{55}$/, "Must be a valid Soroban contract ID starting with C")
     .or(z.literal("")),
+  stellar_network: z.enum(["testnet", "mainnet"]),
   tags: z.string(),
   website_url: z
     .string()
@@ -65,9 +66,9 @@ const submitSchema = z.object({
     .or(z.literal("")),
   github_url: z
     .string()
+    .min(1, "GitHub URL is required")
     .url("Please enter a valid URL")
-    .refine((val) => val === "" || val.includes("github.com"), "Must be a GitHub URL")
-    .or(z.literal("")),
+    .refine((val) => val.includes("github.com"), "Must be a GitHub URL"),
   logo_url: z
     .string()
     .url("Please enter a valid URL")
@@ -124,6 +125,7 @@ export default function SubmitPage() {
       category: "",
       stellar_account_id: "",
       stellar_contract_id: "",
+      stellar_network: "mainnet",
       tags: "",
       website_url: "",
       github_url: "",
@@ -141,9 +143,22 @@ export default function SubmitPage() {
     }
 
     try {
+      // 1. Upload research images to storage
+      const formData = new FormData();
+      researchFiles.forEach((file) => formData.append("files", file));
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadData.error || "Image upload failed");
+
+      // 2. Submit project with image URLs
       const payload = {
         ...values,
-        research_images: researchPreviews,
+        research_images: uploadData.urls,
       };
       const res = await fetch("/api/projects", {
         method: "POST",
@@ -299,6 +314,31 @@ export default function SubmitPage() {
 
             <FormField
               control={form.control}
+              name="stellar_network"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Network</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select network" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="mainnet">Mainnet (Production)</SelectItem>
+                      <SelectItem value="testnet">Testnet</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-ash mt-1">
+                    Select the network your smart contract or account is deployed on
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="website_url"
               render={({ field }) => (
                 <FormItem>
@@ -316,7 +356,7 @@ export default function SubmitPage() {
               name="github_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>GitHub URL</FormLabel>
+                  <FormLabel>GitHub URL *</FormLabel>
                   <FormControl>
                     <Input type="url" placeholder="https://github.com/..." {...field} />
                   </FormControl>
@@ -406,7 +446,7 @@ export default function SubmitPage() {
               disabled={form.formState.isSubmitting}
               className="btn-nova !py-3 !px-8 disabled:opacity-50"
             >
-              {form.formState.isSubmitting ? "Submitting..." : "Submit Project"}
+              {form.formState.isSubmitting ? "Uploading & Submitting..." : "Submit Project"}
             </button>
             <Link href="/explore" className="btn-ghost !py-3 !px-6">
               Cancel

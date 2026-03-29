@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-frontend/node_modules/
+web/node_modules/
 backend/node_modules/
 
 # Build output
@@ -26,3 +26,10 @@ Thumbs.db
 # Rust / Soroban
 contracts/target/
 contracts/**/*.wasm
+
+
+# next.js
+/.next/
+/.next/*
+/.next/trace*
+/out/

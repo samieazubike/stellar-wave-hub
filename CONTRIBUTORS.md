@@ -12,7 +12,7 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 **Template:**
 
 ```html
-<td align="center">
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
   <a href="https://github.com/YOUR_GITHUB_USERNAME">
     <img
       src="https://github.com/YOUR_GITHUB_USERNAME.png"
@@ -35,34 +35,32 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
       alt="X"
   /></a>
   <br />
-  <sub>Role — What you contributed</sub>
-</td>
+  <sub>Role — Project 1, Project 2</sub>
+</div>
 ```
 
-Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contribution line. Remove the X badge if you don't have one.
+Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/projects line. List all the projects you contributed (comma-separated). Remove the X badge if you don't have one.
+
+**Example:**
+
+```
+<sub>Researcher — StellarPay, LumenSwap, AquaDEX</sub>
+```
 
 ## Contributors List
 
 <!-- CONTRIBUTORS-START -->
 <table>
   <tr>
-    <tr>
-  <td align="center">
-    <a href="https://github.com/samieazubike">
-      <img src="https://github.com/samieazubike.png" width="80" alt="samieazubike" style="border-radius:50%" />
+    <td align="center">
+      <a href="https://github.com/samieazubike">
+        <img src="https://github.com/samieazubike.png" width="80" alt="samieazubike" style="border-radius:50%" />
+        <br />
+        <sub><b>samieazubike</b></sub>
+      </a>
       <br />
-      <sub><b>samieazubike</b></sub>
-    </a>
-    <br />
-    <a href="https://github.com/samieazubike"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-    <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
-    <br />
-    <sub>Maintainer — Project creator</sub>
-  </td>
-
-  <td align="center">
-    <a href="https://github.com/codewithzubair07">
-      <img src="https://github.com/codewithzubair07.png" width="80" alt="Juber Quraishi" style="border-radius:50%" />
+      <a href="https://github.com/samieazubike"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
       <br />
       <sub><b>Juber Quraishi</b></sub>
     </a>
@@ -102,17 +100,16 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
       <sub>Maintainer — Project creator</sub>
     </td>
     <td align="center">
-      <a href="https://github.com/sudo-robi">
-        <img src="https://github.com/sudo-robi.png" width="80" alt="sudo-robi" style="border-radius:50%" />
+      <a href="https://github.com/barry01-hash">
+        <img src="https://github.com/barry01-hash.png" width="80" alt="barry01-hash" style="border-radius:50%" />
         <br />
-        <sub><b>sudo-robi</b></sub>
+        <sub><b>barry01-hash</b></sub>
       </a>
       <br />
-      <a href="https://github.com/sudo-robi"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <a href="https://github.com/barry01-hash"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
       <br />
-      <sub>Researcher — Researched and submitted Tansu Soroban Wave project profile</sub>
+      <sub>Researcher - Researched and uploaded the Neko Protocol project profile</sub>
     </td>
-
     <!-- Add your <td> above this line -->
 
   </tr>
@@ -130,7 +127,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
     </td>
   </tr>
 </table>
-<!-- CONTRIBUTORS-END -->
+<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
 
 ## Roles
 

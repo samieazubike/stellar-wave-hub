@@ -15,6 +15,7 @@ interface Project {
 	featured: number;
 	stellar_account_id?: string;
 	stellar_contract_id?: string;
+	stellar_network?: string;
 	tags?: string;
 	website_url?: string;
 	github_url?: string;
@@ -47,11 +48,15 @@ interface FinancialSummary {
 	balances: {asset_code: string; balance: string}[];
 }
 
-const STELLAR_EXPLORER = "https://stellar.expert/explorer/public";
+function stellarExplorerBase(network?: string) {
+	return network === "testnet"
+		? "https://stellar.expert/explorer/testnet"
+		: "https://stellar.expert/explorer/public";
+}
 
-function StellarAddressLink({address, type}: {address: string; type: "account" | "contract"}) {
+function StellarAddressLink({address, type, network}: {address: string; type: "account" | "contract"; network?: string}) {
 	const path = type === "account" ? "account" : "contract";
-	const href = `${STELLAR_EXPLORER}/${path}/${address}`;
+	const href = `${stellarExplorerBase(network)}/${path}/${address}`;
 	return (
 		<a
 			href={href}
@@ -281,10 +286,10 @@ export default function ProjectDetailPage({
 						</a>
 					)}
 					{project.stellar_account_id && (
-						<StellarAddressLink address={project.stellar_account_id} type="account" />
+						<StellarAddressLink address={project.stellar_account_id} type="account" network={project.stellar_network} />
 					)}
 					{project.stellar_contract_id && (
-						<StellarAddressLink address={project.stellar_contract_id} type="contract" />
+						<StellarAddressLink address={project.stellar_contract_id} type="contract" network={project.stellar_network} />
 					)}
 				</div>
 			</div>
@@ -376,7 +381,7 @@ export default function ProjectDetailPage({
 										<div>
 											<p className="text-xs text-ash uppercase tracking-wider mb-2">Stellar Account</p>
 											<a
-												href={`${STELLAR_EXPLORER}/account/${project.stellar_account_id}`}
+												href={`${stellarExplorerBase(project.stellar_network)}/account/${project.stellar_account_id}`}
 												target="_blank"
 												rel="noopener noreferrer"
 												className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
@@ -394,7 +399,7 @@ export default function ProjectDetailPage({
 										<div>
 											<p className="text-xs text-ash uppercase tracking-wider mb-2">Soroban Contract</p>
 											<a
-												href={`${STELLAR_EXPLORER}/contract/${project.stellar_contract_id}`}
+												href={`${stellarExplorerBase(project.stellar_network)}/contract/${project.stellar_contract_id}`}
 												target="_blank"
 												rel="noopener noreferrer"
 												className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
@@ -711,7 +716,7 @@ export default function ProjectDetailPage({
 										Stellar Account
 									</h2>
 									<a
-										href={`${STELLAR_EXPLORER}/account/${project.stellar_account_id}`}
+										href={`${stellarExplorerBase(project.stellar_network)}/account/${project.stellar_account_id}`}
 										target="_blank"
 										rel="noopener noreferrer"
 										className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
