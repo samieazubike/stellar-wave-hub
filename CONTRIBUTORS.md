@@ -12,15 +12,30 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 **Template:**
 
 ```html
-<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+<div
+  style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
   <a href="https://github.com/YOUR_GITHUB_USERNAME">
-    <img src="https://github.com/YOUR_GITHUB_USERNAME.png" width="80" style="border-radius:50%" alt="Your Name" />
+    <img
+      src="https://github.com/YOUR_GITHUB_USERNAME.png"
+      width="80"
+      style="border-radius:50%"
+      alt="Your Name"
+    />
     <br />
     <sub><b>Your Name</b></sub>
   </a>
   <br />
-  <a href="https://github.com/YOUR_GITHUB_USERNAME"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-  <a href="https://x.com/YOUR_X_HANDLE"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <a href="https://github.com/YOUR_GITHUB_USERNAME"
+    ><img
+      src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+      alt="GitHub"
+  /></a>
+  <a href="https://x.com/YOUR_X_HANDLE"
+    ><img
+      src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+      alt="X"
+  /></a>
   <br />
   <sub>Role — Project 1, Project 2</sub>
 </div>
@@ -63,13 +78,13 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <sub>Researcher - Researched and uploaded the Neko Protocol project profile</sub>
     </td>
     <td align="center">
-      <a href="https://github.com/devtochukwu">
-        <img src="https://github.com/devtochukwu.png" width="80" alt="devtochukwu" style="border-radius:50%" />
+      <a href="https://github.com/simplex-t">
+        <img src="https://github.com/simplex-t.png" width="80" alt="simplex-t" style="border-radius:50%" />
         <br />
-        <sub><b>devtochukwu</b></sub>
+        <sub><b>simplex-t</b></sub>
       </a>
       <br />
-      <a href="https://github.com/devtochukwu"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <a href="https://github.com/simplex-t"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
       <br />
       <sub>Researcher — KindFi</sub>
     </td>
@@ -132,7 +147,6 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 
 </div>
 <!-- CONTRIBUTORS-END -->
-
 
 ## Roles
 
