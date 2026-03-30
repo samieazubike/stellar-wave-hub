@@ -41,6 +41,12 @@ export default function Navbar() {
 						>
 							Explore
 						</Link>
+						<Link
+							href="/queue"
+							className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+						>
+							Queue
+						</Link>
 						{user && (
 							<>
 								<Link
@@ -149,6 +155,13 @@ export default function Navbar() {
 						onClick={() => setMobileOpen(false)}
 					>
 						Explore
+					</Link>
+					<Link
+						href="/queue"
+						className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+						onClick={() => setMobileOpen(false)}
+					>
+						Queue
 					</Link>
 					{user ? (
 						<>
