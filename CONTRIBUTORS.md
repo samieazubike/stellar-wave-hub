@@ -15,9 +15,9 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 <div
 	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 >
-	<a href="https://github.com/YOUR_GITHUB_USERNAME">
+	<a href="https://github.com/henrichy">
 		<img
-			src="https://github.com/YOUR_GITHUB_USERNAME.png"
+			src="https://github.com/henrichy.png"
 			width="80"
 			style="border-radius:50%"
 			alt="Your Name"
@@ -26,12 +26,12 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 		<sub><b>Your Name</b></sub>
 	</a>
 	<br />
-	<a href="https://github.com/YOUR_GITHUB_USERNAME"
+	<a href="https://github.com/henrichy"
 		><img
 			src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
 			alt="GitHub"
 	/></a>
-	<a href="https://x.com/YOUR_X_HANDLE"
+	<a href="https://x.com/henrichy"
 		><img
 			src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
 			alt="X"
@@ -257,6 +257,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		/></a>
 		<br />
 		<sub>Researcher — KindFi</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/kilo-code">
+			<img
+				src="https://github.com/kilo-code.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Kilo Code"
+			/>
+			<br />
+			<sub><b>Kilo Code</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/kilo-code"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Stellar Onboarding Hub</sub>
 	</div>
 
 	<!-- Add your <div> above this line -->
