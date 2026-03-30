@@ -39,5 +39,7 @@ Furthermore, DIA's **xRandom** service brings verifiable randomness to Stellar. 
 - **Description:** (As detailed above, >200 words)
 - **Category:** infrastructure
 - **Stellar Account ID:** CCYOZJCOPG34LLQQ7N24YXBM7LL62R7ONMZ3G6WZAAYPB5OYKOMJRN63
+- **GitHub Repos:**
+  - `Soroban Oracle`: https://github.com/diadata-org/dia-oracle-soroban
 - **Tags:** infrastructure, oracle, data-feed, soroban, randomness, stellar-wave, xmarket
 - **Status:** Submitted via Stellar Wave Hub

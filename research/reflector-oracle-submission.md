@@ -40,5 +40,8 @@ Furthermore, Reflector offers extended functionality beyond simple price reporti
 - **Description:** (As detailed above, >200 words)
 - **Category:** infrastructure
 - **Stellar Account ID:** CAFJZQWSED6YAWZU3GWRTOCNPPCGBN32L7QV43XX5LZLFTK6JLN34DLN
+- **GitHub Repos:**
+  - `Contracts`: https://github.com/reflector-network/reflector-contract
+  - `Core`: https://github.com/reflector-network/reflector-core
 - **Tags:** infrastructure, oracle, data-feed, soroban, sep-40, stellar-wave
 - **Status:** Submitted via Stellar Wave Hub API
