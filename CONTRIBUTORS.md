@@ -62,6 +62,17 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <br />
       <sub>Researcher - Researched and uploaded the Neko Protocol project profile</sub>
     </td>
+    <td align="center">
+      <a href="https://github.com/devtochukwu">
+        <img src="https://github.com/devtochukwu.png" width="80" alt="devtochukwu" style="border-radius:50%" />
+        <br />
+        <sub><b>devtochukwu</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/devtochukwu"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — KindFi</sub>
+    </td>
     <!-- Add your <td> above this line -->
   </tr>
 </table>
