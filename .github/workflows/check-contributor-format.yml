@@ -1,0 +1,214 @@
+name: Check Contributor Format
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - 'CONTRIBUTORS.md'
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check contributor format
+        uses: actions/github-script@v7
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+
+            const prTitle  = context.payload.pull_request.title;
+            const prNumber = context.payload.pull_request.number;
+            const prAuthor = context.payload.pull_request.user.login;
+
+            // ── Read file ──────────────────────────────────────────────────
+            const content = fs.readFileSync('CONTRIBUTORS.md', 'utf8');
+
+            // ── Get diff (lines added by this PR) ──────────────────────────
+            let addedLines = '';
+            try {
+              execSync(`git fetch origin ${process.env.BASE_REF}`, { stdio: 'pipe' });
+              const raw = execSync(
+                `git diff origin/${process.env.BASE_REF} -- CONTRIBUTORS.md`,
+                { stdio: 'pipe' }
+              ).toString();
+              addedLines = raw.split('\n').filter(l => l.startsWith('+')).join('\n');
+            } catch (_) { /* fall back to whole-file check */ }
+
+            const errors = [];
+
+            // ── 1. PR title ────────────────────────────────────────────────
+            const titleOk = /^docs:\s+add\s+.+\s+to\s+contributors$/i.test(prTitle);
+            if (!titleOk) {
+              errors.push(
+                `**PR Title**: Must follow \`docs: add [your-name] to contributors\`. ` +
+                `Current title: \`${prTitle}\``
+              );
+            }
+
+            // ── 2. CONTRIBUTORS-START / END markers present ────────────────
+            const sectionMatch = content.match(
+              /<!-- CONTRIBUTORS-START -->([\s\S]*?)<!-- CONTRIBUTORS-END -->/
+            );
+            if (!sectionMatch) {
+              errors.push(
+                '**Missing markers**: `<!-- CONTRIBUTORS-START -->` or ' +
+                '`<!-- CONTRIBUTORS-END -->` markers are missing. Do not remove them.'
+              );
+            } else {
+              const section = sectionMatch[1];
+
+              // ── 3. No placeholder values left ─────────────────────────
+              if (section.includes('YOUR_GITHUB_USERNAME')) {
+                errors.push(
+                  '**Placeholder not replaced**: Replace `YOUR_GITHUB_USERNAME` ' +
+                  'with your actual GitHub username.'
+                );
+              }
+              if (section.includes('YOUR_X_HANDLE')) {
+                errors.push(
+                  '**Placeholder not replaced**: Replace `YOUR_X_HANDLE` with your ' +
+                  'X / Twitter handle, or remove the X badge if you don\'t have one.'
+                );
+              }
+              if (section.includes('>Your Name<')) {
+                errors.push(
+                  '**Placeholder not replaced**: Replace `Your Name` with your actual name.'
+                );
+              }
+              if (/Role — Project 1/.test(section)) {
+                errors.push(
+                  '**Placeholder not replaced**: Replace `Role — Project 1, Project 2` ' +
+                  'with your real role and project names.'
+                );
+              }
+
+              // ── 4. At least one div block present ─────────────────────
+              const divBlocks = section.match(
+                /<div[^>]*style="display:inline-block[^"]*"[\s\S]*?<\/div>/g
+              ) || [];
+              if (divBlocks.length === 0) {
+                errors.push(
+                  '**Missing contributor block**: No `<div>` block was found inside ' +
+                  'the `<!-- CONTRIBUTORS-START -->` section. ' +
+                  'Use the template in the file.'
+                );
+              }
+
+              // ── 5. Structural checks on the added lines ────────────────
+              const checkIn = addedLines || section; // fallback to whole section
+
+              if (!/https:\/\/github\.com\/[A-Za-z0-9_-]+/.test(checkIn)) {
+                errors.push(
+                  '**Missing GitHub link**: Your block must link to your GitHub profile ' +
+                  '(`https://github.com/your-username`).'
+                );
+              }
+              if (!/https:\/\/github\.com\/[A-Za-z0-9_-]+\.png/.test(checkIn)) {
+                errors.push(
+                  '**Missing avatar image**: Your block must include your GitHub avatar ' +
+                  '(`https://github.com/your-username.png`).'
+                );
+              }
+              if (!/<sub><b>[^<]+<\/b><\/sub>/.test(checkIn)) {
+                errors.push(
+                  '**Missing name**: Include your display name as `<sub><b>Your Name</b></sub>`.'
+                );
+              }
+              if (!/<img src="https:\/\/img\.shields\.io\/badge\/-GitHub/.test(checkIn)) {
+                errors.push(
+                  '**Missing GitHub badge**: Include the GitHub badge from the template.'
+                );
+              }
+              if (!/<sub>[A-Za-z][\w\s]* — .+<\/sub>/.test(checkIn)) {
+                errors.push(
+                  '**Missing role/projects line**: Include a role line such as ' +
+                  '`<sub>Researcher — StellarPay, LumenSwap</sub>`.'
+                );
+              }
+            }
+
+            // ── Post or update PR comment ──────────────────────────────────
+            const MARKER = '<!-- contributor-format-check -->';
+
+            const allComments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: prNumber,
+            });
+            const existing = allComments.data.find(c => c.body.includes(MARKER));
+
+            if (errors.length > 0) {
+              const body = [
+                MARKER,
+                '## ❌ Contributor Format Check Failed',
+                '',
+                `Hi @${prAuthor}! Your \`CONTRIBUTORS.md\` changes don't follow the required format. Please fix the issues below, then push again.`,
+                '',
+                '### Issues found',
+                errors.map(e => `- ${e}`).join('\n'),
+                '',
+                '---',
+                '### Required format',
+                '',
+                '**PR title:** `docs: add [your-name] to contributors`',
+                '',
+                '**Contributor block template:**',
+                '```html',
+                '<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">',
+                '  <a href="https://github.com/YOUR_GITHUB_USERNAME">',
+                '    <img src="https://github.com/YOUR_GITHUB_USERNAME.png" width="80" style="border-radius:50%" alt="Your Name" />',
+                '    <br />',
+                '    <sub><b>Your Name</b></sub>',
+                '  </a>',
+                '  <br />',
+                '  <a href="https://github.com/YOUR_GITHUB_USERNAME"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>',
+                '  <a href="https://x.com/YOUR_X_HANDLE"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>',
+                '  <br />',
+                '  <sub>Role — Project 1, Project 2</sub>',
+                '</div>',
+                '```',
+                '',
+                '> Remove the X badge line if you don\'t have an X account.',
+              ].join('\n');
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner:      context.repo.owner,
+                  repo:       context.repo.repo,
+                  comment_id: existing.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner:        context.repo.owner,
+                  repo:         context.repo.repo,
+                  issue_number: prNumber,
+                  body,
+                });
+              }
+
+              core.setFailed('Contributor format check failed. See the PR comment for details.');
+
+            } else {
+              // All checks passed – update any previous failure comment
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner:      context.repo.owner,
+                  repo:       context.repo.repo,
+                  comment_id: existing.id,
+                  body: `${MARKER}\n## ✅ Contributor Format Check Passed\n\nGreat job, @${prAuthor}! Your \`CONTRIBUTORS.md\` entry follows the required format.`,
+                });
+              }
+              console.log('Contributor format check passed!');
+            }
