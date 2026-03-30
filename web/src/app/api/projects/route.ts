@@ -126,6 +126,7 @@ export async function POST(request: Request) {
 			tags,
 			website_url,
 			github_url,
+			github_repos,
 			logo_url,
 			research_images,
 		} = body;
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
 			tags: tags || null,
 			website_url: website_url || null,
 			github_url: github_url || null,
+			github_repos: Array.isArray(github_repos) ? github_repos : [],
 			logo_url: logo_url || null,
 			research_images: Array.isArray(research_images) ? research_images : [],
 			user_id: auth.userId,

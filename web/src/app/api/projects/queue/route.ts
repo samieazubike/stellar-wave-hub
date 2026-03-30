@@ -24,6 +24,7 @@ export async function GET() {
           category: p.category,
           stellar_network: p.stellar_network || "mainnet",
           github_url: p.github_url,
+          github_repos: p.github_repos || [],
           username: uid ? userCache.get(uid) : null,
           created_at: p.created_at,
         };

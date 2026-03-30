@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
 	return (
@@ -7,20 +8,13 @@ export default function Footer() {
 				<div className="grid grid-cols-1 md:grid-cols-4 gap-8">
 					<div className="md:col-span-2">
 						<div className="flex items-center gap-3 mb-4">
-							<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-nova to-plasma flex items-center justify-center">
-								<svg
-									width="18"
-									height="18"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="white"
-									strokeWidth="2.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								>
-									<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-								</svg>
-							</div>
+							<Image
+								src="/logo-icon.svg"
+								alt="Stellar Wave Hub"
+								width={32}
+								height={32}
+								className="w-8 h-8"
+							/>
 							<span className="font-display font-bold text-lg text-starlight">
 								Stellar Wave Hub
 							</span>

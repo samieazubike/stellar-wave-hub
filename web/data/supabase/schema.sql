@@ -36,6 +36,7 @@ create table if not exists public.projects (
   tags text,
   website_url text,
   github_url text,
+  github_repos jsonb default '[]'::jsonb,
   logo_url text,
   research_images jsonb default '[]'::jsonb,
   stellar_network text not null default 'mainnet' check (stellar_network in ('testnet', 'mainnet')),

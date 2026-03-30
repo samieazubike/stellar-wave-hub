@@ -31,6 +31,7 @@ interface Project {
   stellar_network?: string;
   website_url?: string;
   github_url?: string;
+  github_repos?: { label: string; url: string }[];
   avg_rating?: number;
   rating_count?: number;
   rejection_reason?: string;
@@ -560,14 +561,35 @@ function Skeletons({ count = 3 }: { count?: number }) {
 
 // ─── Main page ──────────────────────────────────────────────────────
 
+// ─── Search filter helper ──────────────────────────────────────────
+
+function filterProjects(projects: Project[], query: string): Project[] {
+  if (!query.trim()) return projects;
+  const q = query.toLowerCase();
+  return projects.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.slug.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.username.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q)
+  );
+}
+
 export default function AdminPage() {
   const { user, token } = useAuth();
   const action = useProjectAction(token);
+  const [search, setSearch] = useState("");
 
   const { data: pending = [], isLoading: pendingLoading } = usePendingProjects(token);
   const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
   const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
   const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
+
+  const filteredPending = filterProjects(pending, search);
+  const filteredApproved = filterProjects(approved, search);
+  const filteredFeatured = filterProjects(featured, search);
+  const filteredAll = filterProjects(all, search);
 
   if (!user || user.role !== "admin") {
     return (
@@ -586,7 +608,7 @@ export default function AdminPage() {
     );
   }
 
-  const rejectedCount = all.filter((p) => p.status === "rejected" || p.status === "delisted").length;
+  const rejectedCount = filteredAll.filter((p) => p.status === "rejected" || p.status === "delisted").length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -605,8 +627,44 @@ export default function AdminPage() {
         <p className="text-ash ml-[52px]">Manage project submissions, approvals, and listings</p>
       </div>
 
+      {/* Search */}
+      <div className="mb-6 animate-in animate-in-delay-1">
+        <div className="relative max-w-md">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-ash pointer-events-none"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search projects by name, category, or submitter..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-stardust/50 border border-dust/30 rounded-xl text-sm text-moonlight placeholder:text-ash/60 focus:outline-none focus:border-nova/40 focus:ring-1 focus:ring-nova/20 transition-all"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ash hover:text-moonlight transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 animate-in animate-in-delay-1">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 animate-in animate-in-delay-2">
         <div className="glass rounded-2xl p-5">
           <p className="text-2xl font-bold text-solar-bright">{pending.length}</p>
           <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Pending</p>
@@ -633,14 +691,14 @@ export default function AdminPage() {
       )}
 
       {/* Tabs */}
-      <div className="animate-in animate-in-delay-2">
+      <div className="animate-in animate-in-delay-3">
         <Tabs defaultValue="pending">
           <TabsList className="flex-wrap">
             <TabsTrigger value="pending">
               Pending
-              {pending.length > 0 && (
+              {filteredPending.length > 0 && (
                 <span className="ml-2 bg-solar/20 text-solar-bright text-xs px-2 py-0.5 rounded-md">
-                  {pending.length}
+                  {filteredPending.length}
                 </span>
               )}
             </TabsTrigger>
@@ -661,9 +719,9 @@ export default function AdminPage() {
           <TabsContent value="pending">
             {pendingLoading ? (
               <Skeletons />
-            ) : pending.length > 0 ? (
+            ) : filteredPending.length > 0 ? (
               <div className="space-y-4">
-                {pending.map((p) => (
+                {filteredPending.map((p) => (
                   <PendingCard key={p.id} project={p} action={action} />
                 ))}
               </div>
@@ -684,9 +742,9 @@ export default function AdminPage() {
           <TabsContent value="approved">
             {approvedLoading ? (
               <Skeletons />
-            ) : approved.length > 0 ? (
+            ) : filteredApproved.length > 0 ? (
               <div className="space-y-2">
-                {approved.map((p) => (
+                {filteredApproved.map((p) => (
                   <ProjectRow key={p.id} project={p} action={action} />
                 ))}
               </div>
@@ -709,9 +767,9 @@ export default function AdminPage() {
           <TabsContent value="featured">
             {featuredLoading ? (
               <Skeletons />
-            ) : featured.length > 0 ? (
+            ) : filteredFeatured.length > 0 ? (
               <div className="space-y-2">
-                {featured.map((p) => (
+                {filteredFeatured.map((p) => (
                   <ProjectRow key={p.id} project={p} action={action} />
                 ))}
               </div>
@@ -734,7 +792,7 @@ export default function AdminPage() {
               <Skeletons />
             ) : rejectedCount > 0 ? (
               <div className="space-y-2">
-                {all
+                {filteredAll
                   .filter((p) => p.status === "rejected" || p.status === "delisted")
                   .map((p) => (
                     <ProjectRow key={p.id} project={p} action={action} />
@@ -759,9 +817,9 @@ export default function AdminPage() {
           <TabsContent value="all">
             {allLoading ? (
               <Skeletons count={5} />
-            ) : all.length > 0 ? (
+            ) : filteredAll.length > 0 ? (
               <div className="space-y-2">
-                {all.map((p) => (
+                {filteredAll.map((p) => (
                   <ProjectRow key={p.id} project={p} action={action} />
                 ))}
               </div>
