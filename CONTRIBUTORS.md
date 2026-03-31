@@ -45,6 +45,20 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/contr
       <br />
       <sub>Maintainer — Project creator</sub>
     </td>
+      
+    <td align="center">
+  <a href="https://github.com/codewithzubair07">
+    <img src="https://github.com/codewithzubair07.png" width="80" alt="Juber Quraishi" style="border-radius:50%" />
+    <br />
+    <sub><b>Juber Quraishi</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/codewithzubair07">
+    <img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" />
+  </a>
+  <br />
+  <sub>Researcher — Paystell anchor research & submission</sub>
+</td>
     <!-- Add your <td> above this line -->
   </tr>
 </table>
