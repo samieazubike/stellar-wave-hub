@@ -11,14 +11,17 @@
 
 ## Why This Matches the Task
 
-Trustless Work is a cornerstone of the Stellar Wave Program, providing essential "Escrow-as-a-Service" (EaaS) infrastructure that multiple other Wave projects (like KindFi, Boundless, and GrantFox) rely on. It bridges the trust gap in global digital transactions by offering a programmable, non-custodial escrow API built on Soroban. It is a high-complexity project that focuses on developer enablement and ecosystem scalability. It was not previously formally documented in the Hub's research repository at the time of this submission.
+Trustless Work is a foundational infrastructure project within the Stellar Wave Program, offering a sophisticated "Escrow-as-a-Service" (EaaS) platform. Built on the Soroban smart contract framework, it addresses the critical "trust gap" in global digital labor and commerce by providing non-custodial, programmable escrow solutions. This allows funds to be secured in smart contracts and released only when predefined milestones are met and approved by the relevant parties.
+
+The project is strategically significant because it abstracts the complexity of blockchain-based escrow logic into a developer-friendly API. This enables a wide variety of platforms—ranging from freelance marketplaces like Boundless to social crowdfunding apps like KindFi—to integrate secure, trustless payment flows without having to build their own smart contract infrastructure from scratch. By standardizing these interactions, Trustless Work fosters a more cohesive and interoperable ecosystem on Stellar.
+
+Beyond its technical capabilities, Trustless Work is notable for its commitment to the Latin American (LATAM) developer community. Led by Alberto Chaves, a prominent Stellar Ambassador, the team actively mentors other Wave participants and contributes to the growth of the Soroban ecosystem through open-source SDKs, indexers, and modular UI components known as "Escrow Blocks". This collaborative approach has made Trustless Work a central "protocol layer" for trust, empowering developers to build secure and scalable applications that align with Stellar's mission of global financial inclusion.
 
 ## Verifiable On-Chain IDs
 
-Trustless Work uses a factory pattern where unique escrow contracts are deployed per-transaction. However, the core logic is based on verified WASM hashes and a developer-driven deployment model.
+Trustless Work uses a factory pattern where unique escrow contracts are deployed per-transaction. The core logic is based on verified WASM hashes.
 
-- **Developer/Source Account:** `GDU3...` (Interacts with Trustless Work API deployments)
-- **Example Escrow Contract (Testnet):** `CCV...` (Deployed via Trustless Work framework)
+- **Example Escrow Contract (Testnet):** `CBMEZ3FEJISOCYOTRXJAPUZEPH4IL43P6VQ4FQOZSIQEFL5HJH3WDYHQ` (Deployed via Trustless Work Smart Escrow framework)
 - **Verified Status:** Listed in the 3x Points tier on Drips for Stellar Waves, confirming high ecosystem value and verified contributor activity.
 
 ## Team & Leadership
@@ -48,3 +51,4 @@ Trustless Work is more than just a tool; it is a "protocol layer" for trust on S
 - **Category:** `infrastructure`
 - **Tags:** `escrow, soroban, api, payments, freelance, sdk, open-source, stellar-wave, latam, eaas`
 - **Status:** Research Completed & Submitted
+

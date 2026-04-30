@@ -279,8 +279,9 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="GitHub"
 		/></a>
 		<br />
-		<sub>Researcher — Trustless Work</sub>
+		<sub>Researcher — Trustless Work Submission</sub>
 	</div>
+
 
 	<!-- Add your <div> above this line -->
 
