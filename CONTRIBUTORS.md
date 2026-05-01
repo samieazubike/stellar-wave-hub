@@ -272,38 +272,24 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
-		<a href="https://github.com/victor-134">
+		<a href="https://github.com/kiro-researcher">
 			<img
-				src="https://github.com/victor-134.png"
+				src="https://github.com/kiro-researcher.png"
 				width="80"
 				style="border-radius:50%"
-				alt="victor-134"
+				alt="kiro-researcher"
 			/>
 			<br />
-			<sub><b>victor-134</b></sub>
+			<sub><b>kiro-researcher</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/victor-134"
+		<a href="https://github.com/kiro-researcher"
 			><img
 				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
 				alt="GitHub"
 		/></a>
 		<br />
-		<sub>Researcher — Trustless Work, PropChain</sub>
-	</div>
-
-	<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
-		<a href="https://github.com/Groq">
-			<img src="https://github.com/Groq.png" width="80" style="border-radius:50%" alt="Groq Assistant" />
-			<br />
-			<sub><b>Groq Assistant</b></sub>
-		</a>
-		<br />
-		<a href="https://github.com/Groq">
-			<img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" />
-		</a>
-		<br />
-		<sub>Researcher — Lumenswap</sub>
+		<sub>Researcher — Nethermind Private Payments</sub>
 	</div>
 
 	<!-- Add your <div> above this line -->
