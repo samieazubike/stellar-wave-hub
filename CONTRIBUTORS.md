@@ -6,7 +6,7 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 
 1. Fork the repo and create a branch
 2. Copy the template below and fill in your details
-3. Add it inside the `<!-- CONTRIBUTORS-START -->` section
+3. Add it inside the `CONTRIBUTORS-START` section
 4. Open a PR with the title: `docs: add [your-name] to contributors`
 
 **Template:**
@@ -86,6 +86,34 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
+		<a href="https://github.com/Godfr3y">
+			<img
+				src="https://github.com/Godfr3y.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Godfr3y"
+			/>
+			<br />
+			<sub><b>Godfrey-Delight</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Godfr3y"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/0xgodfreyy"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Contributor</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
 		<a href="https://github.com/codewithzubair07">
 			<img
 				src="https://github.com/codewithzubair07.png"
@@ -157,33 +185,19 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Tansu Soroban Wave</sub>
 	</div>
 
-	<div
-		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
-	>
-		<a href="https://github.com/Uche44">
-			<img
-				src="https://github.com/Uche44.png"
-				width="80"
-				style="border-radius:50%"
-				alt="Uche44"
-			/>
-			<br />
-			<sub><b>Perpetual Asogwa</b></sub>
-		</a>
-		<br />
-		<a href="https://github.com/Uche44"
-			><img
-				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
-				alt="GitHub"
-		/></a>
-		<a href="https://x.com/samabornoking"
-			><img
-				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
-				alt="X"
-		/></a>
-		<br />
-		<sub>Researcher — PetChain, CurrentDao</sub>
-	</div>
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/Uche44">
+    <img src="https://github.com/Uche44.png" width="80" style="border-radius:50%" alt="Uche44" />
+    <br />
+    <sub><b>Perpetual Asogwa</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/Uche44"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <br />
+  <sub>Researcher — PetChain, CurrentDao, Stellar Tipjar</sub>
+</div>
+<!-- Add your <div> above this line -->
 
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -218,7 +232,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	>
 		<a href="https://github.com/fredericklamar342-prog">
 			<img
-				src="https://avatars.githubusercontent.com/u/263657850?v=4"
+				src="https://github.com/fredericklamar342-prog.png"
 				width="80"
 				style="border-radius:50%"
 				alt="ATHCornerstone"
@@ -227,13 +241,9 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 			<sub><b>ATHCornerstone</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/fredericklamar342-prog"
-			><img
-				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
-				alt="GitHub"
-		/></a>
+		<a href="https://github.com/fredericklamar342-prog"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
 		<br />
-		<sub>Researcher — BeEnergy</sub>
+		<sub>Researcher — BeEnergy, Trustless Work, KindFi</sub>
 	</div>
 
 	<div
@@ -285,7 +295,6 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<!-- Add your <div> above this line -->
 </div>
 <!-- CONTRIBUTORS-END -->
-```
 
 ## Roles
 

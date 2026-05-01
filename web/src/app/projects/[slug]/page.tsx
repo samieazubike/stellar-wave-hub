@@ -4,6 +4,11 @@ import {useEffect, useState, use} from "react";
 import {useAuth} from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
 import Link from "next/link";
+import {
+	ON_CHAIN_ENABLED,
+	rateProjectOnChain,
+	explorerTxUrl,
+} from "@/lib/ratingContract";
 
 interface Project {
 	id: number;
@@ -32,6 +37,7 @@ interface Rating {
 	innovation_score?: number;
 	usability_score?: number;
 	review_text?: string;
+	tx_hash?: string;
 	username: string;
 	user_id: number;
 	created_at: string;
@@ -102,6 +108,8 @@ export default function ProjectDetailPage({
 	});
 	const [submitting, setSubmitting] = useState(false);
 	const [ratingMsg, setRatingMsg] = useState("");
+	const [ratingStep, setRatingStep] = useState<"idle" | "onchain" | "saving">("idle");
+	const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
 	useEffect(() => {
 		fetch(`/api/projects/${slug}`)
@@ -131,19 +139,47 @@ export default function ProjectDetailPage({
 		if (!project || !token || ratingForm.score === 0) return;
 		setSubmitting(true);
 		setRatingMsg("");
+		setLastTxHash(null);
 
 		try {
+			// 1. On-chain rating (charges user the rating fee via Freighter)
+			let txHash: string | null = null;
+			if (ON_CHAIN_ENABLED) {
+				if (!user?.stellar_address) {
+					throw new Error(
+						"Link a Stellar wallet in your profile to rate projects. Ratings are recorded on-chain and cost 0.1 USDC.",
+					);
+				}
+				setRatingStep("onchain");
+				txHash = await rateProjectOnChain(
+					user.stellar_address,
+					project.slug,
+					ratingForm.score,
+				);
+				if (txHash) setLastTxHash(txHash);
+			}
+
+			// 2. Save rating + tx hash in the off-chain DB for fast queries
+			setRatingStep("saving");
 			const res = await fetch("/api/ratings", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-				body: JSON.stringify({project_id: project.id, ...ratingForm}),
+				body: JSON.stringify({
+					project_id: project.id,
+					...ratingForm,
+					tx_hash: txHash,
+				}),
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error);
-			setRatingMsg("Rating submitted!");
+			setRatingMsg(
+				txHash
+					? "Rating submitted on-chain!"
+					: "Rating submitted!",
+			);
 			const refresh = await fetch(`/api/projects/${slug}`);
 			const rd = await refresh.json();
 			setRatings(rd.ratings || []);
@@ -160,6 +196,7 @@ export default function ProjectDetailPage({
 				err instanceof Error ? err.message : "Failed to submit",
 			);
 		}
+		setRatingStep("idle");
 		setSubmitting(false);
 	};
 
@@ -508,14 +545,45 @@ export default function ProjectDetailPage({
 								onSubmit={submitRating}
 								className="glass rounded-2xl p-8 space-y-5"
 							>
-								<h2 className="font-semibold text-lg text-starlight">
-									Rate this project
-								</h2>
+								<div>
+									<h2 className="font-semibold text-lg text-starlight">
+										Rate this project
+									</h2>
+									{ON_CHAIN_ENABLED && (
+										<p className="text-xs text-ash mt-1">
+											Ratings are recorded on-chain. Each rating costs{" "}
+											<span className="text-solar-bright font-semibold">0.1 USDC</span>{" "}
+											and requires a linked Stellar wallet.
+										</p>
+									)}
+								</div>
+								{ON_CHAIN_ENABLED && user && !user.stellar_address && (
+									<div className="rounded-xl px-4 py-3 text-sm bg-solar/10 border border-solar/20 text-solar-bright">
+										You need to{" "}
+										<Link href="/profile" className="underline font-medium">
+											link a Stellar wallet
+										</Link>{" "}
+										before rating.
+									</div>
+								)}
 								{ratingMsg && (
 									<div
 										className={`rounded-xl px-4 py-3 text-sm ${ratingMsg.includes("submitted") ? "bg-aurora/10 border border-aurora/20 text-aurora-bright" : "bg-supernova/10 border border-supernova/20 text-supernova"}`}
 									>
 										{ratingMsg}
+										{lastTxHash && (
+											<>
+												{" "}
+												<a
+													href={explorerTxUrl(lastTxHash)}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="underline font-mono text-xs"
+												>
+													View tx
+												</a>
+											</>
+										)}
 									</div>
 								)}
 								<StarRating
@@ -575,13 +643,19 @@ export default function ProjectDetailPage({
 								<button
 									type="submit"
 									disabled={
-										submitting || ratingForm.score === 0
+										submitting ||
+										ratingForm.score === 0 ||
+										(ON_CHAIN_ENABLED && !user?.stellar_address)
 									}
 									className="btn-nova disabled:opacity-50"
 								>
-									{submitting
-										? "Submitting..."
-										: "Submit Rating"}
+									{ratingStep === "onchain"
+										? "Confirm in wallet (0.1 USDC)..."
+										: ratingStep === "saving"
+											? "Saving..."
+											: ON_CHAIN_ENABLED
+												? "Submit Rating (0.1 USDC)"
+												: "Submit Rating"}
 								</button>
 							</form>
 						)}
@@ -630,7 +704,7 @@ export default function ProjectDetailPage({
 												{rating.review_text}
 											</p>
 										)}
-										<div className="flex gap-4 mt-3 text-xs text-ash">
+										<div className="flex gap-4 mt-3 text-xs text-ash flex-wrap items-center">
 											{rating.purpose_score && (
 												<span>
 													Purpose:{" "}
@@ -648,6 +722,22 @@ export default function ProjectDetailPage({
 													Usability:{" "}
 													{rating.usability_score}/5
 												</span>
+											)}
+											{rating.tx_hash && (
+												<a
+													href={explorerTxUrl(rating.tx_hash)}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="tag tag-plasma text-[10px] inline-flex items-center gap-1"
+													title={`On-chain tx: ${rating.tx_hash}`}
+												>
+													<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+														<path d="M12 2L2 7l10 5 10-5-10-5z" />
+														<path d="M2 17l10 5 10-5" />
+														<path d="M2 12l10 5 10-5" />
+													</svg>
+													On-chain
+												</a>
 											)}
 										</div>
 									</div>
