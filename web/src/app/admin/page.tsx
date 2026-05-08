@@ -1,10 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  ON_CHAIN_ENABLED,
+  explorerTxUrl,
+  getRatingFee,
+  getRegistrationFee,
+  getContractVersion,
+  getWasmVersion,
+  getContractAdmin,
+  getTreasuryBalance,
+  setRatingFeeOnChain,
+  setRegistrationFeeOnChain,
+  setTreasuryOnChain,
+  withdrawFeesOnChain,
+  registerProjectOnChain,
+  removeProjectOnChain,
+  upgradeVersionOnChain,
+  transferAdminOnChain,
+} from "@/lib/ratingContract";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
@@ -559,6 +577,334 @@ function Skeletons({ count = 3 }: { count?: number }) {
   );
 }
 
+// ─── Contract panel ─────────────────────────────────────────────────
+
+interface ContractInfo {
+  version: string | null;
+  wasmVersion: number | null;
+  admin: string | null;
+  ratingFee: bigint | null;
+  registrationFee: bigint | null;
+  treasuryBalance: bigint | null;
+}
+
+function feeToUsdc(stroops: bigint | null): string {
+  if (stroops === null) return "—";
+  const v = Number(stroops) / 1_000_000;
+  return `${v.toFixed(v < 0.01 ? 6 : 2)} USDC`;
+}
+
+function usdcToStroops(usdc: string): bigint {
+  const n = parseFloat(usdc);
+  if (isNaN(n) || n < 0) throw new Error("Invalid amount");
+  return BigInt(Math.round(n * 1_000_000));
+}
+
+function ContractPanel({ adminAddress }: { adminAddress: string }) {
+  const [info, setInfo] = useState<ContractInfo>({
+    version: null, wasmVersion: null, admin: null,
+    ratingFee: null, registrationFee: null, treasuryBalance: null,
+  });
+  const [loadingInfo, setLoadingInfo] = useState(false);
+  const [txMsg, setTxMsg] = useState<{ text: string; hash?: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Form fields
+  const [newRatingFee, setNewRatingFee] = useState("");
+  const [newRegFee, setNewRegFee] = useState("");
+  const [newTreasury, setNewTreasury] = useState("");
+  const [newVersion, setNewVersion] = useState("");
+  const [newAdmin, setNewAdmin] = useState("");
+  const [regProjectId, setRegProjectId] = useState("");
+  const [regAccountId, setRegAccountId] = useState("");
+  const [removeProjectId, setRemoveProjectId] = useState("");
+
+  const fetchInfo = useCallback(async () => {
+    setLoadingInfo(true);
+    try {
+      const [version, wasmVersion, admin, ratingFee, registrationFee, treasuryBalance] =
+        await Promise.allSettled([
+          getContractVersion(),
+          getWasmVersion(),
+          getContractAdmin(),
+          getRatingFee(),
+          getRegistrationFee(),
+          getTreasuryBalance(),
+        ]);
+      setInfo({
+        version: version.status === "fulfilled" ? version.value : null,
+        wasmVersion: wasmVersion.status === "fulfilled" ? wasmVersion.value : null,
+        admin: admin.status === "fulfilled" ? admin.value : null,
+        ratingFee: ratingFee.status === "fulfilled" ? ratingFee.value : null,
+        registrationFee: registrationFee.status === "fulfilled" ? registrationFee.value : null,
+        treasuryBalance: treasuryBalance.status === "fulfilled" ? treasuryBalance.value : null,
+      });
+    } finally {
+      setLoadingInfo(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (ON_CHAIN_ENABLED) fetchInfo();
+  }, [fetchInfo]);
+
+  async function run(label: string, fn: () => Promise<string>) {
+    setBusy(true);
+    setTxMsg(null);
+    try {
+      const hash = await fn();
+      setTxMsg({ text: `${label} confirmed.`, hash });
+      fetchInfo();
+    } catch (err) {
+      setTxMsg({ text: err instanceof Error ? err.message : "Failed" });
+    }
+    setBusy(false);
+  }
+
+  if (!ON_CHAIN_ENABLED) {
+    return (
+      <div className="glass rounded-2xl p-12 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-stardust/50 flex items-center justify-center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <h3 className="font-semibold text-lg text-moonlight mb-2">Contract not configured</h3>
+        <p className="text-ash text-sm">
+          Set <code className="text-plasma-bright font-mono">NEXT_PUBLIC_CONTRACT_ID</code> to enable on-chain operations.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Feedback banner */}
+      {txMsg && (
+        <div className={`rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-4 ${txMsg.hash ? "bg-aurora/10 border border-aurora/20 text-aurora-bright" : "bg-supernova/10 border border-supernova/20 text-supernova"}`}>
+          <span>{txMsg.text}</span>
+          <div className="flex items-center gap-3 shrink-0">
+            {txMsg.hash && (
+              <a href={explorerTxUrl(txMsg.hash)} target="_blank" rel="noopener noreferrer" className="underline font-mono text-xs">
+                View tx
+              </a>
+            )}
+            <button onClick={() => setTxMsg(null)} className="opacity-60 hover:opacity-100 transition-opacity">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Contract info */}
+      <div className="glass rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="font-semibold text-starlight flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--plasma-bright)" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+            </svg>
+            Contract State
+          </h3>
+          <button
+            onClick={fetchInfo}
+            disabled={loadingInfo}
+            className="btn-ghost text-xs !py-1.5 !px-3 disabled:opacity-50"
+          >
+            {loadingInfo ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[
+            { label: "Version", value: info.version ?? "—" },
+            { label: "WASM Version", value: info.wasmVersion !== null ? `v${info.wasmVersion}` : "—" },
+            { label: "Rating Fee", value: feeToUsdc(info.ratingFee) },
+            { label: "Reg Fee", value: feeToUsdc(info.registrationFee) },
+            { label: "Treasury Balance", value: feeToUsdc(info.treasuryBalance) },
+          ].map((item) => (
+            <div key={item.label} className="bg-stardust/30 rounded-xl px-4 py-3">
+              <p className="text-xs text-ash uppercase tracking-wider mb-1">{item.label}</p>
+              <p className="font-mono text-sm font-semibold text-moonlight">{item.value}</p>
+            </div>
+          ))}
+        </div>
+        {info.admin && (
+          <div className="mt-3 bg-stardust/30 rounded-xl px-4 py-3">
+            <p className="text-xs text-ash uppercase tracking-wider mb-1">Admin</p>
+            <p className="font-mono text-xs text-plasma-bright break-all">{info.admin}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Set Rating Fee */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Set Rating Fee</h4>
+          <p className="text-xs text-ash">Current: <span className="text-solar-bright">{feeToUsdc(info.ratingFee)}</span></p>
+          <div className="flex gap-2">
+            <input
+              type="number" min="0" step="0.000001" placeholder="e.g. 0.1"
+              value={newRatingFee}
+              onChange={(e) => setNewRatingFee(e.target.value)}
+              className="input-field flex-1 text-sm"
+            />
+            <span className="self-center text-xs text-ash">USDC</span>
+          </div>
+          <button
+            disabled={busy || !newRatingFee}
+            onClick={() => run("Rating fee updated", () => setRatingFeeOnChain(adminAddress, usdcToStroops(newRatingFee)))}
+            className="btn-nova text-sm w-full disabled:opacity-50"
+          >
+            Update
+          </button>
+        </div>
+
+        {/* Set Registration Fee */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Set Registration Fee</h4>
+          <p className="text-xs text-ash">Current: <span className="text-solar-bright">{feeToUsdc(info.registrationFee)}</span></p>
+          <div className="flex gap-2">
+            <input
+              type="number" min="0" step="0.000001" placeholder="e.g. 5.0"
+              value={newRegFee}
+              onChange={(e) => setNewRegFee(e.target.value)}
+              className="input-field flex-1 text-sm"
+            />
+            <span className="self-center text-xs text-ash">USDC</span>
+          </div>
+          <button
+            disabled={busy || !newRegFee}
+            onClick={() => run("Registration fee updated", () => setRegistrationFeeOnChain(adminAddress, usdcToStroops(newRegFee)))}
+            className="btn-nova text-sm w-full disabled:opacity-50"
+          >
+            Update
+          </button>
+        </div>
+
+        {/* Set Treasury */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Set Treasury Address</h4>
+          <input
+            type="text" placeholder="G... address"
+            value={newTreasury}
+            onChange={(e) => setNewTreasury(e.target.value)}
+            className="input-field text-sm font-mono"
+          />
+          <button
+            disabled={busy || !newTreasury}
+            onClick={() => run("Treasury updated", () => setTreasuryOnChain(adminAddress, newTreasury))}
+            className="btn-nova text-sm w-full disabled:opacity-50"
+          >
+            Update Treasury
+          </button>
+        </div>
+
+        {/* Withdraw Fees */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Withdraw Fees</h4>
+          <p className="text-xs text-ash">
+            Collected: <span className="text-aurora-bright font-semibold">{feeToUsdc(info.treasuryBalance)}</span>
+          </p>
+          <p className="text-xs text-ash/70">Sends all collected fees to the treasury address.</p>
+          <button
+            disabled={busy || !info.treasuryBalance || info.treasuryBalance <= BigInt(0)}
+            onClick={() => run("Fees withdrawn", () => withdrawFeesOnChain(adminAddress))}
+            className="btn-nova text-sm w-full disabled:opacity-50"
+          >
+            Withdraw to Treasury
+          </button>
+        </div>
+
+        {/* Register Project */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Register Project On-Chain</h4>
+          <input
+            type="text" placeholder="Project ID (symbol, e.g. my_proj)"
+            value={regProjectId}
+            onChange={(e) => setRegProjectId(e.target.value)}
+            className="input-field text-sm font-mono"
+          />
+          <input
+            type="text" placeholder="Project account (G... address)"
+            value={regAccountId}
+            onChange={(e) => setRegAccountId(e.target.value)}
+            className="input-field text-sm font-mono"
+          />
+          <p className="text-xs text-ash/70">Registration fee is paid from the admin wallet.</p>
+          <button
+            disabled={busy || !regProjectId || !regAccountId}
+            onClick={() => run("Project registered", () => registerProjectOnChain(adminAddress, regProjectId, regAccountId))}
+            className="btn-nova text-sm w-full disabled:opacity-50"
+          >
+            Register
+          </button>
+        </div>
+
+        {/* Remove Project */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Remove Project From Chain</h4>
+          <input
+            type="text" placeholder="Project ID (symbol)"
+            value={removeProjectId}
+            onChange={(e) => setRemoveProjectId(e.target.value)}
+            className="input-field text-sm font-mono"
+          />
+          <p className="text-xs text-ash/70">No fee refund. Ratings remain on-chain.</p>
+          <button
+            disabled={busy || !removeProjectId}
+            onClick={() => run("Project removed", () => removeProjectOnChain(adminAddress, removeProjectId))}
+            className="bg-supernova/15 hover:bg-supernova/25 text-supernova border border-supernova/20 font-medium text-sm px-4 py-2 rounded-xl transition-all w-full disabled:opacity-50"
+          >
+            Remove
+          </button>
+        </div>
+
+        {/* Upgrade Version */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Upgrade Version String</h4>
+          <p className="text-xs text-ash">Current: <span className="text-moonlight font-mono">{info.version ?? "—"}</span></p>
+          <input
+            type="text" placeholder="e.g. 1.2.0"
+            value={newVersion}
+            onChange={(e) => setNewVersion(e.target.value)}
+            className="input-field text-sm font-mono"
+          />
+          <button
+            disabled={busy || !newVersion}
+            onClick={() => run("Version updated", () => upgradeVersionOnChain(adminAddress, newVersion))}
+            className="btn-nova text-sm w-full disabled:opacity-50"
+          >
+            Update Version
+          </button>
+        </div>
+
+        {/* Transfer Admin */}
+        <div className="glass rounded-2xl p-6 space-y-3">
+          <h4 className="font-medium text-starlight text-sm">Transfer Admin</h4>
+          <p className="text-xs text-supernova/80 font-medium">⚠ Irreversible — double-check the address.</p>
+          <input
+            type="text" placeholder="New admin G... address"
+            value={newAdmin}
+            onChange={(e) => setNewAdmin(e.target.value)}
+            className="input-field text-sm font-mono"
+          />
+          <button
+            disabled={busy || !newAdmin}
+            onClick={() => run("Admin transferred", () => transferAdminOnChain(adminAddress, newAdmin))}
+            className="bg-supernova/15 hover:bg-supernova/25 text-supernova border border-supernova/20 font-medium text-sm px-4 py-2 rounded-xl transition-all w-full disabled:opacity-50"
+          >
+            Transfer Admin Rights
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ──────────────────────────────────────────────────────
 
 // ─── Search filter helper ──────────────────────────────────────────
@@ -713,6 +1059,14 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="all">All Projects</TabsTrigger>
+            <TabsTrigger value="contract">
+              Contract
+              {ON_CHAIN_ENABLED && (
+                <span className="ml-2 bg-plasma/15 text-plasma-bright text-xs px-2 py-0.5 rounded-md">
+                  on-chain
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -835,6 +1189,26 @@ export default function AdminPage() {
                 title="No projects yet"
                 subtitle="Projects will appear here once submitted"
               />
+            )}
+          </TabsContent>
+
+          {/* ── Contract tab ── */}
+          <TabsContent value="contract">
+            {user?.stellar_address ? (
+              <ContractPanel adminAddress={user.stellar_address} />
+            ) : (
+              <div className="glass rounded-2xl p-12 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-solar/10 flex items-center justify-center">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--solar-bright)" strokeWidth="1.5">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </div>
+                <h3 className="font-semibold text-lg text-moonlight mb-2">Stellar wallet required</h3>
+                <p className="text-ash text-sm mb-4">
+                  Link a Stellar wallet in your profile to manage the registry contract.
+                </p>
+                <Link href="/profile" className="btn-ghost inline-flex text-sm">Go to Profile</Link>
+              </div>
             )}
           </TabsContent>
         </Tabs>

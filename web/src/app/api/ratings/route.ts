@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { project_id, score, purpose_score, innovation_score, usability_score, review_text } =
+    const { project_id, score, purpose_score, innovation_score, usability_score, review_text, tx_hash } =
       await request.json();
 
     if (!project_id || !score || score < 1 || score > 5) {
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       innovation_score: innovation_score || null,
       usability_score: usability_score || null,
       review_text: review_text || null,
+      tx_hash: tx_hash || null,
       created_at: new Date().toISOString(),
     };
 

@@ -4,6 +4,16 @@ import {useEffect, useState, use} from "react";
 import {useAuth} from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
 import Link from "next/link";
+import {
+	ON_CHAIN_ENABLED,
+	rateProjectOnChain,
+	explorerTxUrl,
+	getRatingFee,
+	hasRatedOnChain,
+	getProjectRatingOnChain,
+	isRegisteredOnChain,
+	type OnChainRating,
+} from "@/lib/ratingContract";
 
 interface Project {
 	id: number;
@@ -32,6 +42,7 @@ interface Rating {
 	innovation_score?: number;
 	usability_score?: number;
 	review_text?: string;
+	tx_hash?: string;
 	username: string;
 	user_id: number;
 	created_at: string;
@@ -76,6 +87,13 @@ function StellarAddressLink({address, type, network}: {address: string; type: "a
 	);
 }
 
+/** Format a raw i128 stroop amount as a human-readable token string (6 dp). */
+function formatFee(stroops: bigint | null): string {
+	if (stroops === null) return "0.1 USDC";
+	const usdc = Number(stroops) / 1_000_000;
+	return `${usdc.toFixed(usdc < 0.01 ? 6 : 2)} USDC`;
+}
+
 export default function ProjectDetailPage({
 	params,
 }: {
@@ -92,6 +110,13 @@ export default function ProjectDetailPage({
 		"overview" | "ratings" | "financials"
 	>("overview");
 
+	// On-chain state
+	const [contractRatingFee, setContractRatingFee] = useState<bigint | null>(null);
+	const [alreadyRatedOnChain, setAlreadyRatedOnChain] = useState(false);
+	const [onChainRating, setOnChainRating] = useState<OnChainRating | null>(null);
+	// true = project exists in registry; false = not registered (rating goes off-chain only)
+	const [isOnChainProject, setIsOnChainProject] = useState(false);
+
 	// Rating form
 	const [ratingForm, setRatingForm] = useState({
 		score: 0,
@@ -102,6 +127,8 @@ export default function ProjectDetailPage({
 	});
 	const [submitting, setSubmitting] = useState(false);
 	const [ratingMsg, setRatingMsg] = useState("");
+	const [ratingStep, setRatingStep] = useState<"idle" | "onchain" | "saving">("idle");
+	const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
 	useEffect(() => {
 		fetch(`/api/projects/${slug}`)
@@ -126,28 +153,86 @@ export default function ProjectDetailPage({
 		}
 	}, [project]);
 
-	const submitRating = async (e: React.FormEvent) => {
+	// Fetch registration status, rating fee, and on-chain aggregate
+	useEffect(() => {
+		if (!ON_CHAIN_ENABLED || !project) return;
+
+		isRegisteredOnChain(project.slug)
+			.then((registered) => {
+				setIsOnChainProject(registered);
+				if (registered) {
+					// Only fetch fee and aggregate if actually registered
+					getRatingFee().then(setContractRatingFee).catch(() => {});
+					getProjectRatingOnChain(project.slug).then(setOnChainRating).catch(() => {});
+				}
+			})
+			.catch(() => {});
+	}, [project]);
+
+	// Check if the current user has already rated on-chain (only if project is registered)
+	useEffect(() => {
+		if (!ON_CHAIN_ENABLED || !isOnChainProject || !project || !user?.stellar_address) return;
+		hasRatedOnChain(user.stellar_address, project.slug)
+			.then((rated) => setAlreadyRatedOnChain(rated))
+			.catch(() => {});
+	}, [isOnChainProject, project, user]);
+
+	const submitRating = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		if (!project || !token || ratingForm.score === 0) return;
 		setSubmitting(true);
 		setRatingMsg("");
+		setLastTxHash(null);
 
 		try {
+			let txHash: string | null = null;
+			if (ON_CHAIN_ENABLED && isOnChainProject) {
+				if (!user?.stellar_address) {
+					throw new Error(
+						"Link a Stellar wallet in your profile to rate projects on-chain.",
+					);
+				}
+				setRatingStep("onchain");
+				txHash = await rateProjectOnChain(
+					user.stellar_address,
+					project.slug,
+					ratingForm.score,
+				);
+				if (txHash) setLastTxHash(txHash);
+			}
+
+			setRatingStep("saving");
 			const res = await fetch("/api/ratings", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${token}`,
 				},
-				body: JSON.stringify({project_id: project.id, ...ratingForm}),
+				body: JSON.stringify({
+					project_id: project.id,
+					...ratingForm,
+					tx_hash: txHash,
+				}),
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error);
-			setRatingMsg("Rating submitted!");
+
+			setRatingMsg(txHash ? "Rating submitted on-chain!" : "Rating submitted!");
+
+			// Refresh off-chain ratings
 			const refresh = await fetch(`/api/projects/${slug}`);
 			const rd = await refresh.json();
 			setRatings(rd.ratings || []);
 			setAverages(rd.averages);
+
+			// Refresh on-chain aggregate
+			if (onChainActive) {
+				getProjectRatingOnChain(project.slug)
+					.then((r) => setOnChainRating(r))
+					.catch(() => {});
+				setAlreadyRatedOnChain(true);
+			}
+
 			setRatingForm({
 				score: 0,
 				purpose_score: 0,
@@ -156,10 +241,9 @@ export default function ProjectDetailPage({
 				review_text: "",
 			});
 		} catch (err) {
-			setRatingMsg(
-				err instanceof Error ? err.message : "Failed to submit",
-			);
+			setRatingMsg(err instanceof Error ? err.message : "Failed to submit");
 		}
+		setRatingStep("idle");
 		setSubmitting(false);
 	};
 
@@ -189,6 +273,9 @@ export default function ProjectDetailPage({
 	}
 
 	const tags = project.tags ? project.tags.split(",") : [];
+	const onChainActive = ON_CHAIN_ENABLED && isOnChainProject;
+	const feeLabel = formatFee(onChainActive ? contractRatingFee : null);
+	const canRate = user && user.id !== project.user_id && !alreadyRatedOnChain;
 
 	return (
 		<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -221,9 +308,9 @@ export default function ProjectDetailPage({
 					</div>
 				</div>
 
-				{/* Score summary */}
-				{averages && averages.total > 0 && (
-					<div className="flex items-center gap-6 mt-4">
+				{/* Score summary — off-chain average + on-chain aggregate */}
+				<div className="flex items-center gap-6 mt-4 flex-wrap">
+					{averages && averages.total > 0 && (
 						<div className="flex items-center gap-2">
 							<svg
 								width="20"
@@ -238,12 +325,24 @@ export default function ProjectDetailPage({
 								{Number(averages.avg_score).toFixed(1)}
 							</span>
 							<span className="text-sm text-ash">
-								({averages.total} rating
-								{averages.total !== 1 ? "s" : ""})
+								({averages.total} rating{averages.total !== 1 ? "s" : ""})
 							</span>
 						</div>
-					</div>
-				)}
+					)}
+					{onChainActive && onChainRating && onChainRating.count > 0 && (
+						<div className="flex items-center gap-1.5 text-sm text-ash">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--plasma-bright)" strokeWidth="2">
+								<path d="M12 2L2 7l10 5 10-5-10-5z" />
+								<path d="M2 17l10 5 10-5" />
+								<path d="M2 12l10 5 10-5" />
+							</svg>
+							<span className="text-plasma-bright font-semibold">
+								{onChainRating.average.toFixed(1)}
+							</span>
+							<span>on-chain ({onChainRating.count})</span>
+						</div>
+					)}
+				</div>
 
 				{/* Links */}
 				<div className="flex gap-3 mt-5 flex-wrap">
@@ -446,6 +545,34 @@ export default function ProjectDetailPage({
 							</div>
 						)}
 
+						{/* On-chain rating aggregate */}
+						{onChainActive && onChainRating && onChainRating.count > 0 && (
+							<div className="glass rounded-2xl p-8">
+								<div className="flex items-center gap-2 mb-4">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--plasma-bright)" strokeWidth="2">
+										<path d="M12 2L2 7l10 5 10-5-10-5z" />
+										<path d="M2 17l10 5 10-5" />
+										<path d="M2 12l10 5 10-5" />
+									</svg>
+									<h2 className="font-semibold text-lg text-starlight">On-Chain Rating</h2>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<div className="bg-stardust/30 rounded-xl px-5 py-4 text-center">
+										<p className="text-2xl font-bold text-plasma-bright">{onChainRating.average.toFixed(1)}</p>
+										<p className="text-xs text-ash mt-1 uppercase tracking-wider">Average</p>
+									</div>
+									<div className="bg-stardust/30 rounded-xl px-5 py-4 text-center">
+										<p className="text-2xl font-bold text-nova-bright">{onChainRating.count}</p>
+										<p className="text-xs text-ash mt-1 uppercase tracking-wider">Ratings</p>
+									</div>
+									<div className="bg-stardust/30 rounded-xl px-5 py-4 text-center">
+										<p className="text-2xl font-bold text-aurora-bright">{onChainRating.sum}</p>
+										<p className="text-xs text-ash mt-1 uppercase tracking-wider">Total Score</p>
+									</div>
+								</div>
+							</div>
+						)}
+
 						{averages && averages.total > 0 && (
 							<div className="glass rounded-2xl p-8">
 								<h2 className="font-semibold text-lg text-starlight mb-6">
@@ -453,22 +580,10 @@ export default function ProjectDetailPage({
 								</h2>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									{[
-										{
-											label: "Overall",
-											value: averages.avg_score,
-										},
-										{
-											label: "Purpose",
-											value: averages.avg_purpose,
-										},
-										{
-											label: "Innovation",
-											value: averages.avg_innovation,
-										},
-										{
-											label: "Usability",
-											value: averages.avg_usability,
-										},
+										{label: "Overall", value: averages.avg_score},
+										{label: "Purpose", value: averages.avg_purpose},
+										{label: "Innovation", value: averages.avg_innovation},
+										{label: "Usability", value: averages.avg_usability},
 									].map((item) => (
 										<div
 											key={item.label}
@@ -487,9 +602,7 @@ export default function ProjectDetailPage({
 													/>
 												</div>
 												<span className="text-sm font-mono text-nova-bright font-semibold">
-													{Number(
-														item.value || 0,
-													).toFixed(1)}
+													{Number(item.value || 0).toFixed(1)}
 												</span>
 											</div>
 										</div>
@@ -502,58 +615,91 @@ export default function ProjectDetailPage({
 
 				{activeTab === "ratings" && (
 					<div className="space-y-8">
+						{/* Already rated on-chain notice */}
+						{onChainActive && alreadyRatedOnChain && user && user.id !== project.user_id && (
+							<div className="glass rounded-2xl p-6 flex items-center gap-3">
+								<div className="w-10 h-10 rounded-xl bg-plasma/10 border border-plasma/20 flex items-center justify-center shrink-0">
+									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--plasma-bright)" strokeWidth="2">
+										<path d="M12 2L2 7l10 5 10-5-10-5z" />
+										<path d="M2 17l10 5 10-5" />
+										<path d="M2 12l10 5 10-5" />
+									</svg>
+								</div>
+								<div>
+									<p className="text-sm font-medium text-starlight">Already rated on-chain</p>
+									<p className="text-xs text-ash mt-0.5">
+										Your rating for this project is permanently recorded on the Stellar blockchain.
+									</p>
+								</div>
+							</div>
+						)}
+
 						{/* Submit rating form */}
-						{user && user.id !== project.user_id && (
+						{canRate && (
 							<form
 								onSubmit={submitRating}
 								className="glass rounded-2xl p-8 space-y-5"
 							>
-								<h2 className="font-semibold text-lg text-starlight">
-									Rate this project
-								</h2>
+								<div>
+									<h2 className="font-semibold text-lg text-starlight">
+										Rate this project
+									</h2>
+									{onChainActive && (
+										<p className="text-xs text-ash mt-1">
+											Ratings are recorded on-chain. Each rating costs{" "}
+											<span className="text-solar-bright font-semibold">{feeLabel}</span>{" "}
+											and requires a linked Stellar wallet.
+										</p>
+									)}
+								</div>
+								{onChainActive && user && !user.stellar_address && (
+									<div className="rounded-xl px-4 py-3 text-sm bg-solar/10 border border-solar/20 text-solar-bright">
+										You need to{" "}
+										<Link href="/profile" className="underline font-medium">
+											link a Stellar wallet
+										</Link>{" "}
+										before rating.
+									</div>
+								)}
 								{ratingMsg && (
 									<div
 										className={`rounded-xl px-4 py-3 text-sm ${ratingMsg.includes("submitted") ? "bg-aurora/10 border border-aurora/20 text-aurora-bright" : "bg-supernova/10 border border-supernova/20 text-supernova"}`}
 									>
 										{ratingMsg}
+										{lastTxHash && (
+											<>
+												{" "}
+												<a
+													href={explorerTxUrl(lastTxHash)}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="underline font-mono text-xs"
+												>
+													View tx
+												</a>
+											</>
+										)}
 									</div>
 								)}
 								<StarRating
 									label="Overall"
 									value={ratingForm.score}
-									onChange={(v) =>
-										setRatingForm((p) => ({...p, score: v}))
-									}
+									onChange={(v) => setRatingForm((p) => ({...p, score: v}))}
 								/>
 								<StarRating
 									label="Purpose"
 									value={ratingForm.purpose_score}
-									onChange={(v) =>
-										setRatingForm((p) => ({
-											...p,
-											purpose_score: v,
-										}))
-									}
+									onChange={(v) => setRatingForm((p) => ({...p, purpose_score: v}))}
 								/>
 								<StarRating
 									label="Innovation"
 									value={ratingForm.innovation_score}
-									onChange={(v) =>
-										setRatingForm((p) => ({
-											...p,
-											innovation_score: v,
-										}))
-									}
+									onChange={(v) => setRatingForm((p) => ({...p, innovation_score: v}))}
 								/>
 								<StarRating
 									label="Usability"
 									value={ratingForm.usability_score}
-									onChange={(v) =>
-										setRatingForm((p) => ({
-											...p,
-											usability_score: v,
-										}))
-									}
+									onChange={(v) => setRatingForm((p) => ({...p, usability_score: v}))}
 								/>
 								<div>
 									<label className="block text-sm font-medium text-moonlight mb-2">
@@ -565,23 +711,26 @@ export default function ProjectDetailPage({
 										placeholder="Share your thoughts..."
 										value={ratingForm.review_text}
 										onChange={(e) =>
-											setRatingForm((p) => ({
-												...p,
-												review_text: e.target.value,
-											}))
+											setRatingForm((p) => ({...p, review_text: e.target.value}))
 										}
 									/>
 								</div>
 								<button
 									type="submit"
 									disabled={
-										submitting || ratingForm.score === 0
+										submitting ||
+										ratingForm.score === 0 ||
+										(onChainActive && !user?.stellar_address)
 									}
 									className="btn-nova disabled:opacity-50"
 								>
-									{submitting
-										? "Submitting..."
-										: "Submit Rating"}
+									{ratingStep === "onchain"
+										? `Confirm in wallet (${feeLabel})...`
+										: ratingStep === "saving"
+											? "Saving..."
+											: onChainActive
+												? `Submit Rating (${feeLabel})`
+												: "Submit Rating"}
 								</button>
 							</form>
 						)}
@@ -604,9 +753,7 @@ export default function ProjectDetailPage({
 														{rating.username}
 													</span>
 													<p className="text-xs text-ash">
-														{new Date(
-															rating.created_at,
-														).toLocaleDateString()}
+														{new Date(rating.created_at).toLocaleDateString()}
 													</p>
 												</div>
 											</div>
@@ -630,24 +777,31 @@ export default function ProjectDetailPage({
 												{rating.review_text}
 											</p>
 										)}
-										<div className="flex gap-4 mt-3 text-xs text-ash">
+										<div className="flex gap-4 mt-3 text-xs text-ash flex-wrap items-center">
 											{rating.purpose_score && (
-												<span>
-													Purpose:{" "}
-													{rating.purpose_score}/5
-												</span>
+												<span>Purpose: {rating.purpose_score}/5</span>
 											)}
 											{rating.innovation_score && (
-												<span>
-													Innovation:{" "}
-													{rating.innovation_score}/5
-												</span>
+												<span>Innovation: {rating.innovation_score}/5</span>
 											)}
 											{rating.usability_score && (
-												<span>
-													Usability:{" "}
-													{rating.usability_score}/5
-												</span>
+												<span>Usability: {rating.usability_score}/5</span>
+											)}
+											{rating.tx_hash && (
+												<a
+													href={explorerTxUrl(rating.tx_hash)}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="tag tag-plasma text-[10px] inline-flex items-center gap-1"
+													title={`On-chain tx: ${rating.tx_hash}`}
+												>
+													<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+														<path d="M12 2L2 7l10 5 10-5-10-5z" />
+														<path d="M2 17l10 5 10-5" />
+														<path d="M2 12l10 5 10-5" />
+													</svg>
+													On-chain
+												</a>
 											)}
 										</div>
 									</div>
@@ -656,8 +810,7 @@ export default function ProjectDetailPage({
 						) : (
 							<div className="glass rounded-2xl p-12 text-center">
 								<p className="text-ash">
-									No ratings yet. Be the first to rate this
-									project!
+									No ratings yet. Be the first to rate this project!
 								</p>
 							</div>
 						)}
@@ -684,8 +837,7 @@ export default function ProjectDetailPage({
 									No Stellar account linked
 								</h3>
 								<p className="text-ash">
-									This project hasn&apos;t linked a Stellar
-									account for on-chain tracking.
+									This project hasn&apos;t linked a Stellar account for on-chain tracking.
 								</p>
 							</div>
 						) : (
@@ -705,9 +857,7 @@ export default function ProjectDetailPage({
 														{b.asset_code}
 													</span>
 													<span className="font-mono text-plasma-bright font-semibold">
-														{Number(
-															b.balance,
-														).toLocaleString()}
+														{Number(b.balance).toLocaleString()}
 													</span>
 												</div>
 											))}
