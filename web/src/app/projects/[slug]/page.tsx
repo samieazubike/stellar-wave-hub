@@ -20,6 +20,7 @@ interface Project {
 	website_url?: string;
 	github_url?: string;
 	github_repos?: { label: string; url: string }[];
+	research_images?: string[];
 	user_id: number;
 	username?: string;
 	created_at: string;
@@ -91,6 +92,7 @@ export default function ProjectDetailPage({
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "ratings" | "financials"
 	>("overview");
+	const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
 	// Rating form
 	const [ratingForm, setRatingForm] = useState({
@@ -114,6 +116,29 @@ export default function ProjectDetailPage({
 			.catch(() => {})
 			.finally(() => setLoading(false));
 	}, [slug]);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (selectedImageIndex === null || !project?.research_images) return;
+			if (e.key === "Escape") {
+				setSelectedImageIndex(null);
+			} else if (e.key === "ArrowLeft") {
+				setSelectedImageIndex((prev) =>
+					prev !== null
+						? (prev - 1 + project.research_images!.length) %
+						  project.research_images!.length
+						: null,
+				);
+			} else if (e.key === "ArrowRight") {
+				setSelectedImageIndex((prev) =>
+					prev !== null ? (prev + 1) % project.research_images!.length : null,
+				);
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [selectedImageIndex, project?.research_images]);
 
 	useEffect(() => {
 		if (project?.stellar_account_id) {
@@ -380,6 +405,36 @@ export default function ProjectDetailPage({
 								{project.description}
 							</p>
 						</div>
+
+						{/* Research Screenshots Gallery */}
+						{project.research_images && project.research_images.length > 0 && (
+							<div className="glass rounded-2xl p-8 animate-in animate-in-delay-1">
+								<h2 className="font-semibold text-lg text-starlight mb-4">
+									Screenshots & Research
+								</h2>
+								<div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+									{project.research_images.map((url, index) => (
+										<div
+											key={index}
+											onClick={() => setSelectedImageIndex(index)}
+											className="relative aspect-video rounded-xl overflow-hidden border border-dust/40 cursor-pointer group hover:border-nova/50 transition-all duration-300 bg-void"
+										>
+											<img
+												src={url}
+												alt={`${project.name} research screenshot ${index + 1}`}
+												className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+												loading="lazy"
+											/>
+											<div className="absolute inset-0 bg-void/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+												<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-nova-bright">
+													<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+												</svg>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 
 						{/* Stellar addresses section */}
 						{(project.stellar_account_id || project.stellar_contract_id) && (
@@ -745,6 +800,82 @@ export default function ProjectDetailPage({
 					</div>
 				)}
 			</div>
+
+			{/* Lightbox Modal */}
+			{selectedImageIndex !== null && project.research_images && project.research_images[selectedImageIndex] && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-void/90 backdrop-blur-md p-4 animate-in"
+					onClick={() => setSelectedImageIndex(null)}
+				>
+					<div
+						className="relative max-w-5xl w-full max-h-[85vh] flex flex-col items-center"
+						onClick={(e) => e.stopPropagation()}
+					>
+						{/* Close button */}
+						<button
+							onClick={() => setSelectedImageIndex(null)}
+							className="absolute -top-12 right-0 text-ash hover:text-starlight text-sm flex items-center gap-1 bg-stardust/40 px-3 py-1.5 rounded-lg border border-dust/30 transition-colors cursor-pointer"
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
+							Close
+						</button>
+
+						{/* Main Image */}
+						<div className="relative w-full h-[70vh] flex items-center justify-center">
+							{project.research_images.length > 1 && (
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										setSelectedImageIndex((prev) =>
+											prev !== null
+												? (prev - 1 + project.research_images!.length) %
+												  project.research_images!.length
+												: null,
+										);
+									}}
+									className="absolute left-4 z-10 w-12 h-12 rounded-full bg-stardust/60 border border-dust/40 text-starlight hover:bg-nova hover:border-nova/50 flex items-center justify-center transition-all cursor-pointer"
+								>
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+										<path d="M15 18l-6-6 6-6" />
+									</svg>
+								</button>
+							)}
+
+							<img
+								src={project.research_images[selectedImageIndex]}
+								alt={`${project.name} research screenshot large`}
+								className="max-w-full max-h-full object-contain rounded-lg border border-dust/30 shadow-2xl"
+							/>
+
+							{project.research_images.length > 1 && (
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										setSelectedImageIndex((prev) =>
+											prev !== null ? (prev + 1) % project.research_images!.length : null,
+										);
+									}}
+									className="absolute right-4 z-10 w-12 h-12 rounded-full bg-stardust/60 border border-dust/40 text-starlight hover:bg-nova hover:border-nova/50 flex items-center justify-center transition-all cursor-pointer"
+								>
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+										<path d="M9 18l6-6-6-6" />
+									</svg>
+								</button>
+							)}
+						</div>
+
+						{/* Caption/Counter */}
+						<div className="mt-4 text-center">
+							<p className="text-starlight font-medium">
+								Image {selectedImageIndex + 1} of {project.research_images.length}
+							</p>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
