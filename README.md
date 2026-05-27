@@ -330,3 +330,43 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 _Built for the Stellar Wave Program community._
+
+---
+
+## [Research] Research & Upload a Stellar Wave Project to the Hub
+
+Research any Stellar Wave Program project that interests you and upload its profile to Stellar Wave Hub. You have flexibility to choose the project and research area — pick a project that hasn't been submitted yet.
+
+**Repo Avatar**
+samieazubike/stellar-wave-hub
+
+**IMPORTANT ->** https://usestellarwavehub.vercel.app/blogs/how-to-research-stellar-wave-projects-on-drips
+
+### Description
+Research the chosen project thoroughly and upload its profile. Include what the project does, how it uses Stellar, on-chain activity, team, and community.
+
+### Complexity
+200 points (High)
+
+### Requirements / Context
+- The project must be part of the Stellar Wave Program
+- Choose any project area (DeFi, payments, NFTs, infrastructure, identity, social, gaming, tools, DAO, etc.)
+- Research beyond marketing materials: technical approach, Stellar integration, and verifiable on-chain evidence
+- Include required fields: name, description, category, Stellar account ID or contract ID, tags
+- Attach research screenshots (tokenomics, architecture, on-chain activity, etc.) to speed approval
+
+### Submission Criteria
+- Browse Wave Program projects and pick one not yet submitted
+- Research independently and document technical details and Stellar usage
+- Verify on-chain accounts and/or contract IDs
+- Register on Stellar Wave Hub and submit via https://usestellarwavehub.vercel.app/submit
+- Select appropriate category and tags
+- Add yourself to CONTRIBUTORS.md using the provided template
+
+### Test / Validation
+- Project is a verified Stellar Wave Program participant
+- Description is original, thorough, and demonstrates independent research (min 200 words)
+- On-chain accounts or contract IDs are verified
+- Category and tags are accurate
+- Research screenshots are attached in the submission
+
