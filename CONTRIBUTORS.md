@@ -272,21 +272,6 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
-		<a href="https://github.com/your-github-username">
-			<img
-				src="https://github.com/your-github-username.png"
-				width="80"
-				style="border-radius:50%"
-				alt="Your Name"
-			/>
-			<br />
-			<sub><b>Your Name</b></sub>
-		</a>
-		<br />
-		<a href="https://github.com/your-github-username"
-	<div
-		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
-	>
 		<a href="https://github.com/victor-134">
 			<img
 				src="https://github.com/victor-134.png"
@@ -391,6 +376,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 			/></a>
 		<br />
 		<sub>Researcher — Routedock</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/OsejiFabian">
+			<img
+				src="https://github.com/OsejiFabian.png"
+				width="80"
+				style="border-radius:50%"
+				alt="OsejiFabian"
+			/>
+			<br />
+			<sub><b>OsejiFabian</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/OsejiFabian"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — StellarPay</sub>
 	</div>
 
 	<!-- Add your <div> above this line -->
