@@ -1,0 +1,14 @@
+{
+  "name": "DAMREV",
+  "description": "DAMREV is a compliant, gold-backed asset tokenizing U.S. alluvial gold reserves for fractional ownership and tradability on Stellar. Each DAMREV token represents an ownership claim in physical, audited gold reserves held in segregated custody. The project combines native Stellar asset issuance with ISO 20022-aligned compliance controls, KYC/AML gating, and third-party attestation of reserves to enable institutional-grade, auditable tokenization. DAMREV enables 24/7 trading, micro-transactions, and transparent on-chain supply accounting, lowering barriers to precious-metals exposure for retail and institutional users. On-chain supply and distribution are publicly verifiable via Stellar Horizon; the issuer’s stellar.toml publishes metadata and provenance. The architecture emphasizes custody separation, periodic third-party audits, and transfer restrictions where required by regulation, while leveraging Stellar for low-cost, final settlement and easy integration with existing banking rails.",
+  "category": "tokenization",
+  "stellar_account_id": "GDHHAKQBIJMPHGMMCIJZZJHCKFYSUHWWQEIJFPLOLXBWYCU4RDQDPYJF",
+  "stellar_contract_id": null,
+  "stellar_network": "mainnet",
+  "tags": "rwa,tokenization,gold,precious-metals,damrev,iso20022,compliance,stellar",
+  "website_url": "https://www.damrev.com",
+  "github_url": null,
+  "github_repos": [],
+  "logo_url": "https://www.damrev.com/wp-content/uploads/2023/06/Final-1536x460.png.webp",
+  "research_images": []
+}
