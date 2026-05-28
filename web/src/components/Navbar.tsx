@@ -42,6 +42,12 @@ export default function Navbar() {
 						>
 							Queue
 						</Link>
+						<Link
+							href="/blogs"
+							className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+						>
+							Blog
+						</Link>
 						{user && (
 							<>
 								<Link
@@ -157,6 +163,13 @@ export default function Navbar() {
 						onClick={() => setMobileOpen(false)}
 					>
 						Queue
+					</Link>
+					<Link
+						href="/blogs"
+						className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+						onClick={() => setMobileOpen(false)}
+					>
+						Blog
 					</Link>
 					{user ? (
 						<>
