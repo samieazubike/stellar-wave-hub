@@ -185,19 +185,33 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Tansu Soroban Wave</sub>
 	</div>
 
-<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
-  <a href="https://github.com/Uche44">
-    <img src="https://github.com/Uche44.png" width="80" style="border-radius:50%" alt="Uche44" />
-    <br />
-    <sub><b>Perpetual Asogwa</b></sub>
-  </a>
-  <br />
-  <a href="https://github.com/Uche44"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-  <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
-  <br />
-  <sub>Researcher — PetChain, CurrentDao, Stellar Tipjar</sub>
-</div>
-<!-- Add your <div> above this line -->
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Uche44">
+			<img
+				src="https://github.com/Uche44.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Uche44"
+			/>
+			<br />
+			<sub><b>Perpetual Asogwa</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Uche44"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/samabornoking"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — PetChain, CurrentDao, Stellar Tipjar</sub>
+	</div>
 
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -241,7 +255,11 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 			<sub><b>ATHCornerstone</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/fredericklamar342-prog"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+		<a href="https://github.com/fredericklamar342-prog"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
 		<br />
 		<sub>Researcher — BeEnergy, Trustless Work, KindFi</sub>
 	</div>
@@ -269,21 +287,30 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — KindFi</sub>
 	</div>
 
-		<div
+	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
-		<a href="https://github.com/your-github-username">
+		<a href="https://github.com/Groq">
 			<img
-				src="https://github.com/your-github-username.png"
+				src="https://github.com/Groq.png"
 				width="80"
 				style="border-radius:50%"
-				alt="Your Name"
+				alt="Groq Assistant"
 			/>
 			<br />
-			<sub><b>Your Name</b></sub>
+			<sub><b>Groq Assistant</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/your-github-username"
+		<a href="https://github.com/Groq">
+			<img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+			/>
+		</a>
+		<br />
+		<sub>Researcher — Lumenswap</sub>
+	</div>
+
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
@@ -308,47 +335,106 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	>
 		<a href="https://github.com/victor-134">
 			<img
-				src="https://github.com/victor-134.png"
+				src="https://github.com/Gozirimdev.png"
 				width="80"
 				style="border-radius:50%"
-				alt="victor-134"
+				alt="Gozirimdev"
 			/>
 			<br />
-			<sub><b>victor-134</b></sub>
+			<sub><b>Gozirimdev</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/victor-134"
+		<a href="https://github.com/Gozirimdev"
 			><img
 				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
 				alt="GitHub"
 		/></a>
 		<br />
-		<sub>Researcher - DAMREV RWA Tokenization</sub>
-		<sub>Researcher — Trustless Work, PropChain</sub>
+		<sub>Researcher - Wraith</sub>
+	</div>
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Chidubemkingsley">
+			<img
+				src="https://github.com/Chidubemkingsley.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Chidubem Kingsley Rubeluchukwuisi"
+			/>
+			<br />
+			<sub><b>Chidubem Kingsley</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Chidubemkingsley"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/KingsleyCaesar1"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — Stellopay</sub>
 	</div>
 
-	<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
-		<a href="https://github.com/Groq">
-			<img src="https://github.com/Groq.png" width="80" style="border-radius:50%" alt="Groq Assistant" />
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/K1NGD4VID">
+			<img
+				src="https://github.com/K1NGD4VID.png"
+				width="80"
+				style="border-radius:50%"
+				alt="K1NGD4VID"
+			/>
 			<br />
-			<sub><b>Groq Assistant</b></sub>
+			<sub><b>K1NGD4VID</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/Groq">
-			<img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" />
+		<a href="https://github.com/K1NGD4VID"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Routedock, Stellar Portfolio Rebalancer</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/GauravKarakoti">
+			<img
+				src="https://github.com/GauravKarakoti.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Gaurav Karakoti"
+			/>
+			<br />
+			<sub><b>Gaurav Karakoti</b></sub>
 		</a>
 		<br />
-		<sub>Researcher — Lumenswap</sub>
+		<a href="https://github.com/GauravKarakoti"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/GauravKara_Koti"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — Carbonchain</sub>
 	</div>
 
 	<!-- Add your <div> above this line -->
 </div>
+```
 <!-- CONTRIBUTORS-END -->
 
-## Roles
 
-- **Researcher** — Researched and uploaded Stellar Wave project profiles
-- **Reviewer** — Rated and reviewed submitted projects
-- **Developer** — Contributed code to the platform
-- **Maintainer** — Core team maintaining the project
 
