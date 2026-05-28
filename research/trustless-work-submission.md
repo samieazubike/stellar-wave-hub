@@ -80,3 +80,34 @@ Verification Steps:
 - [x] Value Proposition Defined
 - [x] On-chain Transaction IDs 
 - [x] UI Screenshots of the Dashboard
+
+## Testing & Verification
+
+Steps to verify Trustless Work on-chain behavior and test the integration locally:
+
+1. On-chain verification
+    - Open the Trustless Work Factory contract page: https://api.stellar.expert/explorer/testnet/contract/CBMEZ3FEJISOCYOTRXJAPUZEPH4IL43ZJ2N6QYMWQGFTG3OIQ7K5P
+    - Open a sample escrow instance: https://api.stellar.expert/explorer/testnet/contract/CDAA5JUKF4FBNW5T2Q3B7XG6LHK5W4G3T4QOIQ7K5PZJ2N6QYMWQ
+    - Inspect recent transactions referencing the escrow contract via Horizon: https://horizon-testnet.stellar.org/transactions?contract=CDAA5JUKF4FBNW5T2Q3B7XG6LHK5W4G3T4QOIQ7K5PZJ2N6QYMWQ
+    - Confirm emitted events and USDC movements using Stellar Expert and Horizon transaction/effects pages.
+
+2. Local SDK and integration tests
+    - Clone the Trustless Work repository and install dependencies.
+    - Run unit tests and integration suites (usually `npm test` or `yarn test` for SDK; `cargo test` for Soroban contracts).
+    - Use `stellar-core`/`soroban` local testnet or `horizon-testnet` to deploy a factory and create an escrow instance; validate event emissions.
+
+3. Hub submission validation
+    - Use the example `curl` POST in the project root to submit the project to the Hub API.
+    - If the API requires auth, obtain a JWT by registering/logging in via `/api/auth/login` and include `Authorization: Bearer $JWT`.
+    - After submission, verify the created project's `slug` and `contract_ids` appear in the Hub UI or via `GET /api/projects/:slug`.
+
+4. Monitoring live activity
+    - Add the escrow contract ID to an indexer (e.g., Wraith) or use Horizon event queries to monitor incoming USDC payments and contract invocations in real time.
+
+
+## Verification Links
+
+- Trustless Work Factory (testnet contract): https://api.stellar.expert/explorer/testnet/contract/CBMEZ3FEJISOCYOTRXJAPUZEPH4IL43ZJ2N6QYMWQGFTG3OIQ7K5P
+- Sample escrow instance (testnet contract): https://api.stellar.expert/explorer/testnet/contract/CDAA5JUKF4FBNW5T2Q3B7XG6LHK5W4G3T4QOIQ7K5PZJ2N6QYMWQ
+- Recent Horizon transaction referencing an escrow instance: https://horizon-testnet.stellar.org/transactions/b6c501d43d7f0279d81bf13ac0701cbf522d14d70422ab7b5a9baaa5f66fd299
+
