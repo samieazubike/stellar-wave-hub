@@ -184,7 +184,12 @@ jobs:
               ].join('\n');
 
               if (context.payload.pull_request.head.repo?.fork) {
-                console.log('Skipping PR comment on fork-based PR (token limitation)');
+                console.log('=== CONTRIBUTOR FORMAT CHECK FAILED ===');
+                console.log('This is a fork-based PR. Unable to post a comment due to token limitations.');
+                console.log('\nValidation errors found:');
+                errors.forEach((e, i) => console.log(`${i + 1}. ${e}`));
+                console.log('\n---\nPR comment body that would have been posted:\n');
+                console.log(body);
                 core.setFailed('Contributor format check failed. See logs for details.');
               } else {
                 if (existing) {
