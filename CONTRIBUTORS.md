@@ -412,6 +412,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Carbonchain</sub>
 	</div>
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/rahimat-dev">
+			<img
+				src="https://github.com/rahimat-dev.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Rahimat"
+			/>
+			<br />
+			<sub><b>Rahimat</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/rahimat-dev"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Soroswap.Finance</sub>
+	</div>
+
 	<!-- Add your <div> above this line -->
 </div>
 ```

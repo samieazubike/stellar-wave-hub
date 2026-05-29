@@ -1,0 +1,67 @@
+SOROSWAP ARCHITECTURE DIAGRAM
+================================
+
+This document describes the Soroswap.Finance architecture for research purposes.
+
+COMPONENT OVERVIEW:
+-------------------
+
+1. SOROSWAP AMM (Automated Market Maker)
+   - Core DEX protocol with liquidity pools
+   - Constant product formula (x * y = k)
+   - Smart contracts: Router, Factory, Pair contracts
+   - Deployed on Stellar Mainnet (Soroban)
+   - Enables direct token swaps and liquidity provision
+
+2. SOROSWAP AGGREGATOR
+   - Smart contract that routes trades across multiple DEXs
+   - Compares prices from:
+     * Soroswap AMM
+     * Phoenix DEX
+     * Aquarius DEX
+     * Stellar Classic DEX
+   - Optimizes for best execution price
+   - Supports multi-hop swaps
+   - Adapter pattern for protocol integration
+
+3. SOROSWAP API
+   - REST API for developers
+   - Endpoints:
+     * /quote - Get best price across all sources
+     * /build - Generate transaction
+     * /send - Submit transaction
+   - Real-time pricing data
+   - Route optimization
+   - Transaction generation
+
+TECHNICAL STACK:
+----------------
+- Smart Contracts: Rust + Soroban SDK
+- Blockchain: Stellar (Soroban)
+- Security Audit: Runtime Verification
+- Frontend: React + soroban-react framework
+- Wallet Integration: stellar-wallets-kit
+
+LIQUIDITY SOURCES:
+------------------
+Soroswap Aggregator connects to:
+1. Soroswap AMM pools
+2. Phoenix protocol pools
+3. Aquarius pools
+4. Stellar Classic DEX orderbook
+
+DATA FLOW:
+----------
+User Request → Soroswap API → Aggregator Contract → Multiple DEX Adapters → Best Route Selection → Transaction Execution → User Receives Tokens
+
+KEY FEATURES:
+-------------
+- Best price execution across all Stellar DEXs
+- Low slippage through liquidity aggregation
+- Fast finality (3-5 seconds via Stellar)
+- Low transaction costs
+- Permissionless and decentralized
+- Open source and audited
+
+Source: https://docs.soroswap.finance
+Repository: https://github.com/soroswap/aggregator

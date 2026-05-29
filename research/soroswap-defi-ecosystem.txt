@@ -1,0 +1,123 @@
+SOROSWAP IN THE STELLAR DEFI ECOSYSTEM
+========================================
+
+This document provides context on Soroswap's role in the Stellar DeFi ecosystem.
+
+STELLAR DEFI LANDSCAPE (2026):
+-------------------------------
+
+Total Value Locked (TVL) Growth:
+- Stellar DeFi TVL reached ~$200M in April 2026
+- Significant growth driven by RWA tokenization and DeFi protocols
+
+Major DeFi Protocols on Stellar:
+
+1. BLEND (Lending Protocol)
+   - TVL: $80M+ (Q1 2026)
+   - Lending and borrowing primitive
+   - Integration with other protocols
+
+2. AQUARIUS (DEX)
+   - TVL: $40M+ (Jan-Feb 2026)
+   - Independent decentralized exchange
+   - Reliable liquidity hub
+
+3. SOROSWAP.FINANCE (DEX + Aggregator)
+   - First DEX aggregator on Stellar
+   - Aggregates liquidity from all Stellar DEXs
+   - Developed by PaltaLabs
+   - Part of Soroban Adoption Fund ($100M program)
+
+4. DEFINDEX
+   - DeFi index and vault protocol
+   - Integrates with Blend pools
+   - Makes DeFi access easier for dApps
+
+5. PHOENIX DEX
+   - Soroban-based AMM
+   - Integrated into Soroswap aggregator
+
+SOROSWAP'S UNIQUE POSITION:
+----------------------------
+
+As the FIRST DEX AGGREGATOR on Stellar, Soroswap:
+- Connects fragmented liquidity across multiple DEXs
+- Provides best execution prices for traders
+- Serves as infrastructure for other applications
+- Enables composability in Stellar DeFi
+
+STELLAR DEVELOPMENT FOUNDATION SUPPORT:
+---------------------------------------
+
+Soroban Adoption Fund:
+- $100M allocated to Soroban projects
+- Soroswap officially recognized in SDF press release (March 2024)
+- Listed alongside Axelar, Allbridge, Band Protocol
+- Received funding during Soroban testnet phase
+
+Stellar Community Fund (SCF):
+- Additional funding program for Stellar projects
+- PaltaLabs/Soroswap participated in SCF rounds
+- Over $10M distributed to 130+ projects
+
+ECOSYSTEM IMPACT:
+-----------------
+
+1. Liquidity Aggregation
+   - Unifies liquidity from Soroban DEXs and Classic DEX
+   - Reduces slippage for traders
+   - Improves capital efficiency
+
+2. Developer Infrastructure
+   - Soroswap API enables wallet integrations
+   - soroban-react framework for dApp development
+   - Design patterns for other DeFi protocols
+
+3. DeFi Composability
+   - Other protocols can build on Soroswap
+   - Pricing oracles for DeFi applications
+   - Swap functionality as a service
+
+COMPETITIVE ADVANTAGES:
+-----------------------
+
+vs. Single DEXs:
+- Better prices through aggregation
+- Access to more liquidity sources
+- Optimal routing algorithms
+
+vs. Other Blockchains:
+- Stellar's fast finality (3-5 seconds)
+- Low transaction costs
+- Native integration with Stellar assets
+- Bridge between Classic and Soroban
+
+REAL-WORLD USAGE:
+-----------------
+
+- Active trading on Stellar mainnet
+- TVL tracked on DeFiLlama
+- Multiple wallet integrations (Freighter, xBull, Lobstr, Hana)
+- API used by third-party applications
+- Regular protocol updates and maintenance
+
+FUTURE OUTLOOK:
+---------------
+
+Stellar DeFi Growth Drivers:
+- Institutional RWA tokenization ($2B in Q1 2026)
+- Chainlink integration for oracles and CCIP
+- DTCC and traditional finance partnerships
+- Growing developer ecosystem
+
+Soroswap's Role:
+- Critical infrastructure for DeFi growth
+- Enables efficient token trading
+- Supports new token launches
+- Foundation for more complex DeFi products
+
+Sources:
+- Stellar.org blog: "DeFi is happening on Stellar" (2026)
+- DeFiLlama protocol data
+- Stellar Development Foundation press releases
+- Soroswap documentation
