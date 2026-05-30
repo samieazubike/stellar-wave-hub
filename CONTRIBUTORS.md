@@ -310,7 +310,6 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<br />
 		<sub>Researcher — Lumenswap</sub>
 	</div>
-
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
@@ -333,7 +332,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
-		<a href="https://github.com/victor-134">
+		<a href="https://github.com/Gozirimdev">
 			<img
 				src="https://github.com/Gozirimdev.png"
 				width="80"
@@ -350,7 +349,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="GitHub"
 		/></a>
 		<br />
-		<sub>Researcher - Wraith</sub>
+		<sub>Researcher — Wraith, Akkuea Real Estate Tokenization</sub>
 	</div>
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
