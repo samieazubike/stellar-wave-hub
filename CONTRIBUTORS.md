@@ -430,7 +430,9 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 			alt="GitHub"
 	/></a>
 	<br />
-	<sub>Researcher — Agora Events</sub>
+	<sub>Researcher — Agora Events
+		Researcher — Tikka
+	</sub>
 </div>
 ```
 <!-- CONTRIBUTORS-END -->
