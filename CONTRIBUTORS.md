@@ -440,6 +440,34 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — StellarMicroPay</sub>
 	</div>
 
+	<div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+		<a href="https://github.com/samieazubike">
+			<img
+				src="https://github.com/samieazubike.png"
+				width="80"
+				style="border-radius:50%"
+				alt="samieazubike"
+			/>
+			<br />
+			<sub><b>samieazubike</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/samieazubike"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/samabornoking"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — Trustless Work Smart Escrow</sub>
+	</div>
+
 	<!-- Add your <div> above this line -->
 </div>
 ```
