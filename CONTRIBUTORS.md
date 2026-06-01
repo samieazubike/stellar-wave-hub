@@ -241,6 +241,21 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Trustless Work Smart Escrow</sub>
 	</div>
 
+
+<!-- Perpetual Asogwa -->
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/Uche44">
+    <img src="https://github.com/Uche44.png" width="80" style="border-radius:50%" alt="Uche44" />
+    <br />
+    <sub><b>Perpetual Asogwa</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/Uche44"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <br />
+  <sub>Researcher — PetChain, CurrentDao, Stellar Tipjar, Lance</sub>
+</div>
+<!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
@@ -387,48 +402,86 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
-		<a href="https://github.com/kiro-ai">
+		<a href="https://github.com/GauravKarakoti">
 			<img
-				src="https://github.com/kiro-ai.png"
+				src="https://github.com/GauravKarakoti.png"
 				width="80"
 				style="border-radius:50%"
-				alt="Kiro"
+				alt="Gaurav Karakoti"
 			/>
 			<br />
-			<sub><b>Kiro</b></sub>
+			<sub><b>Gaurav Karakoti</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/kiro-ai"
+		<a href="https://github.com/GauravKarakoti"
 			><img
 				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
 				alt="GitHub"
 		/></a>
+		<a href="https://x.com/GauravKara_Koti"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
 		<br />
-		<sub>Researcher — Aquarius</sub>
+		<sub>Researcher — Carbonchain</sub>
 	</div>
 
 	<div
-		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
-	>
-		<a href="https://github.com/kiro-ai">
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+		<a href="https://github.com/YOUR_GITHUB_USERNAME">
 			<img
-				src="https://github.com/kiro-ai.png"
+				src="https://github.com/YOUR_GITHUB_USERNAME.png"
 				width="80"
 				style="border-radius:50%"
-				alt="Kiro"
+				alt="Your Name"
 			/>
 			<br />
-			<sub><b>Kiro</b></sub>
+			<sub><b>Your Name</b></sub>
 		</a>
 		<br />
-		<a href="https://github.com/kiro-ai"
+		<a href="https://github.com/Bright-Tekch"
 			><img
-				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				src="https://avatars.githubusercontent.com/u/174682562?v=4"
 				alt="GitHub"
 		/></a>
+		<!-- <a href="https://x.com/YOUR_X_HANDLE"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a> -->
 		<br />
-		<sub>Researcher — Akkuea</sub>
+		<sub>Researcher — StellarMicroPay</sub>
 	</div>
+
+    <div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+	<a href="https://github.com/YOUR_GITHUB_USERNAME">
+		<img
+			src="https://github.com/YOUR_GITHUB_USERNAME.png"
+			width="80"
+			style="border-radius:50%"
+			alt="John-Flint"
+		/>
+		<br />
+		<sub><b>John-Flint</b></sub>
+	</a>
+	<br />
+	<a href="https://github.com/Buchi-Einstein"
+		><img
+			src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+			alt="GitHub"
+	/></a>
+	<a href="https://x.com/Ugverse_1"
+		><img
+			src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+			alt="X"
+	/></a>
+	<br />
+	<sub>Researcher — Stellar-Search, Vestroll</sub>
+</div>
 
 	<!-- Add your <div> above this line -->
 </div>
