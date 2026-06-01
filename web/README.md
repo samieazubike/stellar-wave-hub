@@ -13,7 +13,7 @@ STELLAR_HORIZON_URL=https://horizon.stellar.org
 
 ## Supabase Setup
 
-Run the SQL in [data/supabase/schema.sql](data/supabase/schema.sql) in your Supabase project's SQL Editor.
+Run the SQL in [data/supabase/schema.sql](data/supabase/schema.sql) in your Supabase project's SQL Editor. Then apply the numbered SQL files in [data/supabase](data/supabase) in order; `005_seed_bridgelet_project.sql` is an optional curated research upload that adds the Bridgelet Stellar Wave Program profile.
 
 This creates all required tables and indexes used by the API routes:
 
