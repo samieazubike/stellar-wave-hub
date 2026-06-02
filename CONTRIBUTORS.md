@@ -541,6 +541,34 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	</div>
 	<!-- Add your <div> above this line -->
 </div>
+
+<div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+	<a href="https://github.com/Peolite001">
+		<img
+			src="https://avatars.githubusercontent.com/u/244969013?v=4"
+			width="80"
+			style="border-radius:50%"
+			alt="Your Name"
+		/>
+		<br />
+		<sub><b>Peolite</b></sub>
+	</a>
+	<br />
+	<a href="https://github.com/Peolite001"
+		><img
+			src="[https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square](https://avatars.githubusercontent.com/u/244969013?v=4)"
+			alt="GitHub"
+	/></a>
+	<!-- <a href="https://x.com/YOUR_X_HANDLE"
+		><img
+			src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+			alt="X"
+	/></a> -->
+	<br />
+	<sub>Role — Researcher - Phoenix DeFi Hub</sub>
+</div>
 ```
 <!-- CONTRIBUTORS-END -->
 
