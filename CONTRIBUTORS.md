@@ -241,6 +241,50 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Trustless Work Smart Escrow</sub>
 	</div>
 
+
+<!-- Perpetual Asogwa -->
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/Uche44">
+    <img src="https://github.com/Uche44.png" width="80" style="border-radius:50%" alt="Uche44" />
+    <br />
+    <sub><b>Perpetual Asogwa</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/Uche44"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <br />
+  <sub>Researcher — PetChain, CurrentDao, Stellar Tipjar, Lance, PromptHash</sub>
+</div>
+<!-- Add your <div> above this line -->
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Chidubemkingsley">
+			<img
+				src="https://github.com/Chidubemkingsley.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Chidubem Kingsley"
+			/>
+			<br />
+			<sub><b>Chidubem Kingsley</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Chidubemkingsley"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/KingsleyCaesar1"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — MERCATO</sub>
+	</div>
+
+	<!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
@@ -310,24 +354,6 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<br />
 		<sub>Researcher — Lumenswap</sub>
 	</div>
-	<div
-		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
-	>
-		<a href="https://github.com/github-copilot-agent">
-			<img
-				src="https://github.com/github-copilot-agent.png"
-				width="80"
-				style="border-radius:50%"
-				alt="GitHub Copilot"
-			/>
-			<br />
-			<sub><b>GitHub Copilot</b></sub>
-		</a>
-		<br />
-		<a href="https://github.com/github-copilot-agent"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
-		<br />
-		<sub>Researcher — Soroban Invoice, OFFER-HUB</sub>
-	</div>
 
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -349,7 +375,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="GitHub"
 		/></a>
 		<br />
-		<sub>Researcher — Wraith, Akkuea Real Estate Tokenization</sub>
+		<sub>Researcher - Wraith</sub>
 	</div>
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -430,6 +456,89 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Carbonchain</sub>
 	</div>
 
+	<div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+		<a href="https://github.com/Bright-Tekch">
+			<img
+				src="https://github.com/Bright-Tekch.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Bright-Tekch"
+			/>
+			<br />
+			<sub><b>Bright-Tekch</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Bright-Tekch"
+			><img
+				src="https://avatars.githubusercontent.com/u/174682562?v=4"
+				alt="GitHub"
+		/></a>
+		<!-- <a href="https://x.com/YOUR_X_HANDLE"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a> -->
+		<br />
+		<sub>Researcher — StellarMicroPay, Linkora-social, Lancepay, MettaVerse</sub>
+	</div>
+
+    <div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+	<a href="https://github.com/YOUR_GITHUB_USERNAME">
+		<img
+			src="https://github.com/YOUR_GITHUB_USERNAME.png"
+			width="80"
+			style="border-radius:50%"
+			alt="John-Flint"
+		/>
+		<br />
+		<sub><b>John-Flint</b></sub>
+	</a>
+	<br />
+	<a href="https://github.com/Buchi-Einstein"
+		><img
+			src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+			alt="GitHub"
+	/></a>
+	<a href="https://x.com/Ugverse_1"
+		><img
+			src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+			alt="X"
+	/></a>
+	<br />
+	<sub>Researcher — Stellar-Search, Vestroll</sub>
+</div>
+	<!--Enemuo-Debug-->
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Enemuo-debug">
+			<img
+				src="https://github.com/Enemuo-debug.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Your Name"
+			/>
+			<br />
+			<sub><b>Your Name</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Enemuo-debug"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/zurus06"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — Akkuea</sub>
+	</div>
 	<!-- Add your <div> above this line -->
 </div>
 ```

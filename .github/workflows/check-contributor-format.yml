@@ -37,17 +37,8 @@ jobs:
 
             // ── Get diff (lines added by this PR) ──────────────────────────
             let addedLines = '';
-            let changedFiles = [];
             try {
               execSync(`git fetch origin ${process.env.BASE_REF}`, { stdio: 'pipe' });
-              changedFiles = execSync(
-                `git diff --name-only origin/${process.env.BASE_REF}`,
-                { stdio: 'pipe' }
-              )
-                .toString()
-                .split('\n')
-                .map(f => f.trim())
-                .filter(Boolean);
               const raw = execSync(
                 `git diff origin/${process.env.BASE_REF} -- CONTRIBUTORS.md`,
                 { stdio: 'pipe' }
@@ -58,11 +49,8 @@ jobs:
             const errors = [];
 
             // ── 1. PR title ────────────────────────────────────────────────
-            const contributorOnlyPr =
-              changedFiles.length === 0 ||
-              changedFiles.every(file => file === 'CONTRIBUTORS.md');
             const titleOk = /^docs:\s+add\s+.+\s+to\s+contributors$/i.test(prTitle);
-            if (contributorOnlyPr && !titleOk) {
+            if (!titleOk) {
               errors.push(
                 `**PR Title**: Must follow \`docs: add [your-name] to contributors\`. ` +
                 `Current title: \`${prTitle}\``
