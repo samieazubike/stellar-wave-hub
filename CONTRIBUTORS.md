@@ -241,6 +241,50 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Trustless Work Smart Escrow</sub>
 	</div>
 
+
+<!-- Perpetual Asogwa -->
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/Uche44">
+    <img src="https://github.com/Uche44.png" width="80" style="border-radius:50%" alt="Uche44" />
+    <br />
+    <sub><b>Perpetual Asogwa</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/Uche44"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <a href="https://x.com/samabornoking"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+  <br />
+  <sub>Researcher — PetChain, CurrentDao, Stellar Tipjar, Lance, PromptHash, Hunty</sub>
+</div>
+<!-- Add your <div> above this line -->
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Chidubemkingsley">
+			<img
+				src="https://github.com/Chidubemkingsley.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Chidubem Kingsley"
+			/>
+			<br />
+			<sub><b>Chidubem Kingsley</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Chidubemkingsley"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/KingsleyCaesar1"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — MERCATO</sub>
+	</div>
+
+	<!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
