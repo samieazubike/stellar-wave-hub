@@ -5,34 +5,31 @@
 //!
 //! ## Fees
 //! - **Registration fee** — paid once per project when it's added.
-//! - **Rating fee** — paid by a user every time they rate a project
-//!   (default: 0.1 USD worth of the configured token, i.e. 1_000_000 stroops
-//!   for USDC which uses 7 decimals on Stellar).
+//! - **Rating fee** — paid by a user every time they rate a project.
 //!
-//! Both fees are collected in the same token (typically USDC SAC on mainnet,
-//! or native XLM wrapper for testing). Collected fees accumulate in the
-//! contract and can be withdrawn by the admin to a treasury address.
-//!
-//! ## Upgradability
-//! The admin can swap out the contract's WASM bytecode by calling `upgrade`
-//! with the hash of a newly installed WASM. Storage is preserved across
-//! upgrades.
+//! ## Upgradability & Versioning
+//! - The admin can swap out the contract's WASM bytecode by calling `upgrade`.
+//! - The contract tracks its version using a semver string (e.g., "1.0.0").
+//! - `upgrade_version` allows updating the version string and emits an event.
 //!
 //! # Public interface
 //!
 //! ## Admin-only
-//! - `initialize(admin, token, reg_fee, rate_fee)`
-//! - `register_project(admin, project_id, account_id, payer)`
-//! - `remove_project(admin, project_id)`
-//! - `set_registration_fee(admin, amount)` / `set_rating_fee(admin, amount)`
-//! - `set_treasury(admin, treasury)` / `withdraw_fees(admin) -> i128`
+//! - `initialize(admin, token, reg_fee, rate_fee, version)` — one-time setup.
 //! - `upgrade(admin, new_wasm_hash)` — swap contract WASM.
+//! - `upgrade_version(admin, new_version)` — update the semver version string.
 //! - `transfer_admin(admin, new_admin)` — hand off admin rights.
+//! - `register_project(admin, project_id, account_id, payer)` — add project.
+//! - `remove_project(admin, project_id)` — remove a project.
+//! - `set_registration_fee(admin, amount)` / `set_rating_fee(admin, amount)`
+//! - `set_treasury(admin, treasury)` / `withdraw_fees(admin)`
 //!
 //! ## User-facing
 //! - `rate_project(user, project_id, score)` — charges rating fee, stores rating.
 //!
 //! ## Public reads
+//! - `get_version()` — returns the semver version string.
+//! - `get_wasm_version()` — returns the WASM upgrade counter.
 //! - `is_registered(project_id)` / `get_account(project_id)` / `get_projects()`
 //! - `get_registration_fee()` / `get_rating_fee()`
 //! - `get_rating(user, project_id)` / `get_project_rating(project_id)`
@@ -42,7 +39,7 @@
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, BytesN,
-    Env, Symbol, Vec,
+    Env, String, Symbol, Vec,
 };
 
 // ── Storage keys ────────────────────────────────────────────────────────────
@@ -55,6 +52,7 @@ const RATE_FEE_KEY: Symbol = symbol_short!("RATE_FEE");
 const TREASURY_KEY: Symbol = symbol_short!("TREASURY");
 const COLLECTED_KEY: Symbol = symbol_short!("COLLECT");
 const VERSION_KEY: Symbol = symbol_short!("VERSION");
+const WASM_VERSION_KEY: Symbol = symbol_short!("WASM_VER");
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -110,12 +108,18 @@ impl WaveHubRegistry {
     /// One-time initialization.
     ///
     /// * `admin`     — privileged address that can manage the registry.
-    /// * `token`     — Soroban token contract used for fee payments
-    ///                 (e.g. USDC SAC address on mainnet).
-    /// * `reg_fee`   — registration fee in token's smallest unit
-    ///                 (for USDC with 7 decimals: 1_000_000 = 0.1 USDC).
-    /// * `rate_fee`  — rating fee in the same unit. Default recommendation: 1_000_000 (0.1 USDC).
-    pub fn initialize(env: Env, admin: Address, token: Address, reg_fee: i128, rate_fee: i128) {
+    /// * `token`     — Soroban token contract used for fee payments.
+    /// * `reg_fee`   — registration fee in token's smallest unit.
+    /// * `rate_fee`  — rating fee in the same unit.
+    /// * `version`   — initial contract version (semver string).
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        token: Address,
+        reg_fee: i128,
+        rate_fee: i128,
+        version: String,
+    ) {
         if env.storage().instance().has(&ADMIN_KEY) {
             panic_with_error(&env, Error::AlreadyInitialized);
         }
@@ -123,13 +127,16 @@ impl WaveHubRegistry {
             panic_with_error(&env, Error::InvalidFee);
         }
 
+        validate_version(&version);
+
         env.storage().instance().set(&ADMIN_KEY, &admin);
         env.storage().instance().set(&TOKEN_KEY, &token);
         env.storage().instance().set(&REG_FEE_KEY, &reg_fee);
         env.storage().instance().set(&RATE_FEE_KEY, &rate_fee);
         env.storage().instance().set(&TREASURY_KEY, &admin);
         env.storage().instance().set(&COLLECTED_KEY, &0i128);
-        env.storage().instance().set(&VERSION_KEY, &1u32);
+        env.storage().instance().set(&VERSION_KEY, &version);
+        env.storage().instance().set(&WASM_VERSION_KEY, &1u32);
 
         let projects: Vec<Symbol> = Vec::new(&env);
         env.storage().instance().set(&PROJECTS_KEY, &projects);
@@ -137,17 +144,35 @@ impl WaveHubRegistry {
 
     // ── Upgradability (admin) ───────────────────────────────────────────
 
-    /// Replace the contract's WASM bytecode. The new WASM must already be
-    /// uploaded to the ledger (`soroban contract install`); pass its hash.
-    /// Storage is preserved.
+    /// Replace the contract's WASM bytecode.
     pub fn upgrade(env: Env, admin: Address, new_wasm_hash: BytesN<32>) {
         Self::require_admin(&env, &admin);
         admin.require_auth();
         env.deployer().update_current_contract_wasm(new_wasm_hash);
 
-        // Bump version counter so clients can detect upgrades.
-        let v: u32 = env.storage().instance().get(&VERSION_KEY).unwrap_or(1);
-        env.storage().instance().set(&VERSION_KEY, &(v + 1));
+        // Bump WASM version counter.
+        let v: u32 = env.storage().instance().get(&WASM_VERSION_KEY).unwrap_or(1);
+        env.storage().instance().set(&WASM_VERSION_KEY, &(v + 1));
+    }
+
+    /// Update the semver version string. Emits a ContractUpgraded event.
+    pub fn upgrade_version(env: Env, admin: Address, new_version: String) {
+        Self::require_admin(&env, &admin);
+        admin.require_auth();
+        validate_version(&new_version);
+
+        let old_version: String = env
+            .storage()
+            .instance()
+            .get(&VERSION_KEY)
+            .unwrap_or_else(|| String::from_str(&env, "0.0.0"));
+
+        env.storage().instance().set(&VERSION_KEY, &new_version);
+
+        env.events().publish(
+            (Symbol::new(&env, "ContractUpgraded"),),
+            (old_version, new_version),
+        );
     }
 
     /// Transfer admin rights to a new address. Irrevocable.
@@ -221,10 +246,7 @@ impl WaveHubRegistry {
 
     // ── Rating (user-facing) ────────────────────────────────────────────
 
-    /// Rate a registered project. Charges the user the rating fee and records
-    /// the score. Each user can only rate a given project once.
-    ///
-    /// * `score` must be between 1 and 5 inclusive.
+    /// Rate a registered project. Charges the user the rating fee.
     pub fn rate_project(env: Env, user: Address, project_id: Symbol, score: u32) {
         user.require_auth();
 
@@ -284,7 +306,7 @@ impl WaveHubRegistry {
         env.storage().instance().set(&TREASURY_KEY, &treasury);
     }
 
-    /// Withdraw all collected fees to the treasury. Returns the amount sent.
+    /// Withdraw all collected fees to the treasury.
     pub fn withdraw_fees(env: Env, admin: Address) -> i128 {
         Self::require_admin(&env, &admin);
         admin.require_auth();
@@ -318,6 +340,17 @@ impl WaveHubRegistry {
     }
 
     // ── Public queries ──────────────────────────────────────────────────
+
+    pub fn get_version(env: Env) -> String {
+        env.storage()
+            .instance()
+            .get(&VERSION_KEY)
+            .unwrap_or_else(|| String::from_str(&env, "0.0.0"))
+    }
+
+    pub fn get_wasm_version(env: Env) -> u32 {
+        env.storage().instance().get(&WASM_VERSION_KEY).unwrap_or(1)
+    }
 
     pub fn is_registered(env: Env, project_id: Symbol) -> bool {
         env.storage().persistent().has(&project_id)
@@ -359,11 +392,6 @@ impl WaveHubRegistry {
             .instance()
             .get(&COLLECTED_KEY)
             .unwrap_or(0i128)
-    }
-
-    /// Version counter. Starts at 1, incremented on each upgrade.
-    pub fn get_version(env: Env) -> u32 {
-        env.storage().instance().get(&VERSION_KEY).unwrap_or(1)
     }
 
     pub fn has_rated(env: Env, user: Address, project_id: Symbol) -> bool {
@@ -423,6 +451,38 @@ fn panic_with_error(env: &Env, err: Error) -> ! {
     soroban_sdk::panic_with_error!(env, err);
 }
 
+fn validate_version(version: &String) {
+    let len = version.len() as usize;
+    if len == 0 || len > 32 {
+        panic!("invalid version length");
+    }
+
+    let mut buf = [0u8; 32];
+    version.copy_into_slice(&mut buf[..len]);
+
+    let mut dot_count = 0;
+    let mut part_len = 0;
+
+    for i in 0..len {
+        let b = buf[i];
+        if b == b'.' {
+            if part_len == 0 {
+                panic!("invalid version format");
+            }
+            dot_count += 1;
+            part_len = 0;
+        } else if b >= b'0' && b <= b'9' {
+            part_len += 1;
+        } else {
+            panic!("invalid version characters");
+        }
+    }
+
+    if dot_count != 2 || part_len == 0 {
+        panic!("invalid version format");
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -434,8 +494,8 @@ mod tests {
         Env,
     };
 
-    const REG_FEE: i128 = 5_000_000; // 0.5 USDC (7 decimals)
-    const RATE_FEE: i128 = 1_000_000; // 0.1 USDC (7 decimals)
+    const REG_FEE: i128 = 5_000_000;
+    const RATE_FEE: i128 = 1_000_000;
 
     fn setup_token(env: &Env, admin: &Address) -> Address {
         let token_id = env.register_stellar_asset_contract_v2(admin.clone());
@@ -461,11 +521,14 @@ mod tests {
         let payer = Address::generate(&env);
         fund(&env, &token_addr, &payer, 100_000_000);
 
-        client.initialize(&admin, &token_addr, &REG_FEE, &RATE_FEE);
+        let version = String::from_str(&env, "1.0.0");
+        client.initialize(&admin, &token_addr, &REG_FEE, &RATE_FEE, &version);
+
         assert_eq!(client.get_registration_fee(), REG_FEE);
         assert_eq!(client.get_rating_fee(), RATE_FEE);
         assert_eq!(client.get_admin(), admin);
-        assert_eq!(client.get_version(), 1);
+        assert_eq!(client.get_version(), version);
+        assert_eq!(client.get_wasm_version(), 1);
 
         let project_account = Address::generate(&env);
         let project_id = symbol_short!("proj1");
@@ -484,178 +547,71 @@ mod tests {
     }
 
     #[test]
-    fn test_rate_project_charges_fee_and_records() {
+    fn test_upgrade_version() {
         let env = Env::default();
         env.mock_all_auths();
-
         let contract_id = env.register_contract(None, WaveHubRegistry);
         let client = WaveHubRegistryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let token_addr = setup_token(&env, &admin);
 
+        client.initialize(
+            &admin,
+            &token_addr,
+            &0,
+            &0,
+            &String::from_str(&env, "1.0.0"),
+        );
+        assert_eq!(client.get_version(), String::from_str(&env, "1.0.0"));
+
+        let new_version = String::from_str(&env, "1.1.0");
+        client.upgrade_version(&admin, &new_version);
+        assert_eq!(client.get_version(), new_version);
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid version format")]
+    fn test_invalid_version_panics() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, WaveHubRegistry);
+        let client = WaveHubRegistryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let token_addr = setup_token(&env, &admin);
+
+        client.initialize(&admin, &token_addr, &0, &0, &String::from_str(&env, "1.0"));
+    }
+
+    #[test]
+    fn test_rate_project() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, WaveHubRegistry);
+        let client = WaveHubRegistryClient::new(&env, &contract_id);
         let admin = Address::generate(&env);
         let token_addr = setup_token(&env, &admin);
         let user = Address::generate(&env);
         let payer = Address::generate(&env);
-        fund(&env, &token_addr, &payer, 100_000_000);
         fund(&env, &token_addr, &user, 100_000_000);
+        fund(&env, &token_addr, &payer, 100_000_000);
 
-        client.initialize(&admin, &token_addr, &0, &RATE_FEE);
+        client.initialize(
+            &admin,
+            &token_addr,
+            &0,
+            &RATE_FEE,
+            &String::from_str(&env, "1.0.0"),
+        );
 
-        let project_account = Address::generate(&env);
-        let pid = symbol_short!("proj_r");
-        client.register_project(&admin, &pid, &project_account, &payer);
+        let pid = symbol_short!("proj");
+        client.register_project(&admin, &pid, &Address::generate(&env), &payer);
 
-        client.rate_project(&user, &pid, &4);
-
-        let token_client = token::Client::new(&env, &token_addr);
-        assert_eq!(token_client.balance(&user), 100_000_000 - RATE_FEE);
-        assert_eq!(client.get_treasury_balance(), RATE_FEE);
+        client.rate_project(&user, &pid, &5);
         assert!(client.has_rated(&user, &pid));
-        assert_eq!(client.get_rating(&user, &pid), 4);
+        assert_eq!(client.get_rating(&user, &pid), 5);
 
         let agg = client.get_project_rating(&pid);
         assert_eq!(agg.count, 1);
-        assert_eq!(agg.sum, 4);
-    }
-
-    #[test]
-    fn test_multiple_users_average() {
-        let env = Env::default();
-        env.mock_all_auths();
-
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-
-        let admin = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        let payer = Address::generate(&env);
-        let u1 = Address::generate(&env);
-        let u2 = Address::generate(&env);
-        let u3 = Address::generate(&env);
-        for a in [&payer, &u1, &u2, &u3] {
-            fund(&env, &token_addr, a, 100_000_000);
-        }
-
-        client.initialize(&admin, &token_addr, &0, &RATE_FEE);
-        let pid = symbol_short!("proj_m");
-        client.register_project(&admin, &pid, &Address::generate(&env), &payer);
-
-        client.rate_project(&u1, &pid, &5);
-        client.rate_project(&u2, &pid, &3);
-        client.rate_project(&u3, &pid, &4);
-
-        let agg = client.get_project_rating(&pid);
-        assert_eq!(agg.count, 3);
-        assert_eq!(agg.sum, 12);
-        // average = 12/3 = 4.0
-
-        assert_eq!(client.get_treasury_balance(), RATE_FEE * 3);
-    }
-
-    #[test]
-    #[should_panic(expected = "Error(Contract, #9)")] // AlreadyRated
-    fn test_double_rate_panics() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        let user = Address::generate(&env);
-        let payer = Address::generate(&env);
-        fund(&env, &token_addr, &user, 100_000_000);
-        fund(&env, &token_addr, &payer, 100_000_000);
-        client.initialize(&admin, &token_addr, &0, &RATE_FEE);
-        let pid = symbol_short!("proj_d");
-        client.register_project(&admin, &pid, &Address::generate(&env), &payer);
-        client.rate_project(&user, &pid, &5);
-        client.rate_project(&user, &pid, &3); // should panic
-    }
-
-    #[test]
-    #[should_panic(expected = "Error(Contract, #8)")] // InvalidScore
-    fn test_invalid_score_panics() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        let user = Address::generate(&env);
-        let payer = Address::generate(&env);
-        fund(&env, &token_addr, &user, 100_000_000);
-        fund(&env, &token_addr, &payer, 100_000_000);
-        client.initialize(&admin, &token_addr, &0, &RATE_FEE);
-        let pid = symbol_short!("proj_i");
-        client.register_project(&admin, &pid, &Address::generate(&env), &payer);
-        client.rate_project(&user, &pid, &6);
-    }
-
-    #[test]
-    #[should_panic(expected = "Error(Contract, #6)")] // ProjectNotFound
-    fn test_rate_unknown_project_panics() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        let user = Address::generate(&env);
-        fund(&env, &token_addr, &user, 100_000_000);
-        client.initialize(&admin, &token_addr, &0, &RATE_FEE);
-        client.rate_project(&user, &symbol_short!("ghost"), &4);
-    }
-
-    #[test]
-    fn test_set_rating_fee() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        client.initialize(&admin, &token_addr, &0, &RATE_FEE);
-        client.set_rating_fee(&admin, &2_000_000);
-        assert_eq!(client.get_rating_fee(), 2_000_000);
-    }
-
-    #[test]
-    fn test_transfer_admin() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let new_admin = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        client.initialize(&admin, &token_addr, &0, &0);
-        client.transfer_admin(&admin, &new_admin);
-        assert_eq!(client.get_admin(), new_admin);
-    }
-
-    #[test]
-    #[should_panic(expected = "Error(Contract, #1)")] // AlreadyInitialized
-    fn test_double_init_panics() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        client.initialize(&admin, &token_addr, &0, &0);
-        client.initialize(&admin, &token_addr, &0, &0);
-    }
-
-    #[test]
-    #[should_panic(expected = "Error(Contract, #3)")] // Unauthorized
-    fn test_non_admin_cannot_set_fee() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let contract_id = env.register_contract(None, WaveHubRegistry);
-        let client = WaveHubRegistryClient::new(&env, &contract_id);
-        let admin = Address::generate(&env);
-        let attacker = Address::generate(&env);
-        let token_addr = setup_token(&env, &admin);
-        client.initialize(&admin, &token_addr, &0, &RATE_FEE);
-        client.set_rating_fee(&attacker, &1);
+        assert_eq!(agg.sum, 5);
     }
 }

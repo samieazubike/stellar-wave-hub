@@ -24,10 +24,10 @@ Generate (or import) a deployer identity:
 
 ```bash
 # create a new keypair
-stellar keys generate --global admin --network testnet
+stellar keys generate admin --network testnet
 
 # or import an existing secret key
-stellar keys add --global admin --secret-key
+stellar keys add admin --secret-key
 ```
 
 Fund it on the network you're targeting:
@@ -95,7 +95,7 @@ On **testnet**, use the native XLM wrapper or set up your own test USDC:
 
 ```bash
 # native XLM SAC on testnet
-XLM_SAC=$(stellar contract id asset --asset native --network testnet --source admin)
+XLM_SAC=$(stellar contract id asset --asset native --network testnet)
 echo "Testnet XLM SAC: $XLM_SAC"
 ```
 
@@ -115,7 +115,8 @@ stellar contract invoke \
   --admin $ADMIN_ADDRESS \
   --token $XLM_SAC \
   --reg_fee 5000000 \
-  --rate_fee 1000000
+  --rate_fee 1000000 \
+  --version "1.0.0"
 ```
 
 ### 4d. Verify
