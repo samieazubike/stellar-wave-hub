@@ -454,6 +454,91 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		/></a>
 		<br />
 		<sub>Researcher — Carbonchain</sub>
+	</div>
+
+	<div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+		<a href="https://github.com/Bright-Tekch">
+			<img
+				src="https://github.com/Bright-Tekch.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Bright-Tekch"
+			/>
+			<br />
+			<sub><b>Bright-Tekch</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Bright-Tekch"
+			><img
+				src="https://avatars.githubusercontent.com/u/174682562?v=4"
+				alt="GitHub"
+		/></a>
+		<!-- <a href="https://x.com/YOUR_X_HANDLE"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a> -->
+		<br />
+		<sub>Researcher — StellarMicroPay, Linkora-social, Lancepay, MettaVerse</sub>
+	</div>
+
+    <div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+	<a href="https://github.com/YOUR_GITHUB_USERNAME">
+		<img
+			src="https://github.com/YOUR_GITHUB_USERNAME.png"
+			width="80"
+			style="border-radius:50%"
+			alt="John-Flint"
+		/>
+		<br />
+		<sub><b>John-Flint</b></sub>
+	</a>
+	<br />
+	<a href="https://github.com/Buchi-Einstein"
+		><img
+			src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+			alt="GitHub"
+	/></a>
+	<a href="https://x.com/Ugverse_1"
+		><img
+			src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+			alt="X"
+	/></a>
+	<br />
+	<sub>Researcher — Stellar-Search, Vestroll</sub>
+</div>
+	<!--Enemuo-Debug-->
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Enemuo-debug">
+			<img
+				src="https://github.com/Enemuo-debug.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Your Name"
+			/>
+			<br />
+			<sub><b>Your Name</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Enemuo-debug"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/zurus06"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — Akkuea, Sayfe App</sub>
+	</div>
 	<div
 	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 >
@@ -474,9 +559,9 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 			alt="GitHub"
 	/></a>
 	<br />
-	<sub>Researcher — Agora Events
-		Researcher — Tikka
-	</sub>
+	<sub>Researcher — Agora Events, Tikka</sub>
+</div>
+	<!-- Add your <div> above this line -->
 </div>
 ```
 <!-- CONTRIBUTORS-END -->
