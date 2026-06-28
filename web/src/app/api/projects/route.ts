@@ -1,48 +1,95 @@
 import {projectsCol, usersCol, ratingsCol, nextId} from "@/lib/db";
 import {getAuthUser} from "@/lib/auth";
+import {getSupabase} from "@/lib/firebase";
 import slugify from "slugify";
 export const dynamic = "force-dynamic";
+
+function buildTsQuery(search: string): string {
+	return search
+		.trim()
+		.split(/\s+/)
+		.map((term) => term.replace(/[':!*&|()]/g, "").trim())
+		.filter(Boolean)
+		.map((term) => `${term}:*`)
+		.join(" & ");
+}
 
 export async function GET(request: Request) {
 	try {
 		const url = new URL(request.url);
 		const category = url.searchParams.get("category");
-		const search = url.searchParams.get("search")?.toLowerCase();
+		const rawSearch = url.searchParams.get("search")?.trim() || "";
 		const sort = url.searchParams.get("sort") || "newest";
 		const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
 		const limit = Math.min(
 			50,
 			Math.max(1, Number(url.searchParams.get("limit")) || 12),
 		);
+		const offset = (page - 1) * limit;
+		const supabase = getSupabase();
 
-		// Query approved/featured projects
-		let query = projectsCol.ref.where("status", "in", [
-			"approved",
-			"featured",
-		]);
+		let countQuery = supabase
+			.from("projects")
+			.select("numericId", {count: "exact", head: true})
+			.in("status", ["approved", "featured"]);
+
+		let dataQuery = supabase
+			.from("projects")
+			.select("*")
+			.in("status", ["approved", "featured"]);
 
 		if (category) {
-			query = query.where("category", "==", category);
+			countQuery = countQuery.eq("category", category);
+			dataQuery = dataQuery.eq("category", category);
 		}
 
-		const snap = await query.get();
-		let projects: Record<string, unknown>[] = snap.docs.map((d) => ({
-			...d.data(),
-			id: d.data().numericId,
+		if (rawSearch) {
+			const tsQuery = buildTsQuery(rawSearch);
+			if (tsQuery) {
+				countQuery = countQuery.textSearch("search_vector", tsQuery, {
+					config: "simple",
+					type: "plain",
+				});
+				dataQuery = dataQuery.textSearch("search_vector", tsQuery, {
+					config: "simple",
+					type: "plain",
+				});
+			} else {
+				const pattern = `%${rawSearch.replace(/[%_]/g, "\\$&")}%`;
+				countQuery = countQuery.or(
+					`name.ilike.${pattern},description.ilike.${pattern},tags.ilike.${pattern},category.ilike.${pattern}`,
+				);
+				dataQuery = dataQuery.or(
+					`name.ilike.${pattern},description.ilike.${pattern},tags.ilike.${pattern},category.ilike.${pattern}`,
+				);
+			}
+		}
+
+		if (sort === "oldest") {
+			dataQuery = dataQuery.order("created_at", {ascending: true});
+		} else {
+			dataQuery = dataQuery
+				.order("featured", {ascending: false})
+				.order("created_at", {ascending: false});
+		}
+
+		dataQuery = dataQuery.range(offset, offset + limit - 1);
+
+		const [countResult, projectsResult, ratingsSnap] = await Promise.all([
+			countQuery,
+			dataQuery,
+			ratingsCol.ref.get(),
+		]);
+
+		if (countResult.error) throw countResult.error;
+		if (projectsResult.error) throw projectsResult.error;
+
+		let projects: Record<string, unknown>[] = (projectsResult.data ?? []).map((p) => ({
+			...p,
+			id: p.numericId,
 		}));
 
-		// Client-side search filtering (Firestore doesn't support LIKE)
-		if (search) {
-			projects = projects.filter(
-				(p) =>
-					(p.name as string)?.toLowerCase().includes(search) ||
-					(p.description as string)?.toLowerCase().includes(search) ||
-					(p.tags as string)?.toLowerCase().includes(search),
-			);
-		}
-
 		// Fetch ratings for avg computation
-		const ratingsSnap = await ratingsCol.ref.get();
 		const ratingsByProject = new Map<number, number[]>();
 		ratingsSnap.docs.forEach((d) => {
 			const r = d.data();
@@ -79,29 +126,21 @@ export async function GET(request: Request) {
 			}),
 		);
 
-		// Sort
-		enriched.sort((a, b) => {
-			if (sort === "oldest")
-				return (a.created_at as string) < (b.created_at as string)
-					? -1
-					: 1;
-			if (sort === "top-rated")
-				return (
-					((b.avg_rating as number) || 0) -
-					((a.avg_rating as number) || 0)
-				);
-			// newest — featured first, then by date desc
-			if ((b.featured as number) !== (a.featured as number))
-				return (b.featured as number) - (a.featured as number);
-			return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
-		});
+		if (sort === "top-rated") {
+			projects = enriched.sort(
+				(a, b) =>
+					(((b.avg_rating as number) || 0) - ((a.avg_rating as number) || 0)) ||
+					((b.featured as number) - (a.featured as number)) ||
+					((b.created_at as string) > (a.created_at as string) ? 1 : -1),
+			);
+		} else {
+			projects = enriched;
+		}
 
-		const total = enriched.length;
-		const offset = (page - 1) * limit;
-		const paged = enriched.slice(offset, offset + limit);
+		const total = countResult.count ?? projects.length;
 
 		return Response.json({
-			projects: paged,
+			projects,
 			pagination: {page, limit, total, pages: Math.ceil(total / limit)},
 		});
 	} catch (err) {
