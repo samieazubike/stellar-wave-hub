@@ -10,6 +10,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	financial_snapshots: "financial_snapshots",
 	auth_challenges: "auth_challenges",
 	counters: "counters",
+	promo_codes: "promo_codes",
 };
 
 function resolveTable(collection: string): string {
