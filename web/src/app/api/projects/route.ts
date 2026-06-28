@@ -90,11 +90,16 @@ export async function GET(request: Request) {
 					((b.avg_rating as number) || 0) -
 					((a.avg_rating as number) || 0)
 				);
-			// newest — featured first, then by date desc
-			if ((b.featured as number) !== (a.featured as number))
-				return (b.featured as number) - (a.featured as number);
+			// newest — featured first (only if not expired), then by date desc
+			const bUntil = b.featured_until ? new Date(b.featured_until as string).getTime() : 0;
+			const aUntil = a.featured_until ? new Date(a.featured_until as string).getTime() : 0;
+			const now = Date.now();
+			const bActive = (b.featured as number) === 1 && bUntil > now;
+			const aActive = (a.featured as number) === 1 && aUntil > now;
+			if (bActive !== aActive) return bActive ? -1 : 1;
 			return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
 		});
+
 
 		const total = enriched.length;
 		const offset = (page - 1) * limit;

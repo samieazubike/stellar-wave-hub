@@ -4,6 +4,8 @@ import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import Link from "next/link";
 
+import FeatureButton from "@/components/FeatureButton";
+
 interface Project {
 	id: number;
 	name: string;
@@ -12,11 +14,14 @@ interface Project {
 	category: string;
 	status: string;
 	featured: number;
+	featured_until?: string | null;
+	featured_tx_hash?: string | null;
 	avg_rating?: number;
 	rating_count?: number;
 	created_at: string;
 	rejection_reason?: string;
 }
+
 
 const statusStyles: Record<string, string> = {
 	submitted: "tag-solar",
@@ -140,6 +145,15 @@ export default function MyProjectsPage() {
 								</p>
 							</div>
 							<div className="flex items-center gap-3 shrink-0">
+								<FeatureButton
+									projectId={project.id}
+									featuredUntil={project.featured_until}
+									featuredTxHash={project.featured_tx_hash}
+									featured={project.featured}
+									disabled={
+										project.status !== "approved" && project.status !== "featured"
+									}
+								/>
 								{project.avg_rating && (
 									<div className="flex items-center gap-1">
 										<svg
@@ -152,9 +166,7 @@ export default function MyProjectsPage() {
 											<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
 										</svg>
 										<span className="text-sm font-semibold text-solar-bright">
-											{Number(project.avg_rating).toFixed(
-												1,
-											)}
+											{Number(project.avg_rating).toFixed(1)}
 										</span>
 									</div>
 								)}
@@ -171,8 +183,9 @@ export default function MyProjectsPage() {
 									View
 								</Link>
 							</div>
-						</div>
-					))}
+
+					</div>
+				))}
 				</div>
 			) : (
 				<div className="glass rounded-2xl p-16 text-center animate-in animate-in-delay-1">
