@@ -90,6 +90,41 @@ function usePendingProjects(token: string | null) {
   });
 }
 
+interface RevenuePayment {
+  id: string;
+  transaction_hash: string;
+  amount: string | number;
+  created_at: string | null;
+  project_id: number;
+  project_name: string | null;
+  status: string | null;
+  is_active: boolean;
+  stellar_expert_url: string;
+}
+
+function useAdminRevenue(token: string | null) {
+  return useQuery<{
+    totalXlm: number;
+    activeSpotlights: number;
+    expiredSpotlights: number;
+    payments: RevenuePayment[];
+    timeline: { month: string; amount: number }[];
+  }>({
+    queryKey: ["admin-revenue"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/revenue", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to fetch revenue");
+      }
+      return res.json();
+    },
+    enabled: !!token,
+  });
+}
+
 // ─── Action hooks ───────────────────────────────────────────────────
 
 function useProjectAction(token: string | null) {
@@ -931,6 +966,7 @@ export default function AdminPage() {
   const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
   const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
   const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
+  const { data: revenue = { totalXlm: 0, activeSpotlights: 0, expiredSpotlights: 0, payments: [], timeline: [] }, isLoading: revenueLoading } = useAdminRevenue(token);
 
   const filteredPending = filterProjects(pending, search);
   const filteredApproved = filterProjects(approved, search);
@@ -1029,6 +1065,21 @@ export default function AdminPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 animate-in animate-in-delay-2">
+        <div className="glass rounded-2xl p-5">
+          <p className="text-2xl font-bold text-plasma-bright">{revenue.totalXlm.toFixed(2)} XLM</p>
+          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Spotlight revenue</p>
+        </div>
+        <div className="glass rounded-2xl p-5">
+          <p className="text-2xl font-bold text-aurora-bright">{revenue.activeSpotlights}</p>
+          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Active spotlights</p>
+        </div>
+        <div className="glass rounded-2xl p-5">
+          <p className="text-2xl font-bold text-supernova">{revenue.expiredSpotlights}</p>
+          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Expired spotlights</p>
+        </div>
+      </div>
+
       {/* Mutation feedback */}
       {action.isError && (
         <div className="bg-supernova/10 border border-supernova/20 text-supernova rounded-xl px-4 py-3 text-sm mb-6 animate-in">
@@ -1050,6 +1101,7 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="approved">Approved</TabsTrigger>
             <TabsTrigger value="featured">Featured</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="rejected">
               Rejected / Delisted
               {rejectedCount > 0 && (
@@ -1136,6 +1188,66 @@ export default function AdminPage() {
                 }
                 title="No featured projects"
                 subtitle="Feature projects to highlight them in the directory"
+              />
+            )}
+          </TabsContent>
+
+          {/* ── Revenue tab ── */}
+          <TabsContent value="revenue">
+            {revenueLoading ? (
+              <Skeletons count={3} />
+            ) : revenue.payments.length > 0 ? (
+              <div className="space-y-6">
+                <div className="glass rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold text-starlight mb-3">Spotlight revenue timeline</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {revenue.timeline.map((item) => (
+                      <div key={item.month} className="rounded-2xl border border-dust/70 p-4">
+                        <p className="text-sm text-ash uppercase tracking-wider">{item.month}</p>
+                        <p className="text-xl font-semibold text-starlight">{item.amount.toFixed(2)} XLM</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="glass rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold text-starlight mb-4">Featured payment records</h3>
+                  <div className="space-y-3">
+                    {revenue.payments.map((payment) => (
+                      <div key={payment.id} className="rounded-2xl border border-dust/70 p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div>
+                            <p className="text-sm text-ash uppercase tracking-wider">{payment.project_name || `Project ${payment.project_id}`}</p>
+                            <p className="text-sm text-moonlight">{payment.status === "featured" ? "Active" : "Expired"} spotlight</p>
+                          </div>
+                          <p className="text-xl font-semibold text-starlight">{Number(payment.amount).toFixed(2)} XLM</p>
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-ash">
+                          <span>{payment.created_at ? new Date(payment.created_at).toLocaleDateString() : "Unknown date"}</span>
+                          <a
+                            href={payment.stellar_expert_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-nova hover:underline"
+                          >
+                            View on stellar.expert
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <EmptyState
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 12h8" />
+                  </svg>
+                }
+                title="No spotlight revenue found"
+                subtitle="Featured payment records will appear here once purchases exist"
               />
             )}
           </TabsContent>
