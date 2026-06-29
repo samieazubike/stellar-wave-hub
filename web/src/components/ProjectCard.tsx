@@ -77,16 +77,18 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
         {project.description}
       </p>
 
-      {/* Tags */}
+      {/* Tags — now clickable links */}
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((tag) => (
-            <span
+            <Link
               key={tag}
-              className="text-[11px] px-2 py-0.5 rounded-md bg-stardust/80 text-ash font-medium"
+              href={`/explore?tag=${encodeURIComponent(tag.trim())}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[11px] px-2 py-0.5 rounded-md bg-stardust/80 text-ash font-medium hover:bg-nova/20 hover:text-nova-bright transition-colors"
             >
               {tag.trim()}
-            </span>
+            </Link>
           ))}
         </div>
       )}
