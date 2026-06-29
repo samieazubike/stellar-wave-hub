@@ -1,4 +1,5 @@
 import { projectsCol } from "@/lib/db";
+import { notifyProjectStatusChange } from "@/lib/notifications";
 import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
@@ -18,11 +19,21 @@ export async function PUT(
 
   try {
     const body = await request.json().catch(() => ({}));
+    const previous = doc.data()!;
+    const delistReason = body.reason || "Delisted by admin";
     await ref.update({
       status: "delisted",
       featured: 0,
-      rejection_reason: body.reason || "Delisted by admin",
+      rejection_reason: delistReason,
       updated_at: new Date().toISOString(),
+    });
+    await notifyProjectStatusChange({
+      projectId: previous.numericId as number,
+      projectName: previous.name as string,
+      userId: previous.user_id as number,
+      fromStatus: previous.status as string,
+      toStatus: "delisted",
+      reason: delistReason,
     });
     const updated = await ref.get();
     return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
