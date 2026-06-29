@@ -1,5 +1,5 @@
 import firestore from "./firebase";
-import {getSupabase} from "./firebase";
+import { getSupabase } from "./firebase";
 
 // Lazy collection getters — avoid touching Firestore at module load (build time)
 function col(name: string) {
@@ -11,16 +11,25 @@ export const usersCol = {
 		return col("users");
 	},
 };
+
 export const projectsCol = {
 	get ref() {
 		return col("projects");
 	},
 };
+
 export const ratingsCol = {
 	get ref() {
 		return col("ratings");
 	},
 };
+
+export const ratingVotesCol = {
+	get ref() {
+		return col("rating_votes");
+	},
+};
+
 export const financialSnapshotsCol = {
 	get ref() {
 		return col("financial_snapshots");
@@ -32,7 +41,7 @@ export async function nextId(collection: string): Promise<number> {
 	const supabase = getSupabase();
 
 	for (let attempt = 0; attempt < 5; attempt += 1) {
-		const {data: existing, error: readError} = await supabase
+		const { data: existing, error: readError } = await supabase
 			.from("counters")
 			.select("name, value")
 			.eq("name", collection)
@@ -44,24 +53,26 @@ export async function nextId(collection: string): Promise<number> {
 		const next = current + 1;
 
 		if (!existing) {
-			const {error: insertError} = await supabase
+			const { error: insertError } = await supabase
 				.from("counters")
-				.insert({name: collection, value: next});
+				.insert({ name: collection, value: next });
+
 			if (!insertError) return next;
 			if (insertError.code !== "23505") throw insertError;
 			continue;
 		}
 
-		const {data: updatedRows, error: updateError} = await supabase
+		const { data: updatedRows, error: updateError } = await supabase
 			.from("counters")
-			.update({value: next})
+			.update({ value: next })
 			.eq("name", collection)
 			.eq("value", current)
 			.select("value");
 
 		if (updateError) throw updateError;
+
 		if ((updatedRows?.length ?? 0) > 0) {
-			return Number(updatedRows![0].value);
+			return Number(updatedRows[0].value);
 		}
 	}
 

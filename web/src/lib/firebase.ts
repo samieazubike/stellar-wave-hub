@@ -4,12 +4,13 @@ type Row = Record<string, unknown>;
 type FilterOp = "==" | "in";
 
 const TABLE_BY_COLLECTION: Record<string, string> = {
-	users: "users",
-	projects: "projects",
-	ratings: "ratings",
-	financial_snapshots: "financial_snapshots",
-	auth_challenges: "auth_challenges",
-	counters: "counters",
+    users: "users",
+    projects: "projects",
+    ratings: "ratings",
+    rating_votes: "rating_votes",
+    financial_snapshots: "financial_snapshots",
+    auth_challenges: "auth_challenges",
+    counters: "counters",
 };
 
 function resolveTable(collection: string): string {

@@ -1,7 +1,7 @@
 "use client";
 
-import {useEffect, useState, use} from "react";
-import {useAuth} from "@/context/AuthContext";
+import { useEffect, useState, use } from "react";
+import { useAuth } from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
 import Link from "next/link";
 import {
@@ -46,6 +46,9 @@ interface Rating {
 	username: string;
 	user_id: number;
 	created_at: string;
+
+	helpfulCount: number;
+	hasVoted?: boolean;
 }
 
 interface Averages {
@@ -71,7 +74,7 @@ function stellarExplorerBase(network?: string) {
 		: "https://stellar.expert/explorer/public";
 }
 
-function StellarAddressLink({address, type, network}: {address: string; type: "account" | "contract"; network?: string}) {
+function StellarAddressLink({ address, type, network }: { address: string; type: "account" | "contract"; network?: string }) {
 	const path = type === "account" ? "account" : "contract";
 	const href = `${stellarExplorerBase(network)}/${path}/${address}`;
 	return (
@@ -102,10 +105,10 @@ function formatFee(stroops: bigint | null): string {
 export default function ProjectDetailPage({
 	params,
 }: {
-	params: Promise<{slug: string}>;
+	params: Promise<{ slug: string }>;
 }) {
-	const {slug} = use(params);
-	const {user, token} = useAuth();
+	const { slug } = use(params);
+	const { user, token } = useAuth();
 	const [project, setProject] = useState<Project | null>(null);
 	const [ratings, setRatings] = useState<Rating[]>([]);
 	const [averages, setAverages] = useState<Averages | null>(null);
@@ -143,7 +146,7 @@ export default function ProjectDetailPage({
 				setRatings(data.ratings || []);
 				setAverages(data.averages);
 			})
-			.catch(() => {})
+			.catch(() => { })
 			.finally(() => setLoading(false));
 	}, [slug]);
 
@@ -154,7 +157,7 @@ export default function ProjectDetailPage({
 				.then((data) => {
 					if (data.summary) setFinancials(data.summary);
 				})
-				.catch(() => {});
+				.catch(() => { });
 		}
 	}, [project]);
 
@@ -167,11 +170,11 @@ export default function ProjectDetailPage({
 				setIsOnChainProject(registered);
 				if (registered) {
 					// Only fetch fee and aggregate if actually registered
-					getRatingFee().then(setContractRatingFee).catch(() => {});
-					getProjectRatingOnChain(project.slug).then(setOnChainRating).catch(() => {});
+					getRatingFee().then(setContractRatingFee).catch(() => { });
+					getProjectRatingOnChain(project.slug).then(setOnChainRating).catch(() => { });
 				}
 			})
-			.catch(() => {});
+			.catch(() => { });
 	}, [project]);
 
 	// Check if the current user has already rated on-chain (only if project is registered)
@@ -179,8 +182,30 @@ export default function ProjectDetailPage({
 		if (!ON_CHAIN_ENABLED || !isOnChainProject || !project || !user?.stellar_address) return;
 		hasRatedOnChain(user.stellar_address, project.slug)
 			.then((rated) => setAlreadyRatedOnChain(rated))
-			.catch(() => {});
+			.catch(() => { });
 	}, [isOnChainProject, project, user]);
+
+	const toggleHelpfulVote = async (
+		ratingId: number,
+		hasVoted: boolean,
+	) => {
+		if (!token) return;
+
+		const res = await fetch(`/api/ratings/${ratingId}/helpful`, {
+			method: hasVoted ? "DELETE" : "POST",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		if (!res.ok) return;
+
+		const refresh = await fetch(`/api/projects/${slug}`);
+		const data = await refresh.json();
+
+		setRatings(data.ratings || []);
+		setAverages(data.averages);
+	};
 
 	const submitRating = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -234,7 +259,7 @@ export default function ProjectDetailPage({
 			if (onChainActive) {
 				getProjectRatingOnChain(project.slug)
 					.then((r) => setOnChainRating(r))
-					.catch(() => {});
+					.catch(() => { });
 				setAlreadyRatedOnChain(true);
 			}
 
@@ -458,11 +483,10 @@ export default function ProjectDetailPage({
 					<button
 						key={tab}
 						onClick={() => setActiveTab(tab)}
-						className={`px-5 py-3 text-sm font-medium capitalize transition-all border-b-2 -mb-px ${
-							activeTab === tab
-								? "border-nova text-nova-bright"
-								: "border-transparent text-ash hover:text-moonlight"
-						}`}
+						className={`px-5 py-3 text-sm font-medium capitalize transition-all border-b-2 -mb-px ${activeTab === tab
+							? "border-nova text-nova-bright"
+							: "border-transparent text-ash hover:text-moonlight"
+							}`}
 					>
 						{tab}
 						{tab === "ratings" && averages
@@ -585,10 +609,10 @@ export default function ProjectDetailPage({
 								</h2>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									{[
-										{label: "Overall", value: averages.avg_score},
-										{label: "Purpose", value: averages.avg_purpose},
-										{label: "Innovation", value: averages.avg_innovation},
-										{label: "Usability", value: averages.avg_usability},
+										{ label: "Overall", value: averages.avg_score },
+										{ label: "Purpose", value: averages.avg_purpose },
+										{ label: "Innovation", value: averages.avg_innovation },
+										{ label: "Usability", value: averages.avg_usability },
 									].map((item) => (
 										<div
 											key={item.label}
@@ -689,22 +713,22 @@ export default function ProjectDetailPage({
 								<StarRating
 									label="Overall"
 									value={ratingForm.score}
-									onChange={(v) => setRatingForm((p) => ({...p, score: v}))}
+									onChange={(v) => setRatingForm((p) => ({ ...p, score: v }))}
 								/>
 								<StarRating
 									label="Purpose"
 									value={ratingForm.purpose_score}
-									onChange={(v) => setRatingForm((p) => ({...p, purpose_score: v}))}
+									onChange={(v) => setRatingForm((p) => ({ ...p, purpose_score: v }))}
 								/>
 								<StarRating
 									label="Innovation"
 									value={ratingForm.innovation_score}
-									onChange={(v) => setRatingForm((p) => ({...p, innovation_score: v}))}
+									onChange={(v) => setRatingForm((p) => ({ ...p, innovation_score: v }))}
 								/>
 								<StarRating
 									label="Usability"
 									value={ratingForm.usability_score}
-									onChange={(v) => setRatingForm((p) => ({...p, usability_score: v}))}
+									onChange={(v) => setRatingForm((p) => ({ ...p, usability_score: v }))}
 								/>
 								<div>
 									<label className="block text-sm font-medium text-moonlight mb-2">
@@ -716,7 +740,7 @@ export default function ProjectDetailPage({
 										placeholder="Share your thoughts..."
 										value={ratingForm.review_text}
 										onChange={(e) =>
-											setRatingForm((p) => ({...p, review_text: e.target.value}))
+											setRatingForm((p) => ({ ...p, review_text: e.target.value }))
 										}
 									/>
 								</div>
@@ -782,6 +806,25 @@ export default function ProjectDetailPage({
 												{rating.review_text}
 											</p>
 										)}
+										<div className="mt-4 flex items-center justify-between">
+											<button
+												type="button"
+												disabled={!user}
+												onClick={() =>
+													toggleHelpfulVote(rating.id, rating.hasVoted ?? false)
+												}
+												className={`px-3 py-1 rounded-lg text-xs transition ${rating.hasVoted
+														? "bg-nova text-white"
+														: "bg-stardust/40 hover:bg-stardust/70"
+													}`}
+											>
+												👍 Helpful
+											</button>
+
+											<span className="text-xs text-ash">
+												{rating.helpfulCount} helpful
+											</span>
+										</div>
 										<div className="flex gap-4 mt-3 text-xs text-ash flex-wrap items-center">
 											{rating.purpose_score && (
 												<span>Purpose: {rating.purpose_score}/5</span>
