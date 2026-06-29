@@ -1,4 +1,5 @@
 import { projectsCol } from "@/lib/db";
+import { notifyProjectStatusChange } from "@/lib/notifications";
 import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,15 @@ export async function PUT(
     const featured = body.featured ? 1 : 0;
     const status = featured ? "featured" : "approved";
 
+    const previous = doc.data()!;
     await ref.update({ status, featured, updated_at: new Date().toISOString() });
+    await notifyProjectStatusChange({
+      projectId: previous.numericId as number,
+      projectName: previous.name as string,
+      userId: previous.user_id as number,
+      fromStatus: previous.status as string,
+      toStatus: status,
+    });
     const updated = await ref.get();
     return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
   } catch (err) {
