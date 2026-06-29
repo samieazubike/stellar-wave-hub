@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import {useEffect, useState} from "react";
-import ProjectCard from "@/components/ProjectCard";
+import ProjectCard, {type Snapshot} from "@/components/ProjectCard";
 
 interface Project {
 	id: number;
@@ -20,12 +20,34 @@ interface Project {
 
 export default function Home() {
 	const [featured, setFeatured] = useState<Project[]>([]);
+	const [snapshotMap, setSnapshotMap] = useState<Record<number, Snapshot[]>>({});
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		fetch("/api/projects?limit=6&sort=top-rated")
 			.then((r) => r.json())
-			.then((data) => setFeatured(data.projects || []))
+			.then(async (data) => {
+				const projects: Project[] = data.projects || [];
+				setFeatured(projects);
+
+				// Fetch snapshots for each project in parallel; failures are swallowed.
+				const results = await Promise.allSettled(
+					projects.map((p) =>
+						fetch(`/api/financials/${p.id}/snapshots`).then((r) => r.json()),
+					),
+				);
+
+				const map: Record<number, Snapshot[]> = {};
+				results.forEach((result, i) => {
+					if (
+						result.status === "fulfilled" &&
+						Array.isArray(result.value?.snapshots)
+					) {
+						map[projects[i].id] = result.value.snapshots as Snapshot[];
+					}
+				});
+				setSnapshotMap(map);
+			})
 			.catch(() => {})
 			.finally(() => setLoading(false));
 	}, []);
@@ -190,6 +212,7 @@ export default function Home() {
 								<ProjectCard
 									key={project.id}
 									project={project}
+									snapshots={snapshotMap[project.id]}
 									index={i}
 								/>
 							))}

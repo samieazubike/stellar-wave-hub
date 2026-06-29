@@ -1,6 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Sparkline from "@/components/Sparkline";
+
+export interface Snapshot {
+  created_at: string;
+  xlm_balance: number;
+}
 
 interface ProjectCardProps {
   project: {
@@ -17,6 +23,8 @@ interface ProjectCardProps {
     username?: string;
     logo_url?: string;
   };
+  /** Optional balance-over-time snapshots for the sparkline. */
+  snapshots?: Snapshot[];
   index?: number;
 }
 
@@ -33,9 +41,16 @@ const categoryColors: Record<string, string> = {
   other: "tag-nova",
 };
 
-export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
-  const colorClass = categoryColors[project.category?.toLowerCase()] || "tag-nova";
+export default function ProjectCard({
+  project,
+  snapshots,
+  index = 0,
+}: ProjectCardProps) {
+  const colorClass =
+    categoryColors[project.category?.toLowerCase()] || "tag-nova";
   const tags = project.tags ? project.tags.split(",").slice(0, 3) : [];
+  const sparkValues = snapshots?.map((s) => s.xlm_balance) ?? [];
+  const hasSparkline = sparkValues.length >= 2;
 
   return (
     <Link
@@ -94,28 +109,37 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
       {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-dust/20">
         <span className={`tag ${colorClass}`}>{project.category}</span>
-        <div className="flex items-center gap-1.5">
-          {project.avg_rating ? (
-            <>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="var(--solar)"
-                stroke="none"
-              >
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-              <span className="text-sm font-semibold text-solar-bright">
-                {Number(project.avg_rating).toFixed(1)}
-              </span>
-              <span className="text-xs text-ash">
-                ({project.rating_count})
-              </span>
-            </>
-          ) : (
-            <span className="text-xs text-ash">No ratings yet</span>
+
+        <div className="flex items-center gap-3">
+          {/* Sparkline — only renders when ≥2 snapshots exist */}
+          {hasSparkline && (
+            <Sparkline values={sparkValues} width={64} height={24} />
           )}
+
+          {/* Rating */}
+          <div className="flex items-center gap-1.5">
+            {project.avg_rating ? (
+              <>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="var(--solar)"
+                  stroke="none"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+                <span className="text-sm font-semibold text-solar-bright">
+                  {Number(project.avg_rating).toFixed(1)}
+                </span>
+                <span className="text-xs text-ash">
+                  ({project.rating_count})
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-ash">No ratings yet</span>
+            )}
+          </div>
         </div>
       </div>
     </Link>
