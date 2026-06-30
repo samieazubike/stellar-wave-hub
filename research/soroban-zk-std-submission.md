@@ -52,3 +52,7 @@ To verify:
 - [x] Stellar Integration Details Verified
 - [x] Value Proposition Defined
 - [x] Screenshots / Activity references included 
+
+## Screenshots
+
+![Soroban-ZK-Std Architecture](./soroban-zk-std-architecture.png)
