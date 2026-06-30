@@ -20,6 +20,14 @@ export async function GET(request: Request) {
 			"approved",
 			"featured",
 		]);
+		// Optional author filter
+		const author = url.searchParams.get("author");
+		if (author) {
+			const userSnap = await usersCol.ref.where("username", "==", author).limit(1).get();
+			if (userSnap.empty) return Response.json({ error: "User not found" }, { status: 404 });
+			const uid = Number(userSnap.docs[0].id);
+			query = query.where("user_id", "==", uid);
+		}
 
 		if (category) {
 			query = query.where("category", "==", category);
