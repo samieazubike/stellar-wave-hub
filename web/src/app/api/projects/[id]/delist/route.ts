@@ -2,6 +2,7 @@ import { projectsCol } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { delistProjectSchema } from "@/lib/validation/schemas/featured";
+import { recordModerationLog } from "@/lib/moderationLog";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -22,11 +23,20 @@ export async function PUT(
   if (!parsed.success) return parsed.response;
 
   try {
+    const projectId = doc.data()!.numericId as number;
+    const reason = parsed.data.reason || "Delisted by admin";
+
     await ref.update({
       status: "delisted",
       featured: 0,
-      rejection_reason: parsed.data.reason || "Delisted by admin",
+      rejection_reason: reason,
       updated_at: new Date().toISOString(),
+    });
+    await recordModerationLog({
+      actorId: auth.userId,
+      action: "delist",
+      projectId,
+      reason,
     });
     const updated = await ref.get();
     return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });

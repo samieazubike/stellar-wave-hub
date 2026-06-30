@@ -65,6 +65,18 @@ interface Project {
   created_at: string;
 }
 
+interface ModerationLogEntry {
+  id: number;
+  actor_id: number;
+  actor_username: string;
+  action: string;
+  project_id: number;
+  project_name: string;
+  project_slug: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
 // ─── Fetch helpers ──────────────────────────────────────────────────
 
 function useAdminProjects(status: string | null, token: string | null) {
@@ -93,6 +105,21 @@ function usePendingProjects(token: string | null) {
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       return data.projects || [];
+    },
+    enabled: !!token,
+  });
+}
+
+function useModerationLog(token: string | null) {
+  return useQuery<ModerationLogEntry[]>({
+    queryKey: ["admin-moderation-log"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/moderation-log", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch moderation log");
+      const data = await res.json();
+      return data.entries || [];
     },
     enabled: !!token,
   });
@@ -128,6 +155,7 @@ function useProjectAction(token: string | null) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-projects"] });
+      qc.invalidateQueries({ queryKey: ["admin-moderation-log"] });
     },
   });
 }
@@ -821,6 +849,106 @@ function ProjectRow({
 
 // ─── Empty state ────────────────────────────────────────────────────
 
+const ACTION_LABELS: Record<string, string> = {
+  approve: "Approved",
+  reject: "Rejected",
+  feature: "Featured",
+  delist: "Delisted",
+  delete: "Deleted",
+};
+
+const ACTION_STYLES: Record<string, string> = {
+  approve: "bg-aurora/15 text-aurora-bright border-aurora/20",
+  reject: "bg-supernova/15 text-supernova border-supernova/20",
+  feature: "bg-solar/15 text-solar-bright border-solar/20",
+  delist: "bg-supernova/10 text-supernova/90 border-supernova/15",
+  delete: "bg-supernova/20 text-supernova border-supernova/30",
+};
+
+function formatLogDate(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function ModerationLogPanel({ token }: { token: string | null }) {
+  const { data: entries = [], isLoading } = useModerationLog(token);
+
+  if (isLoading) {
+    return <Skeletons count={5} />;
+  }
+
+  if (entries.length === 0) {
+    return (
+      <EmptyState
+        icon={
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+        }
+        title="No moderation actions yet"
+        subtitle="Approve, reject, feature, delist, and delete actions will appear here"
+      />
+    );
+  }
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-dust/20 text-left">
+              <th className="px-4 py-3 text-xs font-medium text-ash uppercase tracking-wider">When</th>
+              <th className="px-4 py-3 text-xs font-medium text-ash uppercase tracking-wider">Actor</th>
+              <th className="px-4 py-3 text-xs font-medium text-ash uppercase tracking-wider">Action</th>
+              <th className="px-4 py-3 text-xs font-medium text-ash uppercase tracking-wider">Project</th>
+              <th className="px-4 py-3 text-xs font-medium text-ash uppercase tracking-wider hidden sm:table-cell">Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr key={entry.id} className="border-b border-dust/10 last:border-0 hover:bg-stardust/20 transition-colors">
+                <td className="px-4 py-3 text-ash whitespace-nowrap">{formatLogDate(entry.created_at)}</td>
+                <td className="px-4 py-3 text-moonlight whitespace-nowrap">{entry.actor_username}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span
+                    className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-lg border ${ACTION_STYLES[entry.action] ?? "bg-stardust/30 text-ash border-dust/20"}`}
+                  >
+                    {ACTION_LABELS[entry.action] ?? entry.action}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-moonlight">
+                  {entry.project_slug ? (
+                    <Link
+                      href={`/projects/${entry.project_slug}`}
+                      className="hover:text-nova-bright transition-colors"
+                      target="_blank"
+                    >
+                      {entry.project_name}
+                    </Link>
+                  ) : (
+                    <span>{entry.project_name}</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-ash hidden sm:table-cell max-w-xs truncate">
+                  {entry.reason || "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
   return (
     <div className="glass rounded-2xl p-12 text-center">
@@ -1337,6 +1465,7 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="all">All Projects</TabsTrigger>
+            <TabsTrigger value="audit-log">Audit Log</TabsTrigger>
             <TabsTrigger value="contract">
               Contract
               {ON_CHAIN_ENABLED && (
@@ -1469,6 +1598,11 @@ export default function AdminPage() {
                 subtitle="Projects will appear here once submitted"
               />
             )}
+          </TabsContent>
+
+          {/* ── Audit log tab ── */}
+          <TabsContent value="audit-log">
+            <ModerationLogPanel token={token} />
           </TabsContent>
 
           {/* ── Contract tab ── */}

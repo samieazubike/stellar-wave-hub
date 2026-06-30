@@ -1,5 +1,6 @@
 import { projectsCol, ratingsCol } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { recordModerationLog } from "@/lib/moderationLog";
 export const dynamic = "force-dynamic";
 
 export async function DELETE(
@@ -15,6 +16,14 @@ export async function DELETE(
   const ref = projectsCol.ref.doc(id);
   const doc = await ref.get();
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
+
+  const projectId = doc.data()!.numericId as number;
+
+  await recordModerationLog({
+    actorId: auth.userId,
+    action: "delete",
+    projectId,
+  });
 
   // Delete associated ratings
   const rSnap = await ratingsCol.ref.where("project_id", "==", Number(id)).get();

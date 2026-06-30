@@ -8,6 +8,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	projects: "projects",
 	ratings: "ratings",
 	financial_snapshots: "financial_snapshots",
+	moderation_log: "moderation_log",
 	auth_challenges: "auth_challenges",
 	counters: "counters",
 	submission_notes: "submission_notes",
