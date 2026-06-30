@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Form,
@@ -52,12 +53,34 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>;
 
+function useMaintainerStats(userId: number | undefined, token: string | null, isAdmin: boolean) {
+  return useQuery({
+    queryKey: ["maintainer-stats", userId],
+    queryFn: async () => {
+      if (!userId || !token || !isAdmin) return null;
+      const res = await fetch(`/api/admin/maintainer-stats/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch stats");
+      const data = await res.json();
+      return data.stats;
+    },
+    enabled: !!userId && !!token && isAdmin,
+  });
+}
+
 export default function ProfilePage() {
   const { user, token, refreshUser } = useAuth();
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState("");
+  
+  const { data: maintainerStats, isLoading: statsLoading } = useMaintainerStats(
+    user?.userId,
+    token,
+    user?.role === "admin"
+  );
 
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -246,6 +269,49 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Maintainer Stats Section (Admin Only) */}
+      {user.role === "admin" && (
+        <div className="glass rounded-2xl p-6 mb-6 animate-in animate-in-delay-1">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-solar/30 to-aurora/30 border border-solar/20 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--solar-bright)" strokeWidth="2">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg text-starlight">Moderation Activity</h2>
+              <p className="text-xs text-ash">Your project review and moderation statistics</p>
+            </div>
+          </div>
+
+          {statsLoading ? (
+            <div className="skeleton h-24 rounded-xl" />
+          ) : maintainerStats ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-stardust/30 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-starlight">{maintainerStats.total_reviews}</p>
+                <p className="text-xs text-ash uppercase tracking-wider mt-1">Total Reviews</p>
+              </div>
+              <div className="bg-aurora/10 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-aurora-bright">{maintainerStats.approvals}</p>
+                <p className="text-xs text-ash uppercase tracking-wider mt-1">Approvals</p>
+              </div>
+              <div className="bg-supernova/10 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-supernova">{maintainerStats.rejections}</p>
+                <p className="text-xs text-ash uppercase tracking-wider mt-1">Rejections</p>
+              </div>
+              <div className="bg-solar/10 rounded-xl p-4 text-center">
+                <p className="text-2xl font-bold text-solar-bright">{maintainerStats.features}</p>
+                <p className="text-xs text-ash uppercase tracking-wider mt-1">Featured</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-ash">No moderation activity recorded yet.</p>
+          )}
+        </div>
+      )}
 
       {/* Profile Form */}
       <div className="glass rounded-2xl p-8 animate-in animate-in-delay-2">

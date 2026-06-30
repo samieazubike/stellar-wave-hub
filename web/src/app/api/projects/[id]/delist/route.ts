@@ -1,4 +1,4 @@
-import { projectsCol } from "@/lib/db";
+import { projectsCol, moderationLogCol, nextId, usersCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
@@ -25,6 +25,28 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     });
     const updated = await ref.get();
+
+    // Fetch admin user details for logging
+    const adminDoc = await usersCol.ref.doc(String(auth.userId)).get();
+    const adminData = adminDoc.exists ? adminDoc.data()! : null;
+
+    // Log moderation action
+    const logId = await nextId("moderation_log");
+    const projectData = updated.data()!;
+    await moderationLogCol.ref.doc(String(logId)).set({
+      numericId: logId,
+      admin_id: auth.userId,
+      admin_username: adminData?.username || "unknown",
+      project_id: projectData.numericId,
+      project_name: projectData.name,
+      action: "delist",
+      action_details: {
+        reason: body.reason || "Delisted by admin",
+        previous_status: doc.data()!.status,
+      },
+      created_at: new Date().toISOString(),
+    });
+
     return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
   } catch (err) {
     console.error("Delist error:", err);

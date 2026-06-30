@@ -90,6 +90,30 @@ function usePendingProjects(token: string | null) {
   });
 }
 
+function useMaintainerLeaderboard(token: string | null) {
+  return useQuery<{
+    admin_id: number;
+    admin_username: string;
+    total_reviews: number;
+    approvals: number;
+    rejections: number;
+    features: number;
+    delists: number;
+    rank: number;
+  }[]>({
+    queryKey: ["maintainer-leaderboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/maintainer-stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch leaderboard");
+      const data = await res.json();
+      return data.leaderboard || [];
+    },
+    enabled: !!token,
+  });
+}
+
 // ─── Action hooks ───────────────────────────────────────────────────
 
 function useProjectAction(token: string | null) {
@@ -931,6 +955,7 @@ export default function AdminPage() {
   const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
   const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
   const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
+  const { data: leaderboard = [], isLoading: leaderboardLoading } = useMaintainerLeaderboard(token);
 
   const filteredPending = filterProjects(pending, search);
   const filteredApproved = filterProjects(approved, search);
@@ -1059,6 +1084,7 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="all">All Projects</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
             <TabsTrigger value="contract">
               Contract
               {ON_CHAIN_ENABLED && (
@@ -1188,6 +1214,74 @@ export default function AdminPage() {
                 }
                 title="No projects yet"
                 subtitle="Projects will appear here once submitted"
+              />
+            )}
+          </TabsContent>
+
+          {/* ── Leaderboard tab ── */}
+          <TabsContent value="leaderboard">
+            {leaderboardLoading ? (
+              <Skeletons count={5} />
+            ) : leaderboard.length > 0 ? (
+              <div className="glass rounded-2xl overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-dust/20">
+                      <th className="text-left text-xs font-medium text-ash uppercase tracking-wider px-6 py-4">Rank</th>
+                      <th className="text-left text-xs font-medium text-ash uppercase tracking-wider px-6 py-4">Maintainer</th>
+                      <th className="text-center text-xs font-medium text-ash uppercase tracking-wider px-6 py-4">Total</th>
+                      <th className="text-center text-xs font-medium text-ash uppercase tracking-wider px-6 py-4">Approvals</th>
+                      <th className="text-center text-xs font-medium text-ash uppercase tracking-wider px-6 py-4">Rejections</th>
+                      <th className="text-center text-xs font-medium text-ash uppercase tracking-wider px-6 py-4">Featured</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((entry) => (
+                      <tr key={entry.admin_id} className="border-b border-dust/10 hover:bg-stardust/20 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                            entry.rank === 1 ? 'bg-solar/20 text-solar-bright' :
+                            entry.rank === 2 ? 'bg-aurora/20 text-aurora-bright' :
+                            entry.rank === 3 ? 'bg-plasma/20 text-plasma-bright' :
+                            'bg-stardust/30 text-ash'
+                          }`}>
+                            {entry.rank}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="font-medium text-moonlight">{entry.admin_username}</span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="font-bold text-starlight">{entry.total_reviews}</span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-aurora-bright">{entry.approvals}</span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-supernova">{entry.rejections}</span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-solar-bright">{entry.features}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <EmptyState
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                    <path d="M4 22h16" />
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                  </svg>
+                }
+                title="No activity yet"
+                subtitle="Moderation activity will appear here once maintainers start reviewing projects"
               />
             )}
           </TabsContent>
