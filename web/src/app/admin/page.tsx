@@ -57,6 +57,16 @@ interface Project {
   created_at: string;
 }
 
+// ─── User type ────────────────────────────────────────────────────
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
 // ─── Fetch helpers ──────────────────────────────────────────────────
 
 function useAdminProjects(status: string | null, token: string | null) {
@@ -87,6 +97,47 @@ function usePendingProjects(token: string | null) {
       return data.projects || [];
     },
     enabled: !!token,
+  });
+}
+
+// ─── User hooks ───────────────────────────────────────────────────
+
+function useAdminUsers(token: string | null) {
+  return useQuery<User[]>({
+    queryKey: ["admin-users"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch users");
+      const data = await res.json();
+      return data.users || [];
+    },
+    enabled: !!token,
+  });
+}
+
+function useRoleUpdate(token: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      const res = await fetch(`/api/admin/users/${userId}/role`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update role");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
   });
 }
 
@@ -925,12 +976,14 @@ function filterProjects(projects: Project[], query: string): Project[] {
 export default function AdminPage() {
   const { user, token } = useAuth();
   const action = useProjectAction(token);
+  const roleUpdate = useRoleUpdate(token);
   const [search, setSearch] = useState("");
 
   const { data: pending = [], isLoading: pendingLoading } = usePendingProjects(token);
   const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
   const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
   const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
+  const { data: users = [], isLoading: usersLoading } = useAdminUsers(token);
 
   const filteredPending = filterProjects(pending, search);
   const filteredApproved = filterProjects(approved, search);
@@ -970,7 +1023,7 @@ export default function AdminPage() {
           </div>
           <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
         </div>
-        <p className="text-ash ml-[52px]">Manage project submissions, approvals, and listings</p>
+        <p className="text-ash ml-[52px]">Manage project submissions, approvals, and user roles</p>
       </div>
 
       {/* Search */}
@@ -1035,6 +1088,11 @@ export default function AdminPage() {
           {action.error.message}
         </div>
       )}
+      {roleUpdate.isError && (
+        <div className="bg-supernova/10 border border-supernova/20 text-supernova rounded-xl px-4 py-3 text-sm mb-6 animate-in">
+          {roleUpdate.error.message}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="animate-in animate-in-delay-3">
@@ -1059,6 +1117,14 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="all">All Projects</TabsTrigger>
+            <TabsTrigger value="users">
+              Users
+              {users.length > 0 && (
+                <span className="ml-2 bg-nova/15 text-nova-bright text-xs px-2 py-0.5 rounded-md">
+                  {users.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="contract">
               Contract
               {ON_CHAIN_ENABLED && (
@@ -1188,6 +1254,81 @@ export default function AdminPage() {
                 }
                 title="No projects yet"
                 subtitle="Projects will appear here once submitted"
+              />
+            )}
+          </TabsContent>
+
+          {/* ── Users tab ── */}
+          <TabsContent value="users">
+            {usersLoading ? (
+              <Skeletons />
+            ) : users.length > 0 ? (
+              <div className="glass rounded-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-dust/20">
+                        <th className="text-left p-4 text-sm font-medium text-ash">Username</th>
+                        <th className="text-left p-4 text-sm font-medium text-ash">Email</th>
+                        <th className="text-left p-4 text-sm font-medium text-ash">Role</th>
+                        <th className="text-left p-4 text-sm font-medium text-ash">Joined</th>
+                        <th className="text-left p-4 text-sm font-medium text-ash">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.id} className="border-b border-dust/10 hover:bg-stardust/30 transition-colors">
+                          <td className="p-4 text-starlight font-medium">{u.username}</td>
+                          <td className="p-4 text-ash">{u.email}</td>
+                          <td className="p-4">
+                            <span
+                              className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                                u.role === "admin"
+                                  ? "bg-nova/15 text-nova-bright"
+                                  : u.role === "maintainer"
+                                  ? "bg-aurora/15 text-aurora-bright"
+                                  : "bg-stardust/50 text-ash"
+                              }`}
+                            >
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="p-4 text-ash text-sm">
+                            {new Date(u.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="p-4">
+                            <select
+                              value={u.role}
+                              onChange={(e) => roleUpdate.mutate({ userId: u.id, role: e.target.value })}
+                              disabled={roleUpdate.isPending}
+                              className="bg-stardust/50 border border-dust/30 rounded-lg px-3 py-1.5 text-sm text-moonlight focus:outline-none focus:ring-1 focus:ring-nova/30 disabled:opacity-50"
+                            >
+                              <option value="contributor">Contributor</option>
+                              <option value="maintainer">Maintainer</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                            {roleUpdate.isPending && (
+                              <span className="ml-2 text-xs text-ash">Updating…</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <EmptyState
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                }
+                title="No users found"
+                subtitle="Users will appear here once they register"
               />
             )}
           </TabsContent>
