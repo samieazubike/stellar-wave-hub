@@ -11,10 +11,14 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
     try {
         const url = new URL(request.url);
+
         const category = url.searchParams.get("category");
         const search = url.searchParams.get("search")?.toLowerCase();
+        const substantial = url.searchParams.get("substantial") === "true";
         const sort = url.searchParams.get("sort") || "newest";
+
         const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+
         const limit = Math.min(
             50,
             Math.max(1, Number(url.searchParams.get("limit")) || 12),
@@ -29,83 +33,149 @@ export async function GET(request: Request) {
             query = query.where("category", "==", category);
         }
 
+        if (substantial) {
+            query = query.where("is_substantial", "==", true);
+        }
+
         const snap = await query.get();
+
         let projects: Record<string, unknown>[] = snap.docs.map((d) => ({
             ...d.data(),
             id: d.data().numericId,
         }));
 
+        // Firestore search handled client-side
         if (search) {
             projects = projects.filter(
                 (p) =>
-                    (p.name as string)?.toLowerCase().includes(search) ||
-                    (p.description as string)?.toLowerCase().includes(search) ||
-                    (p.tags as string)?.toLowerCase().includes(search),
+                    (p.name as string)
+                        ?.toLowerCase()
+                        .includes(search) ||
+                    (p.description as string)
+                        ?.toLowerCase()
+                        .includes(search) ||
+                    (p.tags as string)
+                        ?.toLowerCase()
+                        .includes(search),
             );
         }
 
         const ratingsSnap = await ratingsCol.ref.get();
+
         const ratingsByProject = new Map<number, number[]>();
+
         ratingsSnap.docs.forEach((d) => {
             const r = d.data();
             const pid = r.project_id as number;
-            if (!ratingsByProject.has(pid)) ratingsByProject.set(pid, []);
+
+            if (!ratingsByProject.has(pid)) {
+                ratingsByProject.set(pid, []);
+            }
+
             ratingsByProject.get(pid)!.push(r.score as number);
         });
 
         const userCache = new Map<number, string>();
-        const enriched: Record<string, unknown>[] = await Promise.all(
-            projects.map(async (p) => {
-                const uid = p.user_id as number;
-                if (uid && !userCache.has(uid)) {
-                    const uDoc = await usersCol.ref.doc(String(uid)).get();
-                    userCache.set(
-                        uid,
-                        uDoc.exists
-                            ? (uDoc.data()!.username as string)
-                            : "unknown",
-                    );
-                }
-                const scores = ratingsByProject.get(p.id as number) || [];
-                const avg_rating =
-                    scores.length > 0
-                        ? scores.reduce((a, b) => a + b, 0) / scores.length
-                        : null;
-                return {
-                    ...p,
-                    username: uid ? userCache.get(uid) : null,
-                    avg_rating,
-                    rating_count: scores.length,
-                };
-            }),
-        );
+
+        const enriched: Record<string, unknown>[] =
+            await Promise.all(
+                projects.map(async (p) => {
+                    const uid = p.user_id as number;
+
+                    if (uid && !userCache.has(uid)) {
+                        const uDoc =
+                            await usersCol.ref
+                                .doc(String(uid))
+                                .get();
+
+                        userCache.set(
+                            uid,
+                            uDoc.exists
+                                ? (uDoc.data()!.username as string)
+                                : "unknown",
+                        );
+                    }
+
+                    const scores =
+                        ratingsByProject.get(
+                            p.id as number,
+                        ) || [];
+
+                    const avg_rating =
+                        scores.length > 0
+                            ? scores.reduce(
+                                  (a, b) => a + b,
+                                  0,
+                              ) / scores.length
+                            : null;
+
+                    return {
+                        ...p,
+                        username: uid
+                            ? userCache.get(uid)
+                            : null,
+                        avg_rating,
+                        rating_count: scores.length,
+                    };
+                }),
+            );
 
         enriched.sort((a, b) => {
-            if (sort === "oldest")
-                return (a.created_at as string) < (b.created_at as string)
+            if (sort === "oldest") {
+                return (a.created_at as string) <
+                    (b.created_at as string)
                     ? -1
                     : 1;
-            if (sort === "top-rated")
+            }
+
+            if (sort === "top-rated") {
                 return (
                     ((b.avg_rating as number) || 0) -
                     ((a.avg_rating as number) || 0)
                 );
-            if ((b.featured as number) !== (a.featured as number))
-                return (b.featured as number) - (a.featured as number);
-            return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
+            }
+
+            if (
+                (b.featured as number) !==
+                (a.featured as number)
+            ) {
+                return (
+                    (b.featured as number) -
+                    (a.featured as number)
+                );
+            }
+
+            return (b.created_at as string) >
+                (a.created_at as string)
+                ? 1
+                : -1;
         });
 
         const total = enriched.length;
+
         const offset = (page - 1) * limit;
-        const paged = enriched.slice(offset, offset + limit);
+
+        const paged = enriched.slice(
+            offset,
+            offset + limit,
+        );
 
         return Response.json({
             projects: paged,
-            pagination: {page, limit, total, pages: Math.ceil(total / limit)},
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit),
+            },
         });
     } catch (err) {
         console.error("List projects error:", err);
-        return Response.json({error: "Internal server error"}, {status: 500});
+
+        return Response.json(
+            { error: "Internal server error" },
+            { status: 500 },
+        );
     }
 }
 

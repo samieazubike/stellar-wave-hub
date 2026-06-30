@@ -25,6 +25,13 @@ import {
 } from "@/lib/ratingContract";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogTrigger,
   AlertDialogContent,
@@ -126,6 +133,33 @@ function useProjectAction(token: string | null) {
 
 // ─── Reject Dialog ──────────────────────────────────────────────────
 
+const REJECT_REASON_TEMPLATES = [
+  {
+    label: "Not part of the Stellar Wave Program",
+    text: "This project does not appear to be part of the Stellar Wave Program.",
+  },
+  {
+    label: "Unverifiable on-chain account/contract ID",
+    text: "The Stellar account ID / Soroban contract ID provided could not be verified on-chain.",
+  },
+  {
+    label: "Description too short or not original",
+    text: "The description doesn't meet the minimum length, or appears to be copied rather than original.",
+  },
+  {
+    label: "Category/tags don't match the project",
+    text: "The category and/or tags don't accurately reflect what this project does.",
+  },
+  {
+    label: "Duplicate submission",
+    text: "This project has already been submitted.",
+  },
+  {
+    label: "Other / write a custom reason",
+    text: "",
+  },
+] as const;
+
 function RejectDialog({
   project,
   onConfirm,
@@ -136,7 +170,13 @@ function RejectDialog({
   isPending: boolean;
 }) {
   const [reason, setReason] = useState("");
+  const [template, setTemplate] = useState("");
   const [open, setOpen] = useState(false);
+
+  const reset = () => {
+    setReason("");
+    setTemplate("");
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -157,23 +197,49 @@ function RejectDialog({
             This project will be moved to rejected status and won&apos;t appear in the public directory.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-moonlight">
-            Reason <span className="text-ash">(optional)</span>
-          </label>
-          <Textarea
-            placeholder="e.g. Not a Stellar Wave project, insufficient description..."
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-moonlight">
+              Template <span className="text-ash">(optional)</span>
+            </label>
+            <Select
+              value={template}
+              onValueChange={(value) => {
+                setTemplate(value);
+                const picked = REJECT_REASON_TEMPLATES.find((t) => t.label === value);
+                setReason(picked?.text ?? "");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a reason template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {REJECT_REASON_TEMPLATES.map((t) => (
+                  <SelectItem key={t.label} value={t.label}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-moonlight">
+              Reason <span className="text-ash">(optional)</span>
+            </label>
+            <Textarea
+              placeholder="e.g. Not a Stellar Wave project, insufficient description..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+            />
+          </div>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setReason("")}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={reset}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               onConfirm(reason);
-              setReason("");
+              reset();
               setOpen(false);
             }}
           >
@@ -960,15 +1026,25 @@ export default function AdminPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
       <div className="mb-8 animate-in">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-solar/30 to-nova/30 border border-solar/20 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--solar-bright)" strokeWidth="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
+        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-solar/30 to-nova/30 border border-solar/20 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--solar-bright)" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
           </div>
-          <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
+          <a
+            href="https://github.com/samieazubike/stellar-wave-hub/blob/main/docs/MAINTAINERS.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost text-sm !py-2 !px-3"
+          >
+            Maintainer Guide
+          </a>
         </div>
         <p className="text-ash ml-[52px]">Manage project submissions, approvals, and listings</p>
       </div>

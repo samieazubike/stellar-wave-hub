@@ -63,6 +63,10 @@ cargo test
 
 Open an issue with a clear description of the bug or feature request.
 
+### 5. Maintaining the Project
+
+If you hold maintainer (`admin`) access, see [docs/MAINTAINERS.md](docs/MAINTAINERS.md) for responsibilities, the permission matrix, and the review checklist to use before approving submissions.
+
 ## Contribution Workflow
 
 1. **Fork** the repository
