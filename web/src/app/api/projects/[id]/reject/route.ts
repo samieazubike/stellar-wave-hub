@@ -1,5 +1,7 @@
 import { projectsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { rejectProjectSchema } from "@/lib/validation/schemas/featured";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -16,11 +18,13 @@ export async function PUT(
   const doc = await ref.get();
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
 
+  const parsed = await parseJsonBody(request, rejectProjectSchema);
+  if (!parsed.success) return parsed.response;
+
   try {
-    const body = await request.json().catch(() => ({}));
     await ref.update({
       status: "rejected",
-      rejection_reason: body.reason || null,
+      rejection_reason: parsed.data.reason || null,
       updated_at: new Date().toISOString(),
     });
     const updated = await ref.get();

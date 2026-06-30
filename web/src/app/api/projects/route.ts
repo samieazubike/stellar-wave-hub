@@ -1,5 +1,7 @@
-import { projectsCol, usersCol, ratingsCol, nextId } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth";
+import {projectsCol, usersCol, ratingsCol, nextId} from "@/lib/db";
+import {getAuthUser} from "@/lib/auth";
+import {parseJsonBody} from "@/lib/validation/parse-body";
+import {createProjectSchema} from "@/lib/validation/schemas/projects";
 import slugify from "slugify";
 export const dynamic = "force-dynamic";
 
@@ -120,72 +122,68 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = getAuthUser(request);
-  if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
+	const auth = getAuthUser(request);
+	if (!auth) return Response.json({error: "Unauthorized"}, {status: 401});
 
-  try {
-    const body = await request.json();
-    const {
-      name,
-      description,
-      category,
-      stellar_account_id,
-      stellar_contract_id,
-      stellar_network,
-      tags,
-      website_url,
-      github_url,
-      github_repos,
-      logo_url,
-      research_images,
-    } = body;
+	const parsed = await parseJsonBody(request, createProjectSchema);
+	if (!parsed.success) return parsed.response;
 
-    if (!name || !description || !category) {
-      return Response.json(
-        { error: "Name, description, and category are required" },
-        { status: 400 },
-      );
-    }
+	const {
+		name,
+		description,
+		category,
+		stellar_account_id,
+		stellar_contract_id,
+		stellar_network,
+		tags,
+		website_url,
+		github_url,
+		github_repos,
+		logo_url,
+		research_images,
+	} = parsed.data;
 
-    let slug = slugify(name, { lower: true, strict: true });
-    const existing = await projectsCol.ref
-      .where("slug", "==", slug)
-      .limit(1)
-      .get();
-    if (!existing.empty) slug = `${slug}-${Date.now()}`;
+	try {
 
-    const numericId = await nextId("projects");
-    const now = new Date().toISOString();
-    const project = {
-      numericId,
-      name,
-      slug,
-      description,
-      category,
-      status: "submitted",
-      stellar_account_id: stellar_account_id || null,
-      stellar_contract_id: stellar_contract_id || null,
-      stellar_network: stellar_network === "testnet" ? "testnet" : "mainnet",
-      tags: tags || null,
-      website_url: website_url || null,
-      github_url: github_url || null,
-      github_repos: Array.isArray(github_repos) ? github_repos : [],
-      logo_url: logo_url || null,
-      research_images: Array.isArray(research_images) ? research_images : [],
-      user_id: auth.userId,
-      featured: 0,
-      rejection_reason: null,
-      created_at: now,
-      updated_at: now,
-    };
+		let slug = slugify(name, {lower: true, strict: true});
+		const existing = await projectsCol.ref
+			.where("slug", "==", slug)
+			.limit(1)
+			.get();
+		if (!existing.empty) slug = `${slug}-${Date.now()}`;
 
-    await projectsCol.ref.doc(String(numericId)).set(project);
-    return Response.json(
-      { project: { ...project, id: numericId } },
-      { status: 201 },
-    );
-  } catch (err) {
-    console.error("Create project error:", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
-  }
+		const numericId = await nextId("projects");
+		const now = new Date().toISOString();
+		const project = {
+			numericId,
+			name,
+			slug,
+			description,
+			category,
+			status: "submitted",
+			stellar_account_id: stellar_account_id || null,
+			stellar_contract_id: stellar_contract_id || null,
+			stellar_network: stellar_network === "testnet" ? "testnet" : "mainnet",
+			tags: tags || null,
+			website_url: website_url || null,
+			github_url: github_url || null,
+			github_repos: Array.isArray(github_repos) ? github_repos : [],
+			logo_url: logo_url || null,
+			research_images: Array.isArray(research_images) ? research_images : [],
+			user_id: auth.userId,
+			featured: 0,
+			rejection_reason: null,
+			created_at: now,
+			updated_at: now,
+		};
+
+		await projectsCol.ref.doc(String(numericId)).set(project);
+		return Response.json(
+			{project: {...project, id: numericId}},
+			{status: 201},
+		);
+	} catch (err) {
+		console.error("Create project error:", err);
+		return Response.json({error: "Internal server error"}, {status: 500});
+	}
 }
