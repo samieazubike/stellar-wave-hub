@@ -1,5 +1,7 @@
 import { projectsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { editProjectSchema } from "@/lib/validation/schemas/projects";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -19,17 +21,16 @@ export async function PUT(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const parsed = await parseJsonBody(request, editProjectSchema);
+  if (!parsed.success) return parsed.response;
+
   try {
-    const body = await request.json();
-    const allowed = ["name", "description", "category", "stellar_account_id", "stellar_contract_id", "stellar_network", "tags", "website_url", "github_url", "github_repos", "logo_url", "research_images"];
+    const body = parsed.data;
+    const allowed = ["name", "description", "category", "stellar_account_id", "stellar_contract_id", "stellar_network", "tags", "website_url", "github_url", "github_repos", "logo_url", "research_images"] as const;
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
     for (const key of allowed) {
       if (body[key] !== undefined) updates[key] = body[key];
-    }
-
-    if (Object.keys(updates).length <= 1) {
-      return Response.json({ error: "No fields to update" }, { status: 400 });
     }
 
     await ref.update(updates);
