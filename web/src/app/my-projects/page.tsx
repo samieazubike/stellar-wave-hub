@@ -3,6 +3,7 @@
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import Link from "next/link";
+import {ErrorState} from "@/components/ui/async-states";
 
 interface Project {
 	id: number;
@@ -29,20 +30,24 @@ export default function MyProjectsPage() {
 	const {user, token} = useAuth();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(false);
+	const [retryCount, setRetryCount] = useState(0);
 
 	useEffect(() => {
 		if (!token) {
 			setLoading(false);
 			return;
 		}
+		setLoading(true);
+		setError(false);
 		fetch("/api/projects/my", {
 			headers: {Authorization: `Bearer ${token}`},
 		})
 			.then((r) => r.json())
 			.then((data) => setProjects(data.projects || []))
-			.catch(() => {})
+			.catch(() => setError(true))
 			.finally(() => setLoading(false));
-	}, [token]);
+	}, [token, retryCount]);
 
 	if (!user) {
 		return (
@@ -97,6 +102,11 @@ export default function MyProjectsPage() {
 						<div key={i} className="skeleton h-28 rounded-2xl" />
 					))}
 				</div>
+			) : error ? (
+				<ErrorState
+					message="Failed to load your projects. Check your connection and try again."
+					onRetry={() => setRetryCount((c) => c + 1)}
+				/>
 			) : projects.length > 0 ? (
 				<div className="space-y-4 animate-in animate-in-delay-1">
 					{projects.map((project) => (

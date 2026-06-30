@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ErrorState } from "@/components/ui/async-states";
 import {
   ON_CHAIN_ENABLED,
   explorerTxUrl,
@@ -993,10 +994,10 @@ export default function AdminPage() {
   const action = useProjectAction(token);
   const [search, setSearch] = useState("");
 
-  const { data: pending = [], isLoading: pendingLoading } = usePendingProjects(token);
-  const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
-  const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
-  const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
+  const { data: pending = [], isLoading: pendingLoading, isError: pendingError, refetch: refetchPending } = usePendingProjects(token);
+  const { data: approved = [], isLoading: approvedLoading, isError: approvedError, refetch: refetchApproved } = useAdminProjects("approved", token);
+  const { data: featured = [], isLoading: featuredLoading, isError: featuredError, refetch: refetchFeatured } = useAdminProjects("featured", token);
+  const { data: all = [], isLoading: allLoading, isError: allError, refetch: refetchAll } = useAdminProjects(null, token);
 
   const filteredPending = filterProjects(pending, search);
   const filteredApproved = filterProjects(approved, search);
@@ -1149,6 +1150,8 @@ export default function AdminPage() {
           <TabsContent value="pending">
             {pendingLoading ? (
               <Skeletons />
+            ) : pendingError ? (
+              <ErrorState message="Failed to load pending projects." onRetry={() => refetchPending()} />
             ) : filteredPending.length > 0 ? (
               <div className="space-y-4">
                 {filteredPending.map((p) => (
@@ -1172,6 +1175,8 @@ export default function AdminPage() {
           <TabsContent value="approved">
             {approvedLoading ? (
               <Skeletons />
+            ) : approvedError ? (
+              <ErrorState message="Failed to load approved projects." onRetry={() => refetchApproved()} />
             ) : filteredApproved.length > 0 ? (
               <div className="space-y-2">
                 {filteredApproved.map((p) => (
@@ -1197,6 +1202,8 @@ export default function AdminPage() {
           <TabsContent value="featured">
             {featuredLoading ? (
               <Skeletons />
+            ) : featuredError ? (
+              <ErrorState message="Failed to load featured projects." onRetry={() => refetchFeatured()} />
             ) : filteredFeatured.length > 0 ? (
               <div className="space-y-2">
                 {filteredFeatured.map((p) => (
@@ -1220,6 +1227,8 @@ export default function AdminPage() {
           <TabsContent value="rejected">
             {allLoading ? (
               <Skeletons />
+            ) : allError ? (
+              <ErrorState message="Failed to load projects." onRetry={() => refetchAll()} />
             ) : rejectedCount > 0 ? (
               <div className="space-y-2">
                 {filteredAll
@@ -1247,6 +1256,8 @@ export default function AdminPage() {
           <TabsContent value="all">
             {allLoading ? (
               <Skeletons count={5} />
+            ) : allError ? (
+              <ErrorState message="Failed to load projects." onRetry={() => refetchAll()} />
             ) : filteredAll.length > 0 ? (
               <div className="space-y-2">
                 {filteredAll.map((p) => (

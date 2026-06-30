@@ -4,6 +4,7 @@ import {useEffect, useState, use} from "react";
 import {useAuth} from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
 import Link from "next/link";
+import {ErrorState} from "@/components/ui/async-states";
 import {
 	ON_CHAIN_ENABLED,
 	rateProjectOnChain,
@@ -111,6 +112,8 @@ export default function ProjectDetailPage({
 	const [averages, setAverages] = useState<Averages | null>(null);
 	const [financials, setFinancials] = useState<FinancialSummary | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [fetchError, setFetchError] = useState(false);
+	const [attempt, setAttempt] = useState(0);
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "ratings" | "financials"
 	>("overview");
@@ -136,6 +139,8 @@ export default function ProjectDetailPage({
 	const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
 	useEffect(() => {
+		setFetchError(false);
+		setLoading(true);
 		fetch(`/api/projects/${slug}`)
 			.then((r) => r.json())
 			.then((data) => {
@@ -143,9 +148,9 @@ export default function ProjectDetailPage({
 				setRatings(data.ratings || []);
 				setAverages(data.averages);
 			})
-			.catch(() => {})
+			.catch(() => setFetchError(true))
 			.finally(() => setLoading(false));
-	}, [slug]);
+	}, [slug, attempt]);
 
 	useEffect(() => {
 		if (project?.stellar_account_id) {
@@ -258,6 +263,17 @@ export default function ProjectDetailPage({
 				<div className="skeleton h-8 w-64 mb-4 rounded-lg" />
 				<div className="skeleton h-4 w-96 mb-8 rounded-lg" />
 				<div className="skeleton h-64 rounded-2xl" />
+			</div>
+		);
+	}
+
+	if (fetchError) {
+		return (
+			<div className="max-w-5xl mx-auto px-4 py-12">
+				<ErrorState
+					message="Failed to load this project. Check your connection and try again."
+					onRetry={() => setAttempt((a) => a + 1)}
+				/>
 			</div>
 		);
 	}

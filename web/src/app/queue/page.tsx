@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { ErrorState } from "@/components/ui/async-states";
 
 interface QueueProject {
   id: number;
@@ -29,7 +30,7 @@ function timeAgo(dateStr: string) {
 }
 
 export default function QueuePage() {
-  const { data, isLoading } = useQuery<{ projects: QueueProject[]; total: number }>({
+  const { data, isLoading, isError, refetch } = useQuery<{ projects: QueueProject[]; total: number }>({
     queryKey: ["project-queue"],
     queryFn: () => fetch("/api/projects/queue").then((r) => r.json()),
     refetchInterval: 30000,
@@ -76,6 +77,11 @@ export default function QueuePage() {
             <div key={i} className="skeleton h-32 rounded-2xl" />
           ))}
         </div>
+      ) : isError ? (
+        <ErrorState
+          message="Failed to load the approval queue. Check your connection and try again."
+          onRetry={() => refetch()}
+        />
       ) : projects.length > 0 ? (
         <div className="space-y-4 animate-in animate-in-delay-2">
           {projects.map((project, idx) => (

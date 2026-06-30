@@ -3,6 +3,7 @@
 import {useEffect, useState, useCallback, Suspense} from "react";
 import {useRouter, useSearchParams, usePathname} from "next/navigation";
 import ProjectCard from "@/components/ProjectCard";
+import {ErrorState} from "@/components/ui/async-states";
 
 const CATEGORIES = [
 	"All",
@@ -66,9 +67,11 @@ function ExplorePageContent() {
 		() => searchParams.get("substantial") === "true",
 	);
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(false);
 
 	const fetchProjects = useCallback(async () => {
 		setLoading(true);
+		setError(false);
 		const params = new URLSearchParams();
 		if (category !== "All") params.set("category", category.toLowerCase());
 		if (search) params.set("search", search);
@@ -83,7 +86,7 @@ function ExplorePageContent() {
 			setProjects(data.projects || []);
 			setPagination((prev) => ({...prev, ...data.pagination}));
 		} catch {
-			setProjects([]);
+			setError(true);
 		}
 		setLoading(false);
 	}, [category, search, sort, substantialOnly, pagination.page]);
@@ -220,6 +223,11 @@ function ExplorePageContent() {
 						<div key={i} className="skeleton h-56 rounded-2xl" />
 					))}
 				</div>
+			) : error ? (
+				<ErrorState
+					message="Failed to load projects. Check your connection and try again."
+					onRetry={fetchProjects}
+				/>
 			) : projects.length > 0 ? (
 				<>
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
