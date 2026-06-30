@@ -27,11 +27,35 @@ export async function PUT(
   const parsed = await parseJsonBody(request, featuredProjectSchema);
   if (!parsed.success) return parsed.response;
 
-  try {
-    const featured = parsed.data.featured ? 1 : 0;
-    const status = featured ? "featured" : "approved";
+  // Featuring a project is a sensitive action — must go through two-person approval.
+  // Callers should POST /api/projects/:id/request-approval instead.
+  if (parsed.data.featured === true) {
+    return Response.json(
+      {
+        error: "Featuring a project requires two-person approval. Use POST /api/projects/:id/request-approval with action 'feature'.",
+        requiresApproval: true,
+        action: "feature",
+      },
+      { status: 403 }
+    );
+  }
 
-    await ref.update({ status, featured, updated_at: new Date().toISOString() });
+  try {
+    // Unfeature (featured → approved) also requires approval workflow
+    const current = doc.data()!;
+    if (current.featured === 1 && parsed.data.featured === false) {
+      return Response.json(
+        {
+          error: "Unfeaturing a project requires two-person approval. Use POST /api/projects/:id/request-approval with action 'unfeature'.",
+          requiresApproval: true,
+          action: "unfeature",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Plain approve (submitted/rejected/delisted → approved, featured stays 0)
+    await ref.update({ status: "approved", featured: 0, updated_at: new Date().toISOString() });
     const updated = await ref.get();
     return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
   } catch (err) {
