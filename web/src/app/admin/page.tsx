@@ -54,6 +54,8 @@ interface Project {
   rating_count?: number;
   rejection_reason?: string;
   research_images?: string[];
+  claimed_by?: number | null;
+  claimed_by_username?: string | null;
   created_at: string;
 }
 
@@ -120,6 +122,7 @@ function useProjectAction(token: string | null) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-projects"] });
+      qc.invalidateQueries({ queryKey: ["project-queue"] });
     },
   });
 }
@@ -322,11 +325,14 @@ function StatusBadge({ status, featured }: { status: string; featured?: number }
 function PendingCard({
   project,
   action,
+  currentUserId,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  currentUserId?: number;
 }) {
   const isLoading = action.isPending;
+  const isMine = project.claimed_by === currentUserId;
 
   return (
     <div className="glass rounded-2xl p-6 transition-all hover:border-dust/40">
@@ -347,6 +353,14 @@ function PendingCard({
             {project.description}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ash">
+            {project.claimed_by_username ? (
+              <span className={`flex items-center gap-1 ${isMine ? "text-aurora-bright" : "text-solar-bright"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isMine ? "bg-aurora" : "bg-solar"} animate-pulse`} />
+                {isMine ? "you" : project.claimed_by_username} is reviewing
+              </span>
+            ) : (
+              <span className="text-ash italic">unclaimed</span>
+            )}
             <span>
               by <span className="text-moonlight">{project.username}</span>
             </span>
@@ -387,50 +401,85 @@ function PendingCard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <Link
-            href={`/projects/${project.slug}`}
-            className="btn-ghost text-sm !py-2 !px-3"
-            target="_blank"
-          >
-            Preview
-          </Link>
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: false },
-              })
-            }
-            className="bg-aurora/15 hover:bg-aurora/25 text-aurora-bright border border-aurora/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
-          >
-            Approve
-          </button>
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: true },
-              })
-            }
-            className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
-          >
-            Feature
-          </button>
-          <RejectDialog
-            project={project}
-            isPending={isLoading}
-            onConfirm={(reason) =>
-              action.mutate({
-                projectId: project.id,
-                action: "reject",
-                body: { reason: reason || undefined },
-              })
-            }
-          />
+          {project.claimed_by && !isMine ? (
+            <span className="text-xs text-ash italic">claimed by {project.claimed_by_username}</span>
+          ) : (
+            <>
+              {!project.claimed_by ? (
+                <button
+                  disabled={isLoading}
+                  onClick={() =>
+                    action.mutate({
+                      projectId: project.id,
+                      action: "claim",
+                      body: { action: "claim" },
+                    })
+                  }
+                  className="bg-plasma/15 hover:bg-plasma/25 text-plasma-bright border border-plasma/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+                >
+                  Claim
+                </button>
+              ) : (
+                <button
+                  disabled={isLoading}
+                  onClick={() =>
+                    action.mutate({
+                      projectId: project.id,
+                      action: "claim",
+                      body: { action: "release" },
+                    })
+                  }
+                  className="bg-dust/30 hover:bg-dust/50 text-ash hover:text-moonlight border border-dust/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+                >
+                  Release
+                </button>
+              )}
+              <Link
+                href={`/projects/${project.slug}`}
+                className="btn-ghost text-sm !py-2 !px-3"
+                target="_blank"
+              >
+                Preview
+              </Link>
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: false },
+                  })
+                }
+                className="bg-aurora/15 hover:bg-aurora/25 text-aurora-bright border border-aurora/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+              >
+                Approve
+              </button>
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: true },
+                  })
+                }
+                className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+              >
+                Feature
+              </button>
+              <RejectDialog
+                project={project}
+                isPending={isLoading}
+                onConfirm={(reason) =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "reject",
+                    body: { reason: reason || undefined },
+                  })
+                }
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -1076,7 +1125,7 @@ export default function AdminPage() {
             ) : filteredPending.length > 0 ? (
               <div className="space-y-4">
                 {filteredPending.map((p) => (
-                  <PendingCard key={p.id} project={p} action={action} />
+                  <PendingCard key={p.id} project={p} action={action} currentUserId={user?.id} />
                 ))}
               </div>
             ) : (

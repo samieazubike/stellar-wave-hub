@@ -53,9 +53,20 @@ export async function GET(request: Request) {
           const uDoc = await usersCol.ref.doc(String(uid)).get();
           userCache.set(uid, uDoc.exists ? (uDoc.data()!.username as string) : "unknown");
         }
+        const cid = p.claimed_by as number | undefined;
+        if (cid && !userCache.has(cid)) {
+          const uDoc = await usersCol.ref.doc(String(cid)).get();
+          userCache.set(cid, uDoc.exists ? (uDoc.data()!.username as string) : "unknown");
+        }
         const scores = ratingsByProject.get(p.id as number) || [];
         const avg_rating = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-        return { ...p, username: uid ? userCache.get(uid) : null, avg_rating, rating_count: scores.length };
+        return {
+          ...p,
+          username: uid ? userCache.get(uid) : null,
+          claimed_by_username: cid ? userCache.get(cid) : null,
+          avg_rating,
+          rating_count: scores.length,
+        };
       }),
     );
 

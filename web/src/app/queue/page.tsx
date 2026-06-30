@@ -13,6 +13,7 @@ interface QueueProject {
   github_url?: string;
   github_repos?: { label: string; url: string }[];
   username: string | null;
+  claimed_by_username: string | null;
   created_at: string;
 }
 
@@ -112,6 +113,12 @@ export default function QueuePage() {
                   </p>
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ash">
+                    {project.claimed_by_username && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-solar animate-pulse" />
+                        reviewing: <span className="text-solar-bright font-medium">{project.claimed_by_username}</span>
+                      </span>
+                    )}
                     {project.username && (
                       <span>
                         by <span className="text-moonlight">{project.username}</span>
