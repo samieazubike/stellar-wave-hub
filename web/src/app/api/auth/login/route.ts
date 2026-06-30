@@ -1,13 +1,16 @@
 import { usersCol } from "@/lib/db";
 import { comparePassword, signToken } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { loginSchema } from "@/lib/validation/schemas/auth";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const parsed = await parseJsonBody(request, loginSchema);
+  if (!parsed.success) return parsed.response;
+
+  const { email, password } = parsed.data;
+
   try {
-    const { email, password } = await request.json();
-    if (!email || !password) {
-      return Response.json({ error: "Email and password are required" }, { status: 400 });
-    }
 
     const snap = await usersCol.ref.where("email", "==", email).limit(1).get();
     if (snap.empty) {

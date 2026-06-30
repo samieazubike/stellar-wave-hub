@@ -10,6 +10,7 @@ import {
   rpc as StellarRpc,
   Account,
   Keypair,
+  xdr,
 } from "@stellar/stellar-sdk";
 
 const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID;
@@ -197,6 +198,69 @@ export async function getProjectRatingOnChain(
   if (!raw) return null;
   const count = Number(raw.count);
   const sum = Number(raw.sum);
+  return { count, sum, average: count > 0 ? sum / count : 0 };
+}
+
+function scvToBase64(val: xdr.ScVal): string {
+  return val.toXDR().toString("base64");
+}
+
+/**
+ * Read on-chain ratings from contract events instead of simulating a contract
+ * call. This avoids per-page simulation costs.
+ *
+ * Queries the Soroban RPC event store for "Rating" events emitted by
+ * `rate_project`, filtered to the given project, and computes the aggregate
+ * locally.
+ */
+export async function getProjectRatingFromEvents(
+  projectSlug: string,
+): Promise<OnChainRating | null> {
+  if (!ON_CHAIN_ENABLED || !CONTRACT_ID) return null;
+
+  const server = getServer();
+  const symbol = slugToSymbol(projectSlug);
+
+  const ratingTopic = scvToBase64(
+    nativeToScVal("Rating", { type: "symbol" }),
+  );
+  const projectTopic = scvToBase64(
+    nativeToScVal(symbol, { type: "symbol" }),
+  );
+
+  let response;
+  try {
+    response = await server.getEvents({
+      startLedger: 1,
+      filters: [
+        {
+          type: "contract",
+          contractIds: [CONTRACT_ID],
+          topics: [[ratingTopic, projectTopic]],
+        },
+      ],
+      limit: 200,
+    });
+  } catch {
+    return null;
+  }
+
+  let count = 0;
+  let sum = 0;
+
+  for (const event of response.events) {
+    let data: unknown;
+    try {
+      data = scValToNative(event.value);
+    } catch {
+      continue;
+    }
+    if (Array.isArray(data) && data.length >= 2 && typeof data[1] === "number") {
+      count++;
+      sum += data[1];
+    }
+  }
+
   return { count, sum, average: count > 0 ? sum / count : 0 };
 }
 
