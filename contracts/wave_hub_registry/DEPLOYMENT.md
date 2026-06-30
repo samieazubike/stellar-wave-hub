@@ -319,7 +319,14 @@ stellar contract invoke \
 
 ## 8. Integrating the contract with the web app
 
-Store these in `web/.env.local`:
+The web application uses a dynamic configuration system to locate the contract. The primary source of truth is the Supabase database (`app_config` table).
+
+To update the contract address without a redeploy:
+1. Log in as an admin in the web app.
+2. Go to the Admin Dashboard (the "Contract State" panel will show current settings).
+3. (Future enhancement: The UI can be expanded to post to the \`/api/admin/contract\` route). Currently, you can manually insert or update the \`contract_id\` and \`contract_network\` keys in the \`app_config\` table via the Supabase dashboard or via an authenticated POST to \`/api/admin/contract\`.
+
+As a fallback, you can still store these in `web/.env.local`:
 
 ```
 NEXT_PUBLIC_CONTRACT_ID=C...        # the contract ID from step 5b

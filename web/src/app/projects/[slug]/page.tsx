@@ -5,7 +5,7 @@ import {useAuth} from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
 import Link from "next/link";
 import {
-	ON_CHAIN_ENABLED,
+	getContractConfig,
 	rateProjectOnChain,
 	explorerTxUrl,
 	getRatingFee,
@@ -116,7 +116,12 @@ export default function ProjectDetailPage({
 	>("overview");
 
 	// On-chain state
+	const [onChainEnabled, setOnChainEnabled] = useState(false);
 	const [contractRatingFee, setContractRatingFee] = useState<bigint | null>(null);
+
+	useEffect(() => {
+		getContractConfig().then(cfg => setOnChainEnabled(Boolean(cfg.contractId)));
+	}, []);
 	const [alreadyRatedOnChain, setAlreadyRatedOnChain] = useState(false);
 	const [onChainRating, setOnChainRating] = useState<OnChainRating | null>(null);
 	// true = project exists in registry; false = not registered (rating goes off-chain only)
@@ -160,7 +165,7 @@ export default function ProjectDetailPage({
 
 	// Fetch registration status, rating fee, and on-chain aggregate
 	useEffect(() => {
-		if (!ON_CHAIN_ENABLED || !project) return;
+		if (!onChainEnabled || !project) return;
 
 		isRegisteredOnChain(project.slug)
 			.then((registered) => {
@@ -176,7 +181,7 @@ export default function ProjectDetailPage({
 
 	// Check if the current user has already rated on-chain (only if project is registered)
 	useEffect(() => {
-		if (!ON_CHAIN_ENABLED || !isOnChainProject || !project || !user?.stellar_address) return;
+		if (!onChainEnabled || !isOnChainProject || !project || !user?.stellar_address) return;
 		hasRatedOnChain(user.stellar_address, project.slug)
 			.then((rated) => setAlreadyRatedOnChain(rated))
 			.catch(() => {});
@@ -191,7 +196,7 @@ export default function ProjectDetailPage({
 
 		try {
 			let txHash: string | null = null;
-			if (ON_CHAIN_ENABLED && isOnChainProject) {
+			if (onChainEnabled && isOnChainProject) {
 				if (!user?.stellar_address) {
 					throw new Error(
 						"Link a Stellar wallet in your profile to rate projects on-chain.",
@@ -278,7 +283,7 @@ export default function ProjectDetailPage({
 	}
 
 	const tags = project.tags ? project.tags.split(",") : [];
-	const onChainActive = ON_CHAIN_ENABLED && isOnChainProject;
+	const onChainActive = onChainEnabled && isOnChainProject;
 	const feeLabel = formatFee(onChainActive ? contractRatingFee : null);
 	const canRate = user && user.id !== project.user_id && !alreadyRatedOnChain;
 

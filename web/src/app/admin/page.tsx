@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  ON_CHAIN_ENABLED,
+  getContractConfig,
   explorerTxUrl,
   getRatingFee,
   getRegistrationFee,

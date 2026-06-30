@@ -10,6 +10,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	financial_snapshots: "financial_snapshots",
 	auth_challenges: "auth_challenges",
 	counters: "counters",
+	app_config: "app_config",
 };
 
 function resolveTable(collection: string): string {
@@ -26,6 +27,7 @@ function keyField(collection: string): string {
 	}
 	if (collection === "counters") return "name";
 	if (collection === "auth_challenges") return "publicKey";
+	if (collection === "app_config") return "key";
 	return "id";
 }
 
