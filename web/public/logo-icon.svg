@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="50%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <radialGradient id="g2" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Ambient glow -->
+  <circle cx="64" cy="55" r="48" fill="url(#g2)"/>
+
+  <!-- Orbital rings -->
+  <ellipse cx="64" cy="58" rx="42" ry="15" stroke="url(#g1)" stroke-width="1" stroke-opacity="0.2" fill="none" transform="rotate(-15, 64, 58)"/>
+  <ellipse cx="64" cy="58" rx="42" ry="15" stroke="url(#g1)" stroke-width="1" stroke-opacity="0.15" fill="none" transform="rotate(25, 64, 58)"/>
+
+  <!-- Star -->
+  <g filter="url(#glow)" transform="translate(64, 52)">
+    <polygon points="0,-22 6,-7 20,-11 11,2 20,15 6,13 0,28 -6,13 -20,15 -11,2 -20,-11 -6,-7" fill="url(#g1)" opacity="0.9"/>
+    <circle cx="0" cy="3" r="8" fill="#a78bfa" opacity="0.6"/>
+    <circle cx="0" cy="3" r="5" fill="#f0eef6" opacity="0.85"/>
+    <circle cx="0" cy="3" r="2.5" fill="white"/>
+  </g>
+
+  <!-- Waves -->
+  <path d="M18,82 Q36,72 50,78 Q60,84 64,78 Q68,72 78,78 Q92,84 110,74" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <path d="M24,92 Q40,83 52,88 Q60,93 64,88 Q68,83 78,88 Q90,93 104,85" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M30,101 Q44,94 54,97 Q60,100 64,97 Q68,94 78,97 Q88,100 98,94" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+
+  <!-- Sparkles -->
+  <circle cx="30" cy="40" r="1.2" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="96" cy="36" r="1" fill="#22d3ee" opacity="0.7"/>
+  <circle cx="90" cy="48" r="0.8" fill="#34d399" opacity="0.5"/>
+</svg>

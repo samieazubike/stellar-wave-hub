@@ -17,6 +17,9 @@ export async function PUT(
   const doc = await ref.get();
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
 
+  const parsed = await parseJsonBody(request, featuredProjectSchema);
+  if (!parsed.success) return parsed.response;
+
   try {
     const body = await request.json().catch(() => ({}));
     const featured = body.featured && canFeatureProjects(auth.role) ? 1 : 0;

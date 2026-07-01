@@ -1,0 +1,6 @@
+{
+	"postman.settings.dotenv-detection-notification-visibility": false,
+	"githubPullRequests.ignoredPullRequestBranches": [
+		"main"
+	]
+}

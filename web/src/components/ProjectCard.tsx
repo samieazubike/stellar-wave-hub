@@ -16,6 +16,7 @@ interface ProjectCardProps {
     rating_count?: number;
     username?: string;
     logo_url?: string;
+    stellar_contract_id?: string;
   };
   index?: number;
 }
@@ -93,7 +94,29 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-dust/20">
-        <span className={`tag ${colorClass}`}>{project.category}</span>
+        <div className="flex items-center gap-1.5">
+          <span className={`tag ${colorClass}`}>{project.category}</span>
+          {project.stellar_contract_id && (
+            <span
+              title="Has a deployed Soroban smart contract"
+              className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-aurora/20 text-aurora-bright font-medium border border-aurora/30"
+            >
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              Smart Contract
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1.5">
           {project.avg_rating ? (
             <>
