@@ -36,6 +36,15 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
+const { user, loading } = useAuth();
+const router = useRouter();
+
+useEffect(() => {
+  if (!loading && (!user || user.role !== "admin")) {
+    router.push("/login");
+  }
+}, [user, loading, router]);
+
 interface Project {
   id: number;
   name: string;
