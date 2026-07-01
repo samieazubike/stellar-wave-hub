@@ -1,5 +1,5 @@
 import { ratingsCol } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, hasMinRole } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function DELETE(
@@ -15,7 +15,7 @@ export async function DELETE(
   if (!doc.exists) return Response.json({ error: "Rating not found" }, { status: 404 });
 
   const rating = doc.data()!;
-  if (rating.user_id !== auth.userId && auth.role !== "admin") {
+  if (rating.user_id !== auth.userId && !hasMinRole(auth.role, "admin")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

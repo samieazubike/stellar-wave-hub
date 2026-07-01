@@ -6,119 +6,115 @@ import slugify from "slugify";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  try {
-    const url = new URL(request.url);
-    const category = url.searchParams.get("category");
-    const search = url.searchParams.get("search")?.toLowerCase();
-    const tag = url.searchParams.get("tag")?.toLowerCase().trim();
-    const sort = url.searchParams.get("sort") || "newest";
-    const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, Number(url.searchParams.get("limit")) || 12),
-    );
+	try {
+		const url = new URL(request.url);
+		const category = url.searchParams.get("category");
+		const search = url.searchParams.get("search")?.toLowerCase();
+		const substantial = url.searchParams.get("substantial") === "true";
+		const sort = url.searchParams.get("sort") || "newest";
+		const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+		const limit = Math.min(
+			50,
+			Math.max(1, Number(url.searchParams.get("limit")) || 12),
+		);
 
-    // Query approved/featured projects
-    let query = projectsCol.ref.where("status", "in", [
-      "approved",
-      "featured",
-    ]);
+		// Query approved/featured projects
+		let query = projectsCol.ref.where("status", "in", [
+			"approved",
+			"featured",
+		]);
 
-    if (category) {
-      query = query.where("category", "==", category);
-    }
+		if (category) {
+			query = query.where("category", "==", category);
+		}
 
-    const snap = await query.get();
-    let projects: Record<string, unknown>[] = snap.docs.map((d) => ({
-      ...d.data(),
-      id: d.data().numericId,
-    }));
+		if (substantial) {
+			query = query.where("is_substantial", "==", true);
+		}
 
-    // Server-side tag filtering
-    if (tag) {
-      projects = projects.filter((p) => {
-        const projectTags = (p.tags as string)?.toLowerCase() || "";
-        return projectTags.split(",").some((t) => t.trim() === tag);
-      });
-    }
+		const snap = await query.get();
+		let projects: Record<string, unknown>[] = snap.docs.map((d) => ({
+			...d.data(),
+			id: d.data().numericId,
+		}));
 
-    // Client-side search filtering (Firestore doesn't support LIKE)
-    if (search) {
-      projects = projects.filter(
-        (p) =>
-          (p.name as string)?.toLowerCase().includes(search) ||
-          (p.description as string)?.toLowerCase().includes(search) ||
-          (p.tags as string)?.toLowerCase().includes(search),
-      );
-    }
+		// Client-side search filtering (Firestore doesn't support LIKE)
+		if (search) {
+			projects = projects.filter(
+				(p) =>
+					(p.name as string)?.toLowerCase().includes(search) ||
+					(p.description as string)?.toLowerCase().includes(search) ||
+					(p.tags as string)?.toLowerCase().includes(search),
+			);
+		}
 
-    // Fetch ratings for avg computation
-    const ratingsSnap = await ratingsCol.ref.get();
-    const ratingsByProject = new Map<number, number[]>();
-    ratingsSnap.docs.forEach((d) => {
-      const r = d.data();
-      const pid = r.project_id as number;
-      if (!ratingsByProject.has(pid)) ratingsByProject.set(pid, []);
-      ratingsByProject.get(pid)!.push(r.score as number);
-    });
+		// Fetch ratings for avg computation
+		const ratingsSnap = await ratingsCol.ref.get();
+		const ratingsByProject = new Map<number, number[]>();
+		ratingsSnap.docs.forEach((d) => {
+			const r = d.data();
+			const pid = r.project_id as number;
+			if (!ratingsByProject.has(pid)) ratingsByProject.set(pid, []);
+			ratingsByProject.get(pid)!.push(r.score as number);
+		});
 
-    // Enrich with ratings + username
-    const userCache = new Map<number, string>();
-    const enriched: Record<string, unknown>[] = await Promise.all(
-      projects.map(async (p) => {
-        const uid = p.user_id as number;
-        if (uid && !userCache.has(uid)) {
-          const uDoc = await usersCol.ref.doc(String(uid)).get();
-          userCache.set(
-            uid,
-            uDoc.exists
-              ? (uDoc.data()!.username as string)
-              : "unknown",
-          );
-        }
-        const scores = ratingsByProject.get(p.id as number) || [];
-        const avg_rating =
-          scores.length > 0
-            ? scores.reduce((a, b) => a + b, 0) / scores.length
-            : null;
-        return {
-          ...p,
-          username: uid ? userCache.get(uid) : null,
-          avg_rating,
-          rating_count: scores.length,
-        };
-      }),
-    );
+		// Enrich with ratings + username
+		const userCache = new Map<number, string>();
+		const enriched: Record<string, unknown>[] = await Promise.all(
+			projects.map(async (p) => {
+				const uid = p.user_id as number;
+				if (uid && !userCache.has(uid)) {
+					const uDoc = await usersCol.ref.doc(String(uid)).get();
+					userCache.set(
+						uid,
+						uDoc.exists
+							? (uDoc.data()!.username as string)
+							: "unknown",
+					);
+				}
+				const scores = ratingsByProject.get(p.id as number) || [];
+				const avg_rating =
+					scores.length > 0
+						? scores.reduce((a, b) => a + b, 0) / scores.length
+						: null;
+				return {
+					...p,
+					username: uid ? userCache.get(uid) : null,
+					avg_rating,
+					rating_count: scores.length,
+				};
+			}),
+		);
 
-    // Sort
-    enriched.sort((a, b) => {
-      if (sort === "oldest")
-        return (a.created_at as string) < (b.created_at as string)
-          ? -1
-          : 1;
-      if (sort === "top-rated")
-        return (
-          ((b.avg_rating as number) || 0) -
-          ((a.avg_rating as number) || 0)
-        );
-      // newest — featured first, then by date desc
-      if ((b.featured as number) !== (a.featured as number))
-        return (b.featured as number) - (a.featured as number);
-      return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
-    });
+		// Sort
+		enriched.sort((a, b) => {
+			if (sort === "oldest")
+				return (a.created_at as string) < (b.created_at as string)
+					? -1
+					: 1;
+			if (sort === "top-rated")
+				return (
+					((b.avg_rating as number) || 0) -
+					((a.avg_rating as number) || 0)
+				);
+			// newest — featured first, then by date desc
+			if ((b.featured as number) !== (a.featured as number))
+				return (b.featured as number) - (a.featured as number);
+			return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
+		});
 
-    const total = enriched.length;
-    const offset = (page - 1) * limit;
-    const paged = enriched.slice(offset, offset + limit);
+		const total = enriched.length;
+		const offset = (page - 1) * limit;
+		const paged = enriched.slice(offset, offset + limit);
 
-    return Response.json({
-      projects: paged,
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    });
-  } catch (err) {
-    console.error("List projects error:", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
-  }
+		return Response.json({
+			projects: paged,
+			pagination: {page, limit, total, pages: Math.ceil(total / limit)},
+		});
+	} catch (err) {
+		console.error("List projects error:", err);
+		return Response.json({error: "Internal server error"}, {status: 500});
+	}
 }
 
 export async function POST(request: Request) {
