@@ -4,6 +4,16 @@ import Link from "next/link";
 import {useEffect, useState} from "react";
 import ProjectCard from "@/components/ProjectCard";
 
+
+const { user, loading } = useAuth();
+const router = useRouter();
+
+useEffect(() => {
+  if (!loading && (!user || user.role !== "admin")) {
+    router.push("/login");
+  }
+}, [user, loading, router]);
+
 interface Project {
 	id: number;
 	name: string;
