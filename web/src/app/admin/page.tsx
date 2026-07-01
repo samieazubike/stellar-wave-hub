@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { hasMinRole } from "@/lib/roles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1016,7 +1017,7 @@ export default function AdminPage() {
   const filteredFeatured = filterProjects(featured, search);
   const filteredAll = filterProjects(all, search);
 
-  if (!user || !isAdmin) {
+  if (!user || !hasMinRole(user.role, "admin")) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-12 text-center max-w-md">

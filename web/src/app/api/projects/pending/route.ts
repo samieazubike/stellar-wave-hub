@@ -1,10 +1,10 @@
 import { projectsCol, usersCol } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { getAuthUser, hasMinRole } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const auth = requireAdmin(request);
-  if (!auth) {
+  const auth = getAuthUser(request);
+  if (!auth || !hasMinRole(auth.role, "admin")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

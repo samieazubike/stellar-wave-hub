@@ -1,5 +1,5 @@
 import { projectsCol } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { delistProjectSchema } from "@/lib/validation/schemas/featured";
 export const dynamic = "force-dynamic";
@@ -8,8 +8,8 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAdmin(request);
-  if (!auth) {
+  const auth = getAuthUser(request);
+  if (!auth || !hasMinRole(auth.role, "admin")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
