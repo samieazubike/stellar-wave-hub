@@ -8,7 +8,7 @@ create table if not exists public.users (
   username text not null,
   email text,
   password_hash text,
-  role text not null default 'contributor',
+  role text not null default 'contributor' check (role in ('contributor', 'maintainer', 'admin')),
   stellar_address text,
   github_url text,
   twitter_url text,
