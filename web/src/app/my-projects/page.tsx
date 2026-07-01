@@ -145,15 +145,17 @@ export default function MyProjectsPage() {
 								</p>
 							</div>
 							<div className="flex items-center gap-3 shrink-0">
-								<FeatureButton
-									projectId={project.id}
-									featuredUntil={project.featured_until}
-									featuredTxHash={project.featured_tx_hash}
-									featured={project.featured}
-									disabled={
-										project.status !== "approved" && project.status !== "featured"
-									}
-								/>
+								{project.status !== "rejected" && (
+									<FeatureButton
+										projectId={project.id}
+										featuredUntil={project.featured_until}
+										featuredTxHash={project.featured_tx_hash}
+										featured={project.featured}
+										disabled={
+											project.status !== "approved" && project.status !== "featured"
+										}
+									/>
+								)}
 								{project.avg_rating && (
 									<div className="flex items-center gap-1">
 										<svg

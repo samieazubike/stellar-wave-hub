@@ -96,7 +96,7 @@ export async function GET(request: Request) {
 			const now = Date.now();
 			const bActive = (b.featured as number) === 1 && bUntil > now;
 			const aActive = (a.featured as number) === 1 && aUntil > now;
-			if (bActive !== aActive) return bActive ? -1 : 1;
+			if (bActive !== aActive) return bActive ? 1 : -1;
 			return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
 		});
 

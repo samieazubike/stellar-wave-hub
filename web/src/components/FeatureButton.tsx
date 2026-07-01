@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { payForSpotlight } from "@/lib/payForSpotlight";
 
 export default function FeatureButton({
@@ -47,6 +47,9 @@ export default function FeatureButton({
       if (!res.ok) throw new Error(data.error || "Activation failed");
       // Refresh to reflect new featured_until
       window.location.reload();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to process payment";
+      alert(message);
     } finally {
       setLoading(false);
     }

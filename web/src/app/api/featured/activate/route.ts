@@ -28,7 +28,8 @@ export async function POST(request: Request) {
     }
 
     // Prevent redemption reuse
-    if (proj.featured_tx_hash && proj.featured_tx_hash === txHash) {
+    const featured_tx_hashes = proj.featured_tx_hashes || [];
+    if (featured_tx_hashes.includes(txHash) || (proj.featured_tx_hash && proj.featured_tx_hash === txHash)) {
       // Already activated with this tx hash
       return Response.json({
         ok: true,
@@ -46,10 +47,13 @@ export async function POST(request: Request) {
     // Extra safety: ensure memo matches expected pattern on server verification.
     // (verifySpotlightPayment already validates memo text -> projectId)
 
+    featured_tx_hashes.push(txHash);
+
     await projectsCol.ref.doc(String(projectId)).update({
       featured: 1,
       featured_until,
-      featured_tx_hash: txHash,
+      featured_tx_hash: txHash, // keep for backward compatibility if used elsewhere
+      featured_tx_hashes,
       updated_at: now.toISOString(),
     });
 

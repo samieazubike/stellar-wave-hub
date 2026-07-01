@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { buildSpotlightPaymentTx } from "@/lib/featuredService";
@@ -36,25 +37,25 @@ export async function payForSpotlight(projectId: number): Promise<string> {
   }
 
   const {
-    rpc: StellarRpc,
+    Horizon,
     TransactionBuilder,
   } = await import("@stellar/stellar-sdk");
   const NETWORK = process.env.NEXT_PUBLIC_CONTRACT_NETWORK || "testnet";
-  const rpcUrl =
-    process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ||
+  const HORIZON_URL =
+    process.env.NEXT_PUBLIC_HORIZON_URL ||
     (NETWORK === "mainnet"
-      ? "https://mainnet.sorobanrpc.com"
-      : "https://soroban-testnet.stellar.org");
+      ? "https://horizon.stellar.org"
+      : "https://horizon-testnet.stellar.org");
 
-  const server = new StellarRpc.Server(rpcUrl);
+  const horizon = new Horizon.Server(HORIZON_URL);
   const signedTx = TransactionBuilder.fromXDR(
     signed.signedTxXdr,
     NETWORK === "mainnet" ? "Public Global Stellar Network ; September 2015" : "Test SDF Network ; September 2015",
   );
 
-  const sent = await server.sendTransaction(signedTx as any);
-  if (sent.status === "ERROR") {
-    throw new Error(`Transaction rejected: ${JSON.stringify(sent.errorResult)}`);
+  const sent = await horizon.submitTransaction(signedTx as any);
+  if (!sent.successful) {
+    throw new Error(`Transaction rejected: ${JSON.stringify(sent)}`);
   }
 
   return sent.hash;
