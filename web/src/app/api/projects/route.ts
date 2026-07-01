@@ -26,7 +26,6 @@ export async function GET(request: Request) {
 
 		const rawSearch = url.searchParams.get("search")?.trim() || "";
 
-		const search = url.searchParams.get("search")?.toLowerCase();
 		const substantial = url.searchParams.get("substantial") === "true";
 
 		const sort = url.searchParams.get("sort") || "newest";
@@ -53,6 +52,10 @@ export async function GET(request: Request) {
 			dataQuery = dataQuery.eq("category", category);
 		}
 
+		if (substantial) {
+			countQuery = countQuery.eq("is_substantial", true);
+			dataQuery = dataQuery.eq("is_substantial", true);
+		}
 
 		if (rawSearch) {
 			const tsQuery = buildTsQuery(rawSearch);
@@ -75,16 +78,6 @@ export async function GET(request: Request) {
 				);
 			}
 		}
-
-		if (substantial) {
-			query = query.where("is_substantial", "==", true);
-		}
-
-		const snap = await query.get();
-		let projects: Record<string, unknown>[] = snap.docs.map((d) => ({
-			...d.data(),
-			id: d.data().numericId,
-		}));
 
 
 		if (sort === "oldest") {
