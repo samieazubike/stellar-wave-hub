@@ -1,6 +1,7 @@
 import { projectsCol, usersCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { canReviewProjects } from "@/lib/rbac";
+import { getMaintainerCategories } from "@/lib/maintainerCategories";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -9,10 +10,18 @@ export async function GET(request: Request) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const snap = await projectsCol.ref
-    .where("status", "==", "submitted")
-    .orderBy("created_at", "desc")
-    .get();
+  let query = projectsCol.ref.where("status", "==", "submitted");
+  let assignedCategories: string[] | null = null;
+
+  if (auth.role === "maintainer") {
+    assignedCategories = await getMaintainerCategories(auth.userId);
+    if (assignedCategories.length === 0) {
+      return Response.json({ projects: [], assignedCategories });
+    }
+    query = query.where("category", "in", assignedCategories);
+  }
+
+  const snap = await query.orderBy("created_at", "desc").get();
 
   const projects = await Promise.all(
     snap.docs.map(async (d) => {
@@ -26,5 +35,5 @@ export async function GET(request: Request) {
     })
   );
 
-  return Response.json({ projects });
+  return Response.json({ projects, assignedCategories });
 }

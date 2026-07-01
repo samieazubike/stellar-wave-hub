@@ -1,8 +1,9 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import {canFeatureProjects, canReviewProjects} from "@/lib/rbac";
+import {PROJECT_CATEGORIES} from "@/lib/categories";
 import Link from "next/link";
 
 interface Project {
@@ -17,21 +18,35 @@ interface Project {
 	created_at: string;
 }
 
+interface CategoryOption {
+	value: string;
+	label: string;
+}
+
+interface MaintainerAssignment {
+	id: number;
+	username: string;
+	email: string | null;
+	categories: string[];
+}
+
 export default function AdminPage() {
 	const {user, token} = useAuth();
 	const [pending, setPending] = useState<Project[]>([]);
+	const [assignedCategories, setAssignedCategories] = useState<
+		string[] | null
+	>(null);
+	const [maintainers, setMaintainers] = useState<MaintainerAssignment[]>([]);
+	const [assignmentCategories, setAssignmentCategories] =
+		useState<CategoryOption[]>([...PROJECT_CATEGORIES]);
 	const [loading, setLoading] = useState(true);
+	const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+	const [savingMaintainerId, setSavingMaintainerId] = useState<number | null>(
+		null,
+	);
 	const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-	useEffect(() => {
-		if (!token) {
-			setLoading(false);
-			return;
-		}
-		fetchPending();
-	}, [token]);
-
-	const fetchPending = async () => {
+	const fetchPending = useCallback(async () => {
 		try {
 			const res = await fetch("/api/projects/pending", {
 				headers: {Authorization: `Bearer ${token}`},
@@ -39,9 +54,83 @@ export default function AdminPage() {
 			if (res.ok) {
 				const data = await res.json();
 				setPending(data.projects || []);
+				setAssignedCategories(data.assignedCategories ?? null);
 			}
 		} catch {}
 		setLoading(false);
+	}, [token]);
+
+	const fetchMaintainerAssignments = useCallback(async () => {
+		setAssignmentsLoading(true);
+		try {
+			const res = await fetch("/api/admin/maintainer-categories", {
+				headers: {Authorization: `Bearer ${token}`},
+			});
+			if (res.ok) {
+				const data = await res.json();
+				setMaintainers(data.maintainers || []);
+				setAssignmentCategories(data.categories || [
+					...PROJECT_CATEGORIES,
+				]);
+			}
+		} catch {}
+		setAssignmentsLoading(false);
+	}, [token]);
+
+	useEffect(() => {
+		if (!token) {
+			setLoading(false);
+			return;
+		}
+		fetchPending();
+	}, [fetchPending, token]);
+
+	useEffect(() => {
+		if (!token || user?.role !== "admin") return;
+		fetchMaintainerAssignments();
+	}, [fetchMaintainerAssignments, token, user?.role]);
+
+	const toggleMaintainerCategory = async (
+		maintainer: MaintainerAssignment,
+		category: string,
+	) => {
+		const nextCategories = maintainer.categories.includes(category)
+			? maintainer.categories.filter((item) => item !== category)
+			: [...maintainer.categories, category];
+
+		setSavingMaintainerId(maintainer.id);
+		try {
+			const res = await fetch("/api/admin/maintainer-categories", {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({
+					maintainerId: maintainer.id,
+					categories: nextCategories,
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				setMaintainers((prev) =>
+					prev.map((item) =>
+						item.id === maintainer.id
+							? {...item, categories: data.categories || []}
+							: item,
+					),
+				);
+			}
+		} catch {}
+		setSavingMaintainerId(null);
+	};
+
+	const categoryLabel = (value: string) => {
+		return (
+			PROJECT_CATEGORIES.find((category) => category.value === value)
+				?.label || value
+		);
 	};
 
 	const handleAction = async (
@@ -124,6 +213,120 @@ export default function AdminPage() {
 					<p className="text-sm text-ash mt-1">Total Projects</p>
 				</div>
 			</div>
+
+			{assignedCategories && (
+				<div className="glass rounded-2xl p-5 mb-10 animate-in animate-in-delay-1">
+					<p className="text-xs uppercase tracking-[0.18em] text-ash mb-3">
+						Your moderation scope
+					</p>
+					<div className="flex flex-wrap gap-2">
+						{assignedCategories.length > 0 ? (
+							assignedCategories.map((category) => (
+								<span key={category} className="tag tag-nova">
+									{categoryLabel(category)}
+								</span>
+							))
+						) : (
+							<p className="text-sm text-ash">
+								No categories assigned yet
+							</p>
+						)}
+					</div>
+				</div>
+			)}
+
+			{user.role === "admin" && (
+				<div className="glass rounded-2xl p-6 mb-10 animate-in animate-in-delay-2">
+					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+						<div>
+							<h2 className="font-semibold text-xl text-starlight">
+								Maintainer Categories
+							</h2>
+							<p className="text-sm text-ash mt-1">
+								Assign maintainers to the categories they can moderate
+							</p>
+						</div>
+						<button
+							onClick={fetchMaintainerAssignments}
+							disabled={assignmentsLoading}
+							className="btn-ghost text-sm !py-2 !px-3 disabled:opacity-50"
+						>
+							Refresh
+						</button>
+					</div>
+
+					{assignmentsLoading ? (
+						<div className="space-y-3">
+							{[...Array(2)].map((_, i) => (
+								<div
+									key={i}
+									className="skeleton h-24 rounded-2xl"
+								/>
+							))}
+						</div>
+					) : maintainers.length > 0 ? (
+						<div className="space-y-4">
+							{maintainers.map((maintainer) => (
+								<div
+									key={maintainer.id}
+									className="rounded-2xl border border-dust/30 bg-stardust/20 p-4"
+								>
+									<div className="flex flex-col lg:flex-row lg:items-start gap-4">
+										<div className="lg:w-56 shrink-0">
+											<p className="font-medium text-moonlight">
+												{maintainer.username}
+											</p>
+											{maintainer.email && (
+												<p className="text-xs text-ash mt-1 break-all">
+													{maintainer.email}
+												</p>
+											)}
+										</div>
+										<div className="flex flex-wrap gap-2">
+											{assignmentCategories.map(
+												(category) => {
+													const selected =
+														maintainer.categories.includes(
+															category.value,
+														);
+													return (
+														<button
+															key={
+																category.value
+															}
+															onClick={() =>
+																toggleMaintainerCategory(
+																	maintainer,
+																	category.value,
+																)
+															}
+															disabled={
+																savingMaintainerId ===
+																maintainer.id
+															}
+															className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all disabled:opacity-50 ${
+																selected
+																	? "bg-nova/20 border-nova/30 text-nova-bright"
+																	: "bg-stardust/40 border-dust/30 text-ash hover:text-moonlight hover:border-dust"
+															}`}
+														>
+															{category.label}
+														</button>
+													);
+												},
+											)}
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					) : (
+						<p className="text-sm text-ash">
+							No maintainer users found
+						</p>
+					)}
+				</div>
+			)}
 
 			{/* Pending Queue */}
 			<div className="animate-in animate-in-delay-2">

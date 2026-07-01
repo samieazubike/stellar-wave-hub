@@ -4,19 +4,7 @@ import {useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
-
-const CATEGORIES = [
-	"DeFi",
-	"Payments",
-	"NFT",
-	"Infrastructure",
-	"Gaming",
-	"Social",
-	"Tools",
-	"DAO",
-	"Identity",
-	"Other",
-];
+import {PROJECT_CATEGORIES} from "@/lib/categories";
 
 export default function SubmitPage() {
 	const {user, token} = useAuth();
@@ -168,9 +156,9 @@ export default function SubmitPage() {
 							}}
 						>
 							<option value="">Select a category</option>
-							{CATEGORIES.map((cat) => (
-								<option key={cat} value={cat.toLowerCase()}>
-									{cat}
+							{PROJECT_CATEGORIES.map((cat) => (
+								<option key={cat.value} value={cat.value}>
+									{cat.label}
 								</option>
 							))}
 						</select>

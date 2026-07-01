@@ -50,6 +50,20 @@ create index if not exists projects_category_idx on public.projects (category);
 create index if not exists projects_created_at_idx on public.projects (created_at desc);
 create index if not exists projects_user_id_idx on public.projects (user_id);
 
+create table if not exists public.maintainer_categories (
+  maintainer_id bigint not null,
+  category text not null,
+  created_at timestamptz not null default now(),
+  primary key (maintainer_id, category),
+  constraint maintainer_categories_maintainer_id_fkey
+    foreign key (maintainer_id)
+    references public.users ("numericId")
+    on delete cascade
+);
+
+create index if not exists maintainer_categories_category_idx
+  on public.maintainer_categories (category);
+
 create table if not exists public.ratings (
   "numericId" bigint primary key,
   project_id bigint not null,

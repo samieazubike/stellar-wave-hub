@@ -11,6 +11,7 @@ begin;
 
 alter table public.users enable row level security;
 alter table public.projects enable row level security;
+alter table public.maintainer_categories enable row level security;
 alter table public.ratings enable row level security;
 alter table public.auth_challenges enable row level security;
 alter table public.counters enable row level security;
@@ -188,7 +189,7 @@ create policy ratings_owner_delete
     )
   );
 
--- BACKEND-ONLY TABLES (auth_challenges, counters, financial_snapshots)
+-- BACKEND-ONLY TABLES (maintainer_categories, auth_challenges, counters, financial_snapshots)
 -- No anon/authenticated policies are added. With RLS enabled, direct client access is denied.
 -- Server-side use with SUPABASE_SERVICE_ROLE_KEY remains allowed.
 

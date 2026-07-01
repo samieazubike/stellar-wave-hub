@@ -1,6 +1,7 @@
 import { projectsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { canFeatureProjects, canReviewProjects } from "@/lib/rbac";
+import { canModerateCategory } from "@/lib/maintainerCategories";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -16,6 +17,11 @@ export async function PUT(
   const ref = projectsCol.ref.doc(id);
   const doc = await ref.get();
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
+  const project = doc.data()!;
+
+  if (!(await canModerateCategory(auth, project.category as string))) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const body = await request.json().catch(() => ({}));

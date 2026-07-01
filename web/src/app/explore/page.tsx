@@ -2,20 +2,9 @@
 
 import {useEffect, useState, useCallback} from "react";
 import ProjectCard from "@/components/ProjectCard";
+import {PROJECT_CATEGORIES} from "@/lib/categories";
 
-const CATEGORIES = [
-	"All",
-	"DeFi",
-	"Payments",
-	"NFT",
-	"Infrastructure",
-	"Gaming",
-	"Social",
-	"Tools",
-	"DAO",
-	"Identity",
-	"Other",
-];
+const CATEGORIES = [{value: "all", label: "All"}, ...PROJECT_CATEGORIES];
 
 const SORT_OPTIONS = [
 	{value: "newest", label: "Newest"},
@@ -52,7 +41,7 @@ export default function ExplorePage() {
 		total: 0,
 		pages: 0,
 	});
-	const [category, setCategory] = useState("All");
+	const [category, setCategory] = useState("all");
 	const [search, setSearch] = useState("");
 	const [sort, setSort] = useState("newest");
 	const [loading, setLoading] = useState(true);
@@ -60,7 +49,7 @@ export default function ExplorePage() {
 	const fetchProjects = useCallback(async () => {
 		setLoading(true);
 		const params = new URLSearchParams();
-		if (category !== "All") params.set("category", category.toLowerCase());
+		if (category !== "all") params.set("category", category);
 		if (search) params.set("search", search);
 		params.set("sort", sort);
 		params.set("page", String(pagination.page));
@@ -146,18 +135,18 @@ export default function ExplorePage() {
 			<div className="flex gap-2 overflow-x-auto pb-4 mb-8 animate-in animate-in-delay-2 scrollbar-none">
 				{CATEGORIES.map((cat) => (
 					<button
-						key={cat}
+						key={cat.value}
 						onClick={() => {
-							setCategory(cat);
+							setCategory(cat.value);
 							setPagination((p) => ({...p, page: 1}));
 						}}
 						className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-							category === cat
+							category === cat.value
 								? "bg-nova text-white glow-nova"
 								: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
 						}`}
 					>
-						{cat}
+						{cat.label}
 					</button>
 				))}
 			</div>

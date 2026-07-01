@@ -19,6 +19,7 @@ This creates all required tables and indexes used by the API routes:
 
 - `users`
 - `projects`
+- `maintainer_categories`
 - `ratings`
 - `auth_challenges`
 - `counters`
