@@ -388,9 +388,11 @@ function StatusBadge({ status, featured }: { status: string; featured?: number }
 function PendingCard({
   project,
   action,
+  isAdmin,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  isAdmin: boolean;
 }) {
   const isLoading = action.isPending;
 
@@ -460,43 +462,47 @@ function PendingCard({
           >
             Preview
           </Link>
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: false },
-              })
-            }
-            className="bg-aurora/15 hover:bg-aurora/25 text-aurora-bright border border-aurora/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
-          >
-            Approve
-          </button>
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: true },
-              })
-            }
-            className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
-          >
-            Feature
-          </button>
-          <RejectDialog
-            project={project}
-            isPending={isLoading}
-            onConfirm={(reason) =>
-              action.mutate({
-                projectId: project.id,
-                action: "reject",
-                body: { reason: reason || undefined },
-              })
-            }
-          />
+          {isAdmin && (
+            <>
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: false },
+                  })
+                }
+                className="bg-aurora/15 hover:bg-aurora/25 text-aurora-bright border border-aurora/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+              >
+                Approve
+              </button>
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: true },
+                  })
+                }
+                className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+              >
+                Feature
+              </button>
+              <RejectDialog
+                project={project}
+                isPending={isLoading}
+                onConfirm={(reason) =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "reject",
+                    body: { reason: reason || undefined },
+                  })
+                }
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -508,9 +514,11 @@ function PendingCard({
 function ProjectRow({
   project,
   action,
+  isAdmin,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  isAdmin: boolean;
 }) {
   const isLoading = action.isPending;
 
@@ -546,72 +554,76 @@ function ProjectRow({
       </div>
 
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
-        {(project.status === "approved" || project.status === "featured") && (
-          <DelistDialog
-            project={project}
-            isPending={isLoading}
-            onConfirm={(reason) =>
-              action.mutate({
-                projectId: project.id,
-                action: "delist",
-                body: { reason },
-              })
-            }
-          />
+        {isAdmin && (
+          <>
+            {(project.status === "approved" || project.status === "featured") && (
+              <DelistDialog
+                project={project}
+                isPending={isLoading}
+                onConfirm={(reason) =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "delist",
+                    body: { reason },
+                  })
+                }
+              />
+            )}
+            {(project.status === "rejected" || project.status === "delisted") && (
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: false },
+                  })
+                }
+                className="bg-aurora/10 hover:bg-aurora/20 text-aurora-bright/80 hover:text-aurora-bright border border-aurora/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+              >
+                Re-approve
+              </button>
+            )}
+            {project.status !== "featured" &&
+              (project.status === "approved" || project.status === "featured") && (
+                <button
+                  disabled={isLoading}
+                  onClick={() =>
+                    action.mutate({
+                      projectId: project.id,
+                      action: "approve",
+                      body: { featured: true },
+                    })
+                  }
+                  className="bg-solar/10 hover:bg-solar/20 text-solar-bright/80 hover:text-solar-bright border border-solar/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                >
+                  Feature
+                </button>
+              )}
+            {project.featured === 1 && (
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: false },
+                  })
+                }
+                className="bg-dust/30 hover:bg-dust/50 text-ash hover:text-moonlight border border-dust/20 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+              >
+                Unfeature
+              </button>
+            )}
+            <DeleteDialog
+              project={project}
+              isPending={isLoading}
+              onConfirm={() =>
+                action.mutate({ projectId: project.id, action: "delete" })
+              }
+            />
+          </>
         )}
-        {(project.status === "rejected" || project.status === "delisted") && (
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: false },
-              })
-            }
-            className="bg-aurora/10 hover:bg-aurora/20 text-aurora-bright/80 hover:text-aurora-bright border border-aurora/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
-          >
-            Re-approve
-          </button>
-        )}
-        {project.status !== "featured" &&
-          (project.status === "approved" || project.status === "featured") && (
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: true },
-              })
-            }
-            className="bg-solar/10 hover:bg-solar/20 text-solar-bright/80 hover:text-solar-bright border border-solar/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
-          >
-            Feature
-          </button>
-        )}
-        {project.featured === 1 && (
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: false },
-              })
-            }
-            className="bg-dust/30 hover:bg-dust/50 text-ash hover:text-moonlight border border-dust/20 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
-          >
-            Unfeature
-          </button>
-        )}
-        <DeleteDialog
-          project={project}
-          isPending={isLoading}
-          onConfirm={() =>
-            action.mutate({ projectId: project.id, action: "delete" })
-          }
-        />
       </div>
     </div>
   );
@@ -990,6 +1002,7 @@ function filterProjects(projects: Project[], query: string): Project[] {
 
 export default function AdminPage() {
   const { user, token } = useAuth();
+  const isAdmin = user?.role === "admin";
   const action = useProjectAction(token);
   const [search, setSearch] = useState("");
 
@@ -1003,7 +1016,7 @@ export default function AdminPage() {
   const filteredFeatured = filterProjects(featured, search);
   const filteredAll = filterProjects(all, search);
 
-  if (!user || user.role !== "admin") {
+  if (!user || !isAdmin) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-12 text-center max-w-md">
@@ -1135,14 +1148,16 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="all">All Projects</TabsTrigger>
-            <TabsTrigger value="contract">
-              Contract
-              {ON_CHAIN_ENABLED && (
-                <span className="ml-2 bg-plasma/15 text-plasma-bright text-xs px-2 py-0.5 rounded-md">
-                  on-chain
-                </span>
-              )}
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="contract">
+                Contract
+                {ON_CHAIN_ENABLED && (
+                  <span className="ml-2 bg-plasma/15 text-plasma-bright text-xs px-2 py-0.5 rounded-md">
+                    on-chain
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -1152,7 +1167,7 @@ export default function AdminPage() {
             ) : filteredPending.length > 0 ? (
               <div className="space-y-4">
                 {filteredPending.map((p) => (
-                  <PendingCard key={p.id} project={p} action={action} />
+                  <PendingCard key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -1225,7 +1240,7 @@ export default function AdminPage() {
                 {filteredAll
                   .filter((p) => p.status === "rejected" || p.status === "delisted")
                   .map((p) => (
-                    <ProjectRow key={p.id} project={p} action={action} />
+                    <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} isAdmin={isAdmin} />
                   ))}
               </div>
             ) : (
