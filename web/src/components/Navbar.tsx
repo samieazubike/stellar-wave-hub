@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {useAuth} from "@/context/AuthContext";
+import {canReviewProjects} from "@/lib/rbac";
 import {useState} from "react";
 
 export default function Navbar() {
@@ -55,12 +56,12 @@ export default function Navbar() {
 								>
 									My Projects
 								</Link>
-								{user.role === "admin" && (
+								{canReviewProjects(user.role) && (
 									<Link
 										href="/admin"
 										className="px-4 py-2 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10 transition-all"
 									>
-										Admin
+										Review Queue
 									</Link>
 								)}
 							</>
@@ -163,13 +164,13 @@ export default function Navbar() {
 							>
 								My Projects
 							</Link>
-							{user.role === "admin" && (
+							{canReviewProjects(user.role) && (
 								<Link
 									href="/admin"
 									className="block px-4 py-2.5 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10"
 									onClick={() => setMobileOpen(false)}
 								>
-									Admin
+									Review Queue
 								</Link>
 							)}
 							<div className="pt-2 border-t border-dust/30">

@@ -1,10 +1,11 @@
 import { projectsCol, usersCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { canReviewProjects } from "@/lib/rbac";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const auth = getAuthUser(request);
-  if (!auth || auth.role !== "admin") {
+  if (!auth || !canReviewProjects(auth.role)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

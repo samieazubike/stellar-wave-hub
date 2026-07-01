@@ -1,5 +1,6 @@
 import { projectsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { canFeatureProjects, canReviewProjects } from "@/lib/rbac";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -7,7 +8,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = getAuthUser(request);
-  if (!auth || auth.role !== "admin") {
+  if (!auth || !canReviewProjects(auth.role)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -18,7 +19,7 @@ export async function PUT(
 
   try {
     const body = await request.json().catch(() => ({}));
-    const featured = body.featured ? 1 : 0;
+    const featured = body.featured && canFeatureProjects(auth.role) ? 1 : 0;
     const status = featured ? "featured" : "approved";
 
     await ref.update({ status, featured, updated_at: new Date().toISOString() });

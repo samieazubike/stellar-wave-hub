@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
+import {canFeatureProjects, canReviewProjects} from "@/lib/rbac";
 import Link from "next/link";
 
 interface Project {
@@ -50,7 +51,7 @@ export default function AdminPage() {
 	) => {
 		setActionLoading(projectId);
 		try {
-			await fetch(`/api/projects/${projectId}/${action}`, {
+			const res = await fetch(`/api/projects/${projectId}/${action}`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
@@ -58,12 +59,14 @@ export default function AdminPage() {
 				},
 				body: JSON.stringify(extra || {}),
 			});
-			setPending((prev) => prev.filter((p) => p.id !== projectId));
+			if (res.ok) {
+				setPending((prev) => prev.filter((p) => p.id !== projectId));
+			}
 		} catch {}
 		setActionLoading(null);
 	};
 
-	if (!user || user.role !== "admin") {
+	if (!user || !canReviewProjects(user.role)) {
 		return (
 			<div className="min-h-[60vh] flex items-center justify-center px-4">
 				<div className="glass rounded-2xl p-12 text-center max-w-md">
@@ -80,10 +83,10 @@ export default function AdminPage() {
 						</svg>
 					</div>
 					<h2 className="font-semibold text-xl text-starlight mb-2">
-						Admin access required
+						Reviewer access required
 					</h2>
 					<p className="text-ash mb-6">
-						You need admin privileges to view this page
+						You need maintainer or admin privileges to view this page
 					</p>
 					<Link href="/explore" className="btn-ghost inline-flex">
 						Back to Explore
@@ -97,7 +100,7 @@ export default function AdminPage() {
 		<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 			<div className="mb-8 animate-in">
 				<h1 className="font-display font-bold text-3xl text-starlight mb-1">
-					Admin Dashboard
+					Review Queue
 				</h1>
 				<p className="text-ash">
 					Review and manage project submissions
@@ -198,21 +201,24 @@ export default function AdminPage() {
 										>
 											Approve
 										</button>
-										<button
-											disabled={
-												actionLoading === project.id
-											}
-											onClick={() =>
-												handleAction(
-													project.id,
-													"approve",
-													{featured: true},
-												)
-											}
-											className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
-										>
-											Feature
-										</button>
+										{canFeatureProjects(user.role) && (
+											<button
+												disabled={
+													actionLoading ===
+													project.id
+												}
+												onClick={() =>
+													handleAction(
+														project.id,
+														"approve",
+														{featured: true},
+													)
+												}
+												className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+											>
+												Feature
+											</button>
+										)}
 										<button
 											disabled={
 												actionLoading === project.id
