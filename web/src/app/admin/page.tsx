@@ -43,6 +43,9 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+
 
 const { user, loading } = useAuth();
 const router = useRouter();
@@ -52,6 +55,8 @@ useEffect(() => {
     router.push("/login");
   }
 }, [user, loading, router]);
+if (loading) return <div className="skeleton h-screen" />;
+  if (!user || user.role !== "admin") return null;
 
 interface Project {
   id: number;
