@@ -1,18 +1,20 @@
-import { Keypair } from "@stellar/stellar-sdk";
+import { Keypair, TransactionBuilder, Networks } from "@stellar/stellar-sdk";
 import firestore from "@/lib/firebase";
 import { usersCol, nextId } from "@/lib/db";
 import { signToken } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { walletAuthSchema } from "@/lib/validation/schemas/auth";
 export const dynamic = "force-dynamic";
 
 function challengesCol() { return firestore.collection("auth_challenges"); }
 
 export async function POST(request: Request) {
-  try {
-    const { publicKey, signature } = await request.json();
+  const parsed = await parseJsonBody(request, walletAuthSchema);
+  if (!parsed.success) return parsed.response;
 
-    if (!publicKey || !signature) {
-      return Response.json({ error: "publicKey and signature are required" }, { status: 400 });
-    }
+  const { publicKey, signedXdr } = parsed.data;
+
+  try {
 
     // Retrieve and validate challenge
     const challengeDoc = await challengesCol().doc(publicKey).get();
@@ -26,15 +28,26 @@ export async function POST(request: Request) {
       return Response.json({ error: "Challenge expired. Request a new one." }, { status: 400 });
     }
 
-    // Verify signature
-    const challenge = challengeData.challenge as string;
-    const keypair = Keypair.fromPublicKey(publicKey);
-    const messageBuffer = Buffer.from(challenge, "utf-8");
-    const signatureBuffer = Buffer.from(signature, "base64");
+    // Parse the signed transaction and verify the user's signature
+    const transaction = TransactionBuilder.fromXDR(
+      signedXdr,
+      Networks.TESTNET
+    );
 
-    const isValid = keypair.verify(messageBuffer, signatureBuffer);
-    if (!isValid) {
-      return Response.json({ error: "Invalid signature" }, { status: 401 });
+    // Check that the transaction contains the user's signature
+    const keypair = Keypair.fromPublicKey(publicKey);
+    const txHash = transaction.hash();
+
+    const userSigned = transaction.signatures.some((sig) => {
+      try {
+        return keypair.verify(txHash, sig.signature());
+      } catch {
+        return false;
+      }
+    });
+
+    if (!userSigned) {
+      return Response.json({ error: "Invalid signature — transaction not signed by wallet" }, { status: 401 });
     }
 
     // Clean up used challenge
@@ -48,7 +61,6 @@ export async function POST(request: Request) {
       .get();
 
     if (!existingSnap.empty) {
-      // Existing wallet user — log them in
       const userData = existingSnap.docs[0].data();
       user = {
         id: userData.numericId,
@@ -60,7 +72,6 @@ export async function POST(request: Request) {
         bio: userData.bio,
       };
     } else {
-      // New wallet user — auto-register
       const numericId = await nextId("users");
       const shortKey = publicKey.slice(0, 8);
       const username = `stellar_${shortKey.toLowerCase()}`;

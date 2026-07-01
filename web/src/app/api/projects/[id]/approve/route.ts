@@ -23,6 +23,9 @@ export async function PUT(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const parsed = await parseJsonBody(request, featuredProjectSchema);
+  if (!parsed.success) return parsed.response;
+
   try {
     const body = await request.json().catch(() => ({}));
     const featured = body.featured && canFeatureProjects(auth.role) ? 1 : 0;

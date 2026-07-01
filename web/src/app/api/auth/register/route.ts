@@ -1,22 +1,16 @@
 import { usersCol, nextId } from "@/lib/db";
 import { hashPassword, signToken } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { registerSchema } from "@/lib/validation/schemas/auth";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const parsed = await parseJsonBody(request, registerSchema);
+  if (!parsed.success) return parsed.response;
+
+  const { username, email, password } = parsed.data;
+
   try {
-    const { username, email, password } = await request.json();
-    if (!username || !email || !password) {
-      return Response.json(
-        { error: "Username, email, and password are required" },
-        { status: 400 }
-      );
-    }
-    if (password.length < 6) {
-      return Response.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
 
     // Check existing email or username
     const byEmail = await usersCol.ref.where("email", "==", email).limit(1).get();

@@ -16,7 +16,12 @@ interface User {
   role: string;
   stellar_address?: string;
   github_url?: string;
+  twitter_url?: string;
+  discord_username?: string;
+  telegram_url?: string;
+  website_url?: string;
   bio?: string;
+  created_at?: string;
 }
 
 interface AuthContextType {
@@ -93,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const connectWallet = async () => {
-    const { isConnected, requestAccess, getAddress, signMessage } = await import("@stellar/freighter-api");
+    const { isConnected, requestAccess, getAddress, signTransaction } = await import("@stellar/freighter-api");
 
     // Check if Freighter is installed
     const connResult = await isConnected();
@@ -115,22 +120,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const publicKey = addrResult.address;
 
-    // Request challenge from server
+    // Request challenge transaction from server
     const challengeRes = await fetch(`/api/auth/challenge?publicKey=${publicKey}`);
     const challengeData = await challengeRes.json();
     if (!challengeRes.ok) throw new Error(challengeData.error || "Failed to get challenge");
 
-    // Sign the challenge with wallet
-    const signResult = await signMessage(challengeData.challenge);
-    if (signResult.error || !signResult.signedMessage) {
-      throw new Error("Failed to sign challenge with wallet.");
+    // Sign the challenge transaction with Freighter
+    const signResult = await signTransaction(challengeData.challengeXdr, {
+      networkPassphrase: challengeData.networkPassphrase,
+    });
+    if (signResult.error || !signResult.signedTxXdr) {
+      throw new Error("Failed to sign transaction with wallet.");
     }
 
-    // Verify signature with server
+    // Verify signed transaction with server
     const authRes = await fetch("/api/auth/wallet", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ publicKey, signature: signResult.signedMessage }),
+      body: JSON.stringify({ publicKey, signedXdr: signResult.signedTxXdr }),
     });
     const authData = await authRes.json();
     if (!authRes.ok) throw new Error(authData.error || "Wallet authentication failed");
