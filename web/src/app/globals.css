@@ -85,6 +85,7 @@ body {
   content: '';
   position: absolute;
   inset: -50%;
+  will-change: transform;
   background-image:
     radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6), transparent),
     radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.5), transparent),
