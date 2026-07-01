@@ -3,7 +3,7 @@ import { comparePassword, signToken } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { loginSchema } from "@/lib/validation/schemas/auth";
 import { rateLimit, getRetryAfterHeader } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/utils";
+import { getClientIp } from "@/lib/server-utils";
 
 export const dynamic = "force-dynamic";
 

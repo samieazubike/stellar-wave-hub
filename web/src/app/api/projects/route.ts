@@ -4,7 +4,7 @@ import { parseJsonBody } from "@/lib/validation/parse-body";
 import { createProjectSchema } from "@/lib/validation/schemas/projects";
 import slugify from "slugify";
 import { rateLimit, getRetryAfterHeader } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/utils";
+import { getClientIp } from "@/lib/server-utils";
 
 export const dynamic = "force-dynamic";
 
