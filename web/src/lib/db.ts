@@ -26,6 +26,11 @@ export const financialSnapshotsCol = {
 		return col("financial_snapshots");
 	},
 };
+export const submissionNotesCol = {
+	get ref() {
+		return col("submission_notes");
+	},
+};
 
 // Auto-incrementing numeric ID
 export async function nextId(collection: string): Promise<number> {
