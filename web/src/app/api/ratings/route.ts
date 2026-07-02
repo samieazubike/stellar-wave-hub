@@ -2,9 +2,22 @@ import { projectsCol, ratingsCol, nextId } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { createRatingSchema } from "@/lib/validation/schemas/ratings";
+import { rateLimit, getRetryAfterHeader } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/server-utils";
+
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const ip = await getClientIp();
+  
+  const { success, resetTime } = rateLimit(`ratings_post_${ip}`, 15, 60 * 1000);
+  if (!success) {
+    return Response.json(
+      { error: "Too many ratings submitted in a short time." },
+      { status: 429, headers: { "Retry-After": getRetryAfterHeader(resetTime) } }
+    );
+  }
+
   const auth = getAuthUser(request);
   if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -22,7 +35,6 @@ export async function POST(request: Request) {
   } = parsed.data;
 
   try {
-
     const pDoc = await projectsCol.ref.doc(String(project_id)).get();
     if (!pDoc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
     if (pDoc.data()!.user_id === auth.userId) {

@@ -12,7 +12,9 @@ const globalStore = globalThis as typeof globalThis & {
   __stellarWaveRateLimitStore?: RateLimitStore;
 };
 
-const buckets = globalStore.__stellarWaveRateLimitStore ?? new Map<string, RateLimitBucket>();
+const buckets =
+  globalStore.__stellarWaveRateLimitStore ?? new Map<string, RateLimitBucket>();
+
 globalStore.__stellarWaveRateLimitStore = buckets;
 
 export function checkRateLimit(
@@ -21,11 +23,15 @@ export function checkRateLimit(
 ): RateLimitResult {
   const now = Date.now();
   const windowStart = now - options.windowMs;
+
   const bucket = buckets.get(key) ?? { hits: [] };
+
+  // Keep only requests inside the sliding window
   bucket.hits = bucket.hits.filter((hit) => hit > windowStart);
 
   if (bucket.hits.length >= options.limit) {
     const retryAfterMs = bucket.hits[0] + options.windowMs - now;
+
     buckets.set(key, bucket);
 
     return {
@@ -40,7 +46,9 @@ export function checkRateLimit(
   return { allowed: true };
 }
 
-export function rateLimitExceededResponse(retryAfterSeconds: number): Response {
+export function rateLimitExceededResponse(
+  retryAfterSeconds: number,
+): Response {
   return Response.json(
     {
       error: "Rate limit exceeded",
