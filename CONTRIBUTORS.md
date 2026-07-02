@@ -373,6 +373,17 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
         <br />
         <sub>Researcher — Stellar GreenPay</sub>
     </div>
+        <td align="center">
+      <a href="https://github.com/eleven-smg">
+        <img src="https://github.com/eleven-smg.png" width="80" alt="eleven-smg" style="border-radius:50%" />
+        <br />
+        <sub><b>eleven-smg</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/eleven-smg"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Boundless Bounty</sub>
+    </td>
     <!-- Add your <td> above this line -->
   </tr>
 </table>
