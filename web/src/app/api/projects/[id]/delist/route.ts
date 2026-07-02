@@ -1,6 +1,9 @@
 import { projectsCol } from "@/lib/db";
 import { notifyProjectStatusChange } from "@/lib/notifications";
 import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { delistProjectSchema } from "@/lib/validation/schemas/featured";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -8,7 +11,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = getAuthUser(request);
-  if (!auth || auth.role !== "admin") {
+  if (!auth || !hasMinRole(auth.role, "admin")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -16,6 +19,9 @@ export async function PUT(
   const ref = projectsCol.ref.doc(id);
   const doc = await ref.get();
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
+
+  const parsed = await parseJsonBody(request, delistProjectSchema);
+  if (!parsed.success) return parsed.response;
 
   try {
     const body = await request.json().catch(() => ({}));
@@ -25,6 +31,11 @@ export async function PUT(
       status: "delisted",
       featured: 0,
       rejection_reason: delistReason,
+
+    await ref.update({
+      status: "delisted",
+      featured: 0,
+      rejection_reason: parsed.data.reason || "Delisted by admin",
       updated_at: new Date().toISOString(),
     });
     await notifyProjectStatusChange({

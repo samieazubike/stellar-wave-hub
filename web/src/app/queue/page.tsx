@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import SubmissionNotes from "@/components/SubmissionNotes";
 
 interface QueueProject {
   id: number;
@@ -149,6 +150,7 @@ export default function QueuePage() {
                   </div>
                 </div>
               </div>
+              <SubmissionNotes projectId={project.id} />
             </div>
           ))}
         </div>

@@ -10,7 +10,7 @@ import {
 	explorerTxUrl,
 	getRatingFee,
 	hasRatedOnChain,
-	getProjectRatingOnChain,
+	getProjectRatingFromEvents,
 	isRegisteredOnChain,
 	type OnChainRating,
 } from "@/lib/ratingContract";
@@ -168,7 +168,7 @@ export default function ProjectDetailPage({
 				if (registered) {
 					// Only fetch fee and aggregate if actually registered
 					getRatingFee().then(setContractRatingFee).catch(() => {});
-					getProjectRatingOnChain(project.slug).then(setOnChainRating).catch(() => {});
+					getProjectRatingFromEvents(project.slug).then(setOnChainRating).catch(() => {});
 				}
 			})
 			.catch(() => {});
@@ -232,7 +232,7 @@ export default function ProjectDetailPage({
 
 			// Refresh on-chain aggregate
 			if (onChainActive) {
-				getProjectRatingOnChain(project.slug)
+				getProjectRatingFromEvents(project.slug)
 					.then((r) => setOnChainRating(r))
 					.catch(() => {});
 				setAlreadyRatedOnChain(true);
