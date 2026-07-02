@@ -2,7 +2,10 @@ import { projectsCol } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { featuredProjectSchema } from "@/lib/validation/schemas/featured";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
+
+const moderationActionLimit = { limit: 30, windowMs: 60_000 };
 
 export async function PUT(
   request: Request,
@@ -12,6 +15,9 @@ export async function PUT(
   if (!auth || !hasMinRole(auth.role, "admin")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const rateLimit = checkRateLimit(`maintainer:${auth.userId}:moderation-action`, moderationActionLimit);
+  if (!rateLimit.allowed) return rateLimitExceededResponse(rateLimit.retryAfterSeconds);
 
   const { id } = await params;
   const ref = projectsCol.ref.doc(id);
