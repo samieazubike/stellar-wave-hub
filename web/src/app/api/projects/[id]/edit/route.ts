@@ -1,5 +1,5 @@
 import { projectsCol } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { editProjectSchema } from "@/lib/validation/schemas/projects";
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export async function PUT(
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
 
   const project = doc.data()!;
-  if (project.user_id !== auth.userId && auth.role !== "admin") {
+  if (project.user_id !== auth.userId && !hasMinRole(auth.role, "admin")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

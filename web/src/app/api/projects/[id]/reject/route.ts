@@ -4,6 +4,8 @@ import { canReviewProjects } from "@/lib/rbac";
 import { canModerateCategory } from "@/lib/maintainerCategories";
 export const dynamic = "force-dynamic";
 
+const moderationActionLimit = { limit: 30, windowMs: 60_000 };
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -12,6 +14,9 @@ export async function PUT(
   if (!auth || !canReviewProjects(auth.role)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const rateLimit = checkRateLimit(`maintainer:${auth.userId}:moderation-action`, moderationActionLimit);
+  if (!rateLimit.allowed) return rateLimitExceededResponse(rateLimit.retryAfterSeconds);
 
   const { id } = await params;
   const ref = projectsCol.ref.doc(id);
