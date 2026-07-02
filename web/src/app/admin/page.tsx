@@ -131,6 +131,207 @@ function useProjectAction(token: string | null) {
   });
 }
 
+interface PromoCode {
+  id: number;
+  code: string;
+  percent_off: number;
+  max_uses: number | null;
+  uses: number;
+  expires_at: string | null;
+  created_at: string;
+}
+
+function useAdminPromoCodes(token: string | null) {
+  return useQuery<PromoCode[]>({
+    queryKey: ["admin-promo-codes"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/promo-codes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch promo codes");
+      const data = await res.json();
+      return data.promoCodes || [];
+    },
+    enabled: !!token,
+  });
+}
+
+function PromoCodesTab({ token }: { token: string | null }) {
+  const qc = useQueryClient();
+  const { data: promos = [], isLoading } = useAdminPromoCodes(token);
+  
+  const [code, setCode] = useState("");
+  const [percentOff, setPercentOff] = useState("");
+  const [maxUses, setMaxUses] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/promo-codes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: code.trim().toUpperCase(),
+          percent_off: Number(percentOff),
+          max_uses: maxUses ? Number(maxUses) : null,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Failed to create promo code");
+      }
+      setCode("");
+      setPercentOff("");
+      setMaxUses("");
+      setExpiresAt("");
+      qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error creating code");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deletePromo = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this promo code?")) return;
+    try {
+      const res = await fetch(`/api/admin/promo-codes?id=${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete promo code");
+      qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting code");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="glass rounded-2xl p-6">
+        <h3 className="font-semibold text-starlight mb-4">Create Promo Code</h3>
+        <form onSubmit={createPromo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+          <div>
+            <label className="text-xs text-ash mb-1 block">Code *</label>
+            <input
+              type="text"
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              className="input-field w-full text-sm font-mono"
+              placeholder="e.g. HALFOFF"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ash mb-1 block">% Off *</label>
+            <input
+              type="number"
+              required
+              min="1"
+              max="100"
+              value={percentOff}
+              onChange={(e) => setPercentOff(e.target.value)}
+              className="input-field w-full text-sm"
+              placeholder="e.g. 50"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ash mb-1 block">Max Uses (optional)</label>
+            <input
+              type="number"
+              min="1"
+              value={maxUses}
+              onChange={(e) => setMaxUses(e.target.value)}
+              className="input-field w-full text-sm"
+              placeholder="e.g. 100"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ash mb-1 block">Expires (optional)</label>
+            <input
+              type="datetime-local"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+              className="input-field w-full text-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting || !code || !percentOff}
+            className="btn-nova text-sm w-full h-[42px] disabled:opacity-50"
+          >
+            {isSubmitting ? "Creating..." : "Create"}
+          </button>
+        </form>
+        {error && <p className="text-supernova text-xs mt-3">{error}</p>}
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h3 className="font-semibold text-starlight mb-4">Active Promo Codes</h3>
+        {isLoading ? (
+          <Skeletons count={2} />
+        ) : promos.length > 0 ? (
+          <div className="space-y-3">
+            {promos.map((promo) => (
+              <div
+                key={promo.id}
+                className="bg-stardust/30 border border-dust/20 rounded-xl px-4 py-3 flex items-center justify-between gap-4 flex-wrap hover:border-dust/40 transition-colors"
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono font-bold text-plasma-bright text-lg">
+                      {promo.code}
+                    </span>
+                    <span className="tag tag-solar text-xs font-semibold">
+                      {promo.percent_off}% OFF
+                    </span>
+                    {promo.expires_at && new Date(promo.expires_at) < new Date() && (
+                      <span className="tag tag-supernova text-xs">Expired</span>
+                    )}
+                    {promo.max_uses && promo.uses >= promo.max_uses && (
+                      <span className="tag tag-supernova text-xs">Depleted</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-ash">
+                    <span>
+                      Uses: <span className="text-moonlight">{promo.uses}</span>
+                      {promo.max_uses ? ` / ${promo.max_uses}` : " (Unlimited)"}
+                    </span>
+                    {promo.expires_at && (
+                      <span>
+                        Expires: <span className="text-moonlight">{new Date(promo.expires_at).toLocaleDateString()} {new Date(promo.expires_at).toLocaleTimeString()}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => deletePromo(promo.id)}
+                  className="bg-supernova/10 hover:bg-supernova/20 text-supernova border border-supernova/20 text-xs px-4 py-2 rounded-lg transition-all font-medium shrink-0"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-ash text-sm">No promo codes created yet.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Reject Dialog ──────────────────────────────────────────────────
 
 const REJECT_REASON_TEMPLATES = [
