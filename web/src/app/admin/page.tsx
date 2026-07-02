@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { hasMinRole } from "@/lib/roles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -24,6 +25,13 @@ import {
   transferAdminOnChain,
 } from "@/lib/ratingContract";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -124,7 +132,235 @@ function useProjectAction(token: string | null) {
   });
 }
 
+interface PromoCode {
+  id: number;
+  code: string;
+  percent_off: number;
+  max_uses: number | null;
+  uses: number;
+  expires_at: string | null;
+  created_at: string;
+}
+
+function useAdminPromoCodes(token: string | null) {
+  return useQuery<PromoCode[]>({
+    queryKey: ["admin-promo-codes"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/promo-codes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch promo codes");
+      const data = await res.json();
+      return data.promoCodes || [];
+    },
+    enabled: !!token,
+  });
+}
+
+function PromoCodesTab({ token }: { token: string | null }) {
+  const qc = useQueryClient();
+  const { data: promos = [], isLoading } = useAdminPromoCodes(token);
+  
+  const [code, setCode] = useState("");
+  const [percentOff, setPercentOff] = useState("");
+  const [maxUses, setMaxUses] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/promo-codes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: code.trim().toUpperCase(),
+          percent_off: Number(percentOff),
+          max_uses: maxUses ? Number(maxUses) : null,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Failed to create promo code");
+      }
+      setCode("");
+      setPercentOff("");
+      setMaxUses("");
+      setExpiresAt("");
+      qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error creating code");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deletePromo = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this promo code?")) return;
+    try {
+      const res = await fetch(`/api/admin/promo-codes?id=${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete promo code");
+      qc.invalidateQueries({ queryKey: ["admin-promo-codes"] });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting code");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="glass rounded-2xl p-6">
+        <h3 className="font-semibold text-starlight mb-4">Create Promo Code</h3>
+        <form onSubmit={createPromo} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+          <div>
+            <label className="text-xs text-ash mb-1 block">Code *</label>
+            <input
+              type="text"
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              className="input-field w-full text-sm font-mono"
+              placeholder="e.g. HALFOFF"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ash mb-1 block">% Off *</label>
+            <input
+              type="number"
+              required
+              min="1"
+              max="100"
+              value={percentOff}
+              onChange={(e) => setPercentOff(e.target.value)}
+              className="input-field w-full text-sm"
+              placeholder="e.g. 50"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ash mb-1 block">Max Uses (optional)</label>
+            <input
+              type="number"
+              min="1"
+              value={maxUses}
+              onChange={(e) => setMaxUses(e.target.value)}
+              className="input-field w-full text-sm"
+              placeholder="e.g. 100"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-ash mb-1 block">Expires (optional)</label>
+            <input
+              type="datetime-local"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+              className="input-field w-full text-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting || !code || !percentOff}
+            className="btn-nova text-sm w-full h-[42px] disabled:opacity-50"
+          >
+            {isSubmitting ? "Creating..." : "Create"}
+          </button>
+        </form>
+        {error && <p className="text-supernova text-xs mt-3">{error}</p>}
+      </div>
+
+      <div className="glass rounded-2xl p-6">
+        <h3 className="font-semibold text-starlight mb-4">Active Promo Codes</h3>
+        {isLoading ? (
+          <Skeletons count={2} />
+        ) : promos.length > 0 ? (
+          <div className="space-y-3">
+            {promos.map((promo) => (
+              <div
+                key={promo.id}
+                className="bg-stardust/30 border border-dust/20 rounded-xl px-4 py-3 flex items-center justify-between gap-4 flex-wrap hover:border-dust/40 transition-colors"
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono font-bold text-plasma-bright text-lg">
+                      {promo.code}
+                    </span>
+                    <span className="tag tag-solar text-xs font-semibold">
+                      {promo.percent_off}% OFF
+                    </span>
+                    {promo.expires_at && new Date(promo.expires_at) < new Date() && (
+                      <span className="tag tag-supernova text-xs">Expired</span>
+                    )}
+                    {promo.max_uses && promo.uses >= promo.max_uses && (
+                      <span className="tag tag-supernova text-xs">Depleted</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-ash">
+                    <span>
+                      Uses: <span className="text-moonlight">{promo.uses}</span>
+                      {promo.max_uses ? ` / ${promo.max_uses}` : " (Unlimited)"}
+                    </span>
+                    {promo.expires_at && (
+                      <span>
+                        Expires: <span className="text-moonlight">{new Date(promo.expires_at).toLocaleDateString()} {new Date(promo.expires_at).toLocaleTimeString()}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => deletePromo(promo.id)}
+                  className="bg-supernova/10 hover:bg-supernova/20 text-supernova border border-supernova/20 text-xs px-4 py-2 rounded-lg transition-all font-medium shrink-0"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-ash text-sm">No promo codes created yet.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Reject Dialog ──────────────────────────────────────────────────
+
+const REJECT_REASON_TEMPLATES = [
+  {
+    label: "Not part of the Stellar Wave Program",
+    text: "This project does not appear to be part of the Stellar Wave Program.",
+  },
+  {
+    label: "Unverifiable on-chain account/contract ID",
+    text: "The Stellar account ID / Soroban contract ID provided could not be verified on-chain.",
+  },
+  {
+    label: "Description too short or not original",
+    text: "The description doesn't meet the minimum length, or appears to be copied rather than original.",
+  },
+  {
+    label: "Category/tags don't match the project",
+    text: "The category and/or tags don't accurately reflect what this project does.",
+  },
+  {
+    label: "Duplicate submission",
+    text: "This project has already been submitted.",
+  },
+  {
+    label: "Other / write a custom reason",
+    text: "",
+  },
+] as const;
 
 function RejectDialog({
   project,
@@ -136,7 +372,13 @@ function RejectDialog({
   isPending: boolean;
 }) {
   const [reason, setReason] = useState("");
+  const [template, setTemplate] = useState("");
   const [open, setOpen] = useState(false);
+
+  const reset = () => {
+    setReason("");
+    setTemplate("");
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -157,23 +399,49 @@ function RejectDialog({
             This project will be moved to rejected status and won&apos;t appear in the public directory.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-moonlight">
-            Reason <span className="text-ash">(optional)</span>
-          </label>
-          <Textarea
-            placeholder="e.g. Not a Stellar Wave project, insufficient description..."
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-moonlight">
+              Template <span className="text-ash">(optional)</span>
+            </label>
+            <Select
+              value={template}
+              onValueChange={(value) => {
+                setTemplate(value);
+                const picked = REJECT_REASON_TEMPLATES.find((t) => t.label === value);
+                setReason(picked?.text ?? "");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a reason template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {REJECT_REASON_TEMPLATES.map((t) => (
+                  <SelectItem key={t.label} value={t.label}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-moonlight">
+              Reason <span className="text-ash">(optional)</span>
+            </label>
+            <Textarea
+              placeholder="e.g. Not a Stellar Wave project, insufficient description..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+            />
+          </div>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setReason("")}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={reset}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               onConfirm(reason);
-              setReason("");
+              reset();
               setOpen(false);
             }}
           >
@@ -937,7 +1205,7 @@ export default function AdminPage() {
   const filteredFeatured = filterProjects(featured, search);
   const filteredAll = filterProjects(all, search);
 
-  if (!user || user.role !== "admin") {
+  if (!user || !hasMinRole(user.role, "admin")) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-12 text-center max-w-md">
@@ -960,15 +1228,25 @@ export default function AdminPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
       <div className="mb-8 animate-in">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-solar/30 to-nova/30 border border-solar/20 flex items-center justify-center">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--solar-bright)" strokeWidth="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
+        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-solar/30 to-nova/30 border border-solar/20 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--solar-bright)" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
           </div>
-          <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
+          <a
+            href="https://github.com/samieazubike/stellar-wave-hub/blob/main/docs/MAINTAINERS.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost text-sm !py-2 !px-3"
+          >
+            Maintainer Guide
+          </a>
         </div>
         <p className="text-ash ml-[52px]">Manage project submissions, approvals, and listings</p>
       </div>
@@ -1035,7 +1313,7 @@ export default function AdminPage() {
           {action.error.message}
         </div>
       )}
-
+      
       {/* Tabs */}
       <div className="animate-in animate-in-delay-3">
         <Tabs defaultValue="pending">
@@ -1067,6 +1345,7 @@ export default function AdminPage() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="promos">Promo Codes</TabsTrigger>
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -1210,6 +1489,10 @@ export default function AdminPage() {
                 <Link href="/profile" className="btn-ghost inline-flex text-sm">Go to Profile</Link>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="promos">
+            <PromoCodesTab token={token} />
           </TabsContent>
         </Tabs>
       </div>

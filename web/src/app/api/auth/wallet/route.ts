@@ -2,17 +2,19 @@ import { Keypair, TransactionBuilder, Networks } from "@stellar/stellar-sdk";
 import firestore from "@/lib/firebase";
 import { usersCol, nextId } from "@/lib/db";
 import { signToken } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { walletAuthSchema } from "@/lib/validation/schemas/auth";
 export const dynamic = "force-dynamic";
 
 function challengesCol() { return firestore.collection("auth_challenges"); }
 
 export async function POST(request: Request) {
-  try {
-    const { publicKey, signedXdr } = await request.json();
+  const parsed = await parseJsonBody(request, walletAuthSchema);
+  if (!parsed.success) return parsed.response;
 
-    if (!publicKey || !signedXdr) {
-      return Response.json({ error: "publicKey and signedXdr are required" }, { status: 400 });
-    }
+  const { publicKey, signedXdr } = parsed.data;
+
+  try {
 
     // Retrieve and validate challenge
     const challengeDoc = await challengesCol().doc(publicKey).get();
