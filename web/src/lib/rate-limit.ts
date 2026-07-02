@@ -1,31 +1,64 @@
-type RateLimitContext = {
-  count: number;
-  resetTime: number;
+type RateLimitBucket = {
+  hits: number[];
 };
 
-const rateLimits = new Map<string, RateLimitContext>();
+type RateLimitResult =
+  | { allowed: true }
+  | { allowed: false; retryAfterSeconds: number };
 
-export function rateLimit(identifier: string, limit: number, windowMs: number) {
+type RateLimitStore = Map<string, RateLimitBucket>;
+
+const globalStore = globalThis as typeof globalThis & {
+  __stellarWaveRateLimitStore?: RateLimitStore;
+};
+
+const buckets =
+  globalStore.__stellarWaveRateLimitStore ?? new Map<string, RateLimitBucket>();
+
+globalStore.__stellarWaveRateLimitStore = buckets;
+
+export function checkRateLimit(
+  key: string,
+  options: { limit: number; windowMs: number },
+): RateLimitResult {
   const now = Date.now();
-  const windowContext = rateLimits.get(identifier);
+  const windowStart = now - options.windowMs;
 
-  if (!windowContext || now > windowContext.resetTime) {
-    rateLimits.set(identifier, { count: 1, resetTime: now + windowMs });
-    return { success: true, remaining: limit - 1, resetTime: now + windowMs };
+  const bucket = buckets.get(key) ?? { hits: [] };
+
+  // Keep only requests inside the sliding window
+  bucket.hits = bucket.hits.filter((hit) => hit > windowStart);
+
+  if (bucket.hits.length >= options.limit) {
+    const retryAfterMs = bucket.hits[0] + options.windowMs - now;
+
+    buckets.set(key, bucket);
+
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, Math.ceil(retryAfterMs / 1000)),
+    };
   }
 
-  if (windowContext.count >= limit) {
-    return { success: false, remaining: 0, resetTime: windowContext.resetTime };
-  }
+  bucket.hits.push(now);
+  buckets.set(key, bucket);
 
-  windowContext.count += 1;
-  return { 
-    success: true, 
-    remaining: limit - windowContext.count, 
-    resetTime: windowContext.resetTime 
-  };
+  return { allowed: true };
 }
 
-export function getRetryAfterHeader(resetTime: number): string {
-  return Math.ceil((resetTime - Date.now()) / 1000).toString();
+export function rateLimitExceededResponse(
+  retryAfterSeconds: number,
+): Response {
+  return Response.json(
+    {
+      error: "Rate limit exceeded",
+      retryAfterSeconds,
+    },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(retryAfterSeconds),
+      },
+    },
+  );
 }
