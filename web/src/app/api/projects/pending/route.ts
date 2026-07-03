@@ -1,12 +1,12 @@
 import { projectsCol, usersCol } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth";
+import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { isClaimStale } from "@/lib/claims";
 import { getSupabase } from "@/lib/firebase";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const auth = getAuthUser(request);
-  if (!auth || auth.role !== "admin") {
+  if (!auth || !hasMinRole(auth.role, "admin")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
