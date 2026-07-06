@@ -1,6 +1,6 @@
-import { ratingsCol, usersCol } from "@/lib/db";
+import { ratingsCol, usersCol, ratingVotesCol } from "@/lib/db";
+import { verifyAuth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
-
 
 export async function GET(
     request: Request,
