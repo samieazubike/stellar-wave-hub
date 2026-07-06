@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import { useAuth } from "@/context/AuthContext";
+import {useEffect, useState, use} from "react";
+import {useAuth} from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
 import Link from "next/link";
 import {
@@ -74,7 +74,7 @@ function stellarExplorerBase(network?: string) {
 		: "https://stellar.expert/explorer/public";
 }
 
-function StellarAddressLink({ address, type, network }: { address: string; type: "account" | "contract"; network?: string }) {
+function StellarAddressLink({address, type, network}: {address: string; type: "account" | "contract"; network?: string}) {
 	const path = type === "account" ? "account" : "contract";
 	const href = `${stellarExplorerBase(network)}/${path}/${address}`;
 	return (
@@ -105,10 +105,10 @@ function formatFee(stroops: bigint | null): string {
 export default function ProjectDetailPage({
 	params,
 }: {
-	params: Promise<{ slug: string }>;
+	params: Promise<{slug: string}>;
 }) {
-	const { slug } = use(params);
-	const { user, token } = useAuth();
+	const {slug} = use(params);
+	const {user, token} = useAuth();
 	const [project, setProject] = useState<Project | null>(null);
 	const [ratings, setRatings] = useState<Rating[]>([]);
 	const [averages, setAverages] = useState<Averages | null>(null);
@@ -170,8 +170,8 @@ export default function ProjectDetailPage({
 				setIsOnChainProject(registered);
 				if (registered) {
 					// Only fetch fee and aggregate if actually registered
-					getRatingFee().then(setContractRatingFee).catch(() => {});
-					getProjectRatingFromEvents(project.slug).then(setOnChainRating).catch(() => {});
+					getRatingFee().then(setContractRatingFee).catch(() => { });
+					getProjectRatingFromEvents(project.slug).then(setOnChainRating).catch(() => { });
 				}
 			})
 			.catch(() => { });
@@ -407,7 +407,7 @@ export default function ProjectDetailPage({
 								className="btn-ghost text-sm !py-1.5 inline-flex items-center gap-1.5"
 							>
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-									<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+									<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78.015-.795.9-.015 1.74.435 1.97.81.3.51 1.205.84 1.55.84.345 0 .645-.135.9-.405-2.93-.3-6-1.445-6-6.75 0-1.485.635-2.73 1.68-3.7-.165-.375-.75-1.965.165-4.035 1.35-.135 2.715 1.02 3.465 1.02.345-.09.72-.135 1.035-.135 1.5 0 2.925.585 4.005 1.53.6-.465 2.092-1.635 3.397-1.635 1.245 2.645.285 4.005.165 4.41.9.825 1.695 1.945 1.695 3.255 0 5.25-3.015 6.514-5.885 6.857.465.39.99 1.17.99 2.465 0 1.77-.015 3.3-.015 3.75 0 .315.225.69.825.57A12.939 12.939 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
 								</svg>
 								{repo.label}
 							</a>
@@ -420,7 +420,7 @@ export default function ProjectDetailPage({
 							className="btn-ghost text-sm !py-1.5 inline-flex items-center gap-1.5"
 						>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-								<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+								<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78.015-.795.9-.015 1.74.435 1.97.81.3.51 1.205.84 1.55.84.345 0 .645-.135.9-.405-2.93-.3-6-1.445-6-6.75 0-1.485.635-2.73 1.68-3.7-.165-.375-.75-1.965.165-4.035 1.35-.135 2.715 1.02 3.465 1.02.345-.09.72-.135 1.035-.135 1.5 0 2.925.585 4.005 1.53.6-.465 2.092-1.635 3.397-1.635 1.245 2.645.285 4.005.165 4.41.9.825 1.695 1.945 1.695 3.255 0 5.25-3.015 6.514-5.885 6.857.465.39.99 1.17.99 2.465 0 1.77-.015 3.3-.015 3.75 0 .315.225.69.825.57A12.939 12.939 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
 							</svg>
 							GitHub
 						</a>
@@ -609,10 +609,10 @@ export default function ProjectDetailPage({
 								</h2>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 									{[
-										{ label: "Overall", value: averages.avg_score },
-										{ label: "Purpose", value: averages.avg_purpose },
-										{ label: "Innovation", value: averages.avg_innovation },
-										{ label: "Usability", value: averages.avg_usability },
+										{label: "Overall", value: averages.avg_score},
+										{label: "Purpose", value: averages.avg_purpose},
+										{label: "Innovation", value: averages.avg_innovation},
+										{label: "Usability", value: averages.avg_usability},
 									].map((item) => (
 										<div
 											key={item.label}
@@ -814,8 +814,8 @@ export default function ProjectDetailPage({
 													toggleHelpfulVote(rating.id, rating.hasVoted ?? false)
 												}
 												className={`px-3 py-1 rounded-lg text-xs transition ${rating.hasVoted
-														? "bg-nova text-white"
-														: "bg-stardust/40 hover:bg-stardust/70"
+													? "bg-nova text-white"
+													: "bg-stardust/40 hover:bg-stardust/70"
 													}`}
 											>
 												👍 Helpful
