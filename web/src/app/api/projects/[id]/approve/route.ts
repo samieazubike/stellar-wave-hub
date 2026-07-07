@@ -1,5 +1,6 @@
 import { projectsCol } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { canFeatureProjects } from "@/lib/rbac";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { featuredProjectSchema } from "@/lib/validation/schemas/featured";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
