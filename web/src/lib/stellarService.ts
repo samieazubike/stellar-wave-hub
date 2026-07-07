@@ -11,6 +11,7 @@ export async function getAccountSummary(accountId: string) {
     balances: account.balances.map((b) => ({
       asset_type: b.asset_type,
       asset_code: "asset_code" in b ? b.asset_code : "XLM",
+      asset_issuer: "asset_issuer" in b ? b.asset_issuer : undefined,
       balance: b.balance,
     })),
     sequence: account.sequence,

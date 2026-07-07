@@ -39,6 +39,17 @@ The write policies expect JWT custom claims:
 - `app_user_id` (mapped to `users.numericId`)
 - `app_role` (for admin overrides)
 
+## Substantial Projects Filter
+
+Run [data/supabase/005_add_substantial_flag.sql](data/supabase/005_add_substantial_flag.sql) after the base schema (and any other numbered migrations) to add the `is_substantial` flag used by the Explore page's "Substantial only" toggle.
+
+A project counts as **substantial** when it meets both of:
+
+1. it has a deployed Soroban smart contract (`stellar_contract_id` is set) — required, not sufficient on its own, and
+2. it meets at least 2 of these 3 secondary markers: `stellar_account_id` set, `github_url` set (or `github_repos` non-empty), `website_url` set.
+
+This is computed by the `public.project_is_substantial(...)` Postgres function and stored in an indexed generated column (`projects.is_substantial`), so `GET /api/projects?substantial=true` filters at the database level. To retune the rule, edit the function with `create or replace function` and then force existing rows to recompute with `update public.projects set "numericId" = "numericId";` (a function change alone doesn't retroactively update already-stored rows).
+
 ## Getting Started
 
 First, run the development server:
