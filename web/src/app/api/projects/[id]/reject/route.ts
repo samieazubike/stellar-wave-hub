@@ -2,6 +2,9 @@ import { projectsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { canReviewProjects } from "@/lib/rbac";
 import { canModerateCategory } from "@/lib/maintainerCategories";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { rejectProjectSchema } from "@/lib/validation/schemas/featured";
 export const dynamic = "force-dynamic";
 
 const moderationActionLimit = { limit: 30, windowMs: 60_000 };

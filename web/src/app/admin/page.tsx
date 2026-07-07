@@ -1,6 +1,7 @@
 "use client";
 
 import {useCallback, useEffect, useState} from "react";
+import {useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import {useAuth} from "@/context/AuthContext";
 import {canFeatureProjects, canReviewProjects} from "@/lib/rbac";
 import {PROJECT_CATEGORIES} from "@/lib/categories";
@@ -1621,7 +1622,7 @@ export default function AdminPage() {
 						))}
 					</div>
 				) : (
-					<div clahttps://github.com/samieazubike/stellar-wave-hub/pull/280/conflict?name=web%252Fsrc%252Fapp%252Fadmin%252Fpage.tsx&ancestor_oid=03fb3ce07d5dd4292372d90d2131a1add2a199a9&base_oid=daf1d253330d4e2ac4cb65d4513ad858b266c9fb&head_oid=141db11e68765cf89e944c7a2d3317fa1b0c93d2ssName="glass rounded-2xl p-12 text-center">
+					<div className="glass rounded-2xl p-12 text-center">
 						<div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-aurora/10 flex items-center justify-center">
 							<svg
 								width="28"
