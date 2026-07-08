@@ -1,4 +1,4 @@
-import { Horizon, Memo, TransactionBuilder, Networks, BASE_FEE, Operation, nativeToScVal } from "@stellar/stellar-sdk";
+import { Horizon, Memo, TransactionBuilder, Networks, BASE_FEE, Operation, Asset } from "@stellar/stellar-sdk";
 
 
 
@@ -204,7 +204,7 @@ export async function buildSpotlightPaymentTx(params: {
       Operation.payment({
         destination: featuredDestination,
         // Use the SDK-native payment asset representation (no explicit {type:"native"} typing)
-        asset: nativeToScVal("native", { type: "string" }) as any,
+        asset: Asset.native(),
         amount: amountXlm,
       }) as any,
     )

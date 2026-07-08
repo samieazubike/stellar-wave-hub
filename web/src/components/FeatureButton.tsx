@@ -60,7 +60,7 @@ export default function FeatureButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading || isActive}
-      className="btn-nova text-sm inline-flex items-center gap-2"
+      className="btn-nova text-sm inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? "Processing…" : label}
     </button>

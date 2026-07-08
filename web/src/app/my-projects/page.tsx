@@ -145,7 +145,7 @@ export default function MyProjectsPage() {
 								</p>
 							</div>
 							<div className="flex items-center gap-3 shrink-0">
-								{project.status !== "rejected" && (
+								{(project.status === "approved" || project.status === "featured") && (
 									<FeatureButton
 										projectId={project.id}
 										featuredUntil={project.featured_until}
