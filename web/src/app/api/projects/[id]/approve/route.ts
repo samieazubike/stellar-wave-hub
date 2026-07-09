@@ -1,6 +1,6 @@
 import { projectsCol } from "@/lib/db";
-import { getAuthUser, hasMinRole } from "@/lib/auth";
-import { canFeatureProjects } from "@/lib/rbac";
+import { getAuthUser } from "@/lib/auth";
+import { canFeatureProjects, canReviewProjects } from "@/lib/rbac";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { featuredProjectSchema } from "@/lib/validation/schemas/featured";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
@@ -13,7 +13,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = getAuthUser(request);
-  if (!auth || !hasMinRole(auth.role, "admin")) {
+  if (!auth || !canReviewProjects(auth.role)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -29,8 +29,7 @@ export async function PUT(
   if (!parsed.success) return parsed.response;
 
   try {
-    const body = await request.json().catch(() => ({}));
-    const featured = body.featured && canFeatureProjects(auth.role) ? 1 : 0;
+    const featured = parsed.data.featured && canFeatureProjects(auth.role) ? 1 : 0;
     const status = featured ? "featured" : "approved";
 
     await ref.update({ status, featured, updated_at: new Date().toISOString() });
