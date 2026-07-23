@@ -53,11 +53,11 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>;
 
-function useMaintainerStats(userId: number | undefined, token: string | null, isAdmin: boolean) {
+function useMaintainerStats(userId: number | undefined, token: string | null, isMaintainerOrAdmin: boolean) {
   return useQuery({
     queryKey: ["maintainer-stats", userId],
     queryFn: async () => {
-      if (!userId || !token || !isAdmin) return null;
+      if (!userId || !token || !isMaintainerOrAdmin) return null;
       const res = await fetch(`/api/admin/maintainer-stats/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -65,7 +65,7 @@ function useMaintainerStats(userId: number | undefined, token: string | null, is
       const data = await res.json();
       return data.stats;
     },
-    enabled: !!userId && !!token && isAdmin,
+    enabled: !!userId && !!token && isMaintainerOrAdmin,
   });
 }
 
@@ -77,9 +77,9 @@ export default function ProfilePage() {
   const [walletError, setWalletError] = useState("");
   
   const { data: maintainerStats, isLoading: statsLoading } = useMaintainerStats(
-    user?.userId,
+    user?.id,
     token,
-    user?.role === "admin"
+    user?.role === "admin" || user?.role === "maintainer"
   );
 
   const form = useForm<ProfileValues>({
@@ -270,8 +270,8 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Maintainer Stats Section (Admin Only) */}
-      {user.role === "admin" && (
+      {/* Maintainer Stats Section */}
+      {(user.role === "admin" || user.role === "maintainer") && (
         <div className="glass rounded-2xl p-6 mb-6 animate-in animate-in-delay-1">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-solar/30 to-aurora/30 border border-solar/20 flex items-center justify-center">

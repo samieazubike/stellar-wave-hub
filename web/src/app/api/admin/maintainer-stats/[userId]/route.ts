@@ -7,11 +7,14 @@ export async function GET(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   const auth = getAuthUser(request);
-  if (!auth || auth.role !== "admin") {
+  const { userId } = await params;
+
+  // Allow admins to view any user's stats, and maintainers to view their own
+  const isAdmin = auth?.role === "admin";
+  const isOwnStats = auth && String(auth.userId) === userId;
+  if (!auth || (!isAdmin && !isOwnStats)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
-
-  const { userId } = await params;
 
   try {
     // Fetch moderation logs for specific admin

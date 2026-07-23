@@ -29,6 +29,8 @@ export const financialSnapshotsCol = {
 export const moderationLogCol = {
 	get ref() {
 		return col("moderation_log");
+	},
+};
 export const submissionNotesCol = {
 	get ref() {
 		return col("submission_notes");
