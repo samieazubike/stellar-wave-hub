@@ -1,11 +1,18 @@
-import { projectsCol, usersCol, ratingsCol } from "@/lib/db";
+import { projectsCol, usersCol, ratingsCol, ratingVotesCol } from "@/lib/db";
+import { verifyAuth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  let currentUserId: number | null = null;
+  try {
+    const auth = await verifyAuth(request);
+    currentUserId = auth.user.id;
+  } catch {}
 
   // Lookup by numeric ID or slug
   const isNumeric = /^\d+$/.test(id);
@@ -36,7 +43,7 @@ export async function GET(
     }
   }
 
-  // Fetch ratings
+  // Fetch ratings with helpful vote counts
   const rSnap = await ratingsCol.ref
     .where("project_id", "==", projectData.id)
     .orderBy("created_at", "desc")
@@ -50,7 +57,20 @@ export async function GET(
         const u = await usersCol.ref.doc(String(r.user_id)).get();
         if (u.exists) username = u.data()!.username;
       }
-      return { ...r, id: r.numericId ?? d.id, username };
+
+      const votes = await ratingVotesCol.ref
+        .where("rating_id", "==", r.numericId)
+        .get();
+
+      const helpfulCount = votes.docs.length;
+
+      const hasVoted =
+        currentUserId !== null &&
+        votes.docs.some(
+          (v) => v.data().user_id === currentUserId
+        );
+
+      return { ...r, id: r.numericId ?? d.id, username, helpfulCount, hasVoted };
     })
   );
 

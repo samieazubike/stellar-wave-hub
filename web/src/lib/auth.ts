@@ -31,3 +31,9 @@ export function getAuthUser(request: Request): { userId: number; role: string } 
   if (!header?.startsWith("Bearer ")) return null;
   return verifyToken(header.slice(7));
 }
+
+export async function verifyAuth(request: Request): Promise<{ user: { id: number } }> {
+  const auth = getAuthUser(request);
+  if (!auth) throw new Error("Unauthorized");
+  return { user: { id: auth.userId } };
+}
