@@ -22,6 +22,7 @@ interface ProjectCardProps {
     rating_count?: number;
     username?: string;
     logo_url?: string;
+    stellar_contract_id?: string;
   };
   /** Optional balance-over-time snapshots for the sparkline. */
   snapshots?: Snapshot[];

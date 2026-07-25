@@ -4,7 +4,7 @@
 -- NOTE:
 -- These policies assume JWT custom claims:
 --   app_user_id (numericId as string)
---   app_role    (e.g. "admin" or "contributor")
+--   app_role    (e.g. "admin", "maintainer", or "contributor")
 -- If those claims are absent, authenticated write policies will deny access.
 
 begin;
@@ -101,7 +101,7 @@ create policy projects_owner_update
     ) is not null
     and (
       user_id = (auth.jwt() ->> 'app_user_id')::bigint
-      or coalesce(auth.jwt() ->> 'app_role', '') = 'admin'
+      or coalesce(auth.jwt() ->> 'app_role', '') in ('admin', 'maintainer')
     )
   )
   with check (
@@ -110,7 +110,7 @@ create policy projects_owner_update
     ) is not null
     and (
       user_id = (auth.jwt() ->> 'app_user_id')::bigint
-      or coalesce(auth.jwt() ->> 'app_role', '') = 'admin'
+      or coalesce(auth.jwt() ->> 'app_role', '') in ('admin', 'maintainer')
     )
   );
 
@@ -124,7 +124,7 @@ create policy projects_owner_delete
     ) is not null
     and (
       user_id = (auth.jwt() ->> 'app_user_id')::bigint
-      or coalesce(auth.jwt() ->> 'app_role', '') = 'admin'
+      or coalesce(auth.jwt() ->> 'app_role', '') in ('admin', 'maintainer')
     )
   );
 
@@ -161,7 +161,7 @@ create policy ratings_owner_update
     ) is not null
     and (
       user_id = (auth.jwt() ->> 'app_user_id')::bigint
-      or coalesce(auth.jwt() ->> 'app_role', '') = 'admin'
+      or coalesce(auth.jwt() ->> 'app_role', '') in ('admin', 'maintainer')
     )
   )
   with check (
@@ -170,7 +170,7 @@ create policy ratings_owner_update
     ) is not null
     and (
       user_id = (auth.jwt() ->> 'app_user_id')::bigint
-      or coalesce(auth.jwt() ->> 'app_role', '') = 'admin'
+      or coalesce(auth.jwt() ->> 'app_role', '') in ('admin', 'maintainer')
     )
   );
 
@@ -184,7 +184,7 @@ create policy ratings_owner_delete
     ) is not null
     and (
       user_id = (auth.jwt() ->> 'app_user_id')::bigint
-      or coalesce(auth.jwt() ->> 'app_role', '') = 'admin'
+      or coalesce(auth.jwt() ->> 'app_role', '') in ('admin', 'maintainer')
     )
   );
 
