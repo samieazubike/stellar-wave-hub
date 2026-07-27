@@ -98,6 +98,34 @@ function usePendingProjects(token: string | null) {
   });
 }
 
+interface MaintainerApplication {
+  id: number;
+  user_id: number;
+  status: string;
+  reason: string;
+  created_at: string;
+  user?: {
+    username: string;
+    email: string;
+    github_url: string;
+  };
+}
+
+function useMaintainerApplications(token: string | null) {
+  return useQuery<MaintainerApplication[]>({
+    queryKey: ["admin-maintainer-applications"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/maintainer-applications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch applications");
+      const data = await res.json();
+      return data.applications || [];
+    },
+    enabled: !!token,
+  });
+}
+
 // ─── Action hooks ───────────────────────────────────────────────────
 
 function useProjectAction(token: string | null) {
@@ -1199,6 +1227,7 @@ export default function AdminPage() {
   const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
   const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
   const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
+  const { data: maintainerApplications = [], isLoading: maintainerAppsLoading, refetch: refetchMaintainerApps } = useMaintainerApplications(token);
 
   const filteredPending = filterProjects(pending, search);
   const filteredApproved = filterProjects(approved, search);
@@ -1345,6 +1374,14 @@ export default function AdminPage() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="maintainers">
+              Maintainer Apps
+              {maintainerApplications.length > 0 && (
+                <span className="ml-2 bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-md">
+                  {maintainerApplications.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="promos">Promo Codes</TabsTrigger>
           </TabsList>
 
@@ -1442,6 +1479,78 @@ export default function AdminPage() {
                 }
                 title="No rejected projects"
                 subtitle="Rejected and delisted projects will appear here"
+              />
+            )}
+          </TabsContent>
+
+          {/* ── Maintainer Applications tab ── */}
+          <TabsContent value="maintainers">
+            {maintainerAppsLoading ? (
+              <Skeletons />
+            ) : maintainerApplications.length > 0 ? (
+              <div className="space-y-4">
+                {maintainerApplications.map((app) => (
+                  <div key={app.id} className="glass rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-dust/30">
+                    <div>
+                      <h3 className="font-semibold text-lg text-starlight">{app.user?.username || "Unknown User"}</h3>
+                      <p className="text-sm text-ash">{app.user?.email}</p>
+                      {app.user?.github_url && (
+                        <a href={app.user.github_url} target="_blank" rel="noopener noreferrer" className="text-xs text-nova hover:underline">
+                          GitHub Profile
+                        </a>
+                      )}
+                      <div className="mt-4 p-4 rounded-xl bg-dust/10 border border-dust/20 text-sm text-moonlight whitespace-pre-wrap">
+                        {app.reason}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={async () => {
+                          const res = await fetch(`/api/admin/maintainer-applications/${app.id}/review`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ status: "approved" })
+                          });
+                          if(res.ok) refetchMaintainerApps();
+                        }}
+                        className="btn-nova !py-2 !px-4 text-sm"
+                      >
+                        Approve
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          const res = await fetch(`/api/admin/maintainer-applications/${app.id}/review`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ status: "rejected" })
+                          });
+                          if(res.ok) refetchMaintainerApps();
+                        }}
+                        className="bg-supernova/10 hover:bg-supernova/20 text-supernova border border-supernova/20 font-medium text-sm px-4 py-2 rounded-xl transition-all"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <polyline points="16 11 18 13 22 9" />
+                  </svg>
+                }
+                title="No pending applications"
+                subtitle="When users apply to be maintainers, they will appear here"
               />
             )}
           </TabsContent>
