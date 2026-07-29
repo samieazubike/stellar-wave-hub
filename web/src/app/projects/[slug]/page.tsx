@@ -46,6 +46,7 @@ interface Rating {
 	username: string;
 	user_id: number;
 	created_at: string;
+	helpful_count?: number;
 }
 
 interface Averages {
@@ -134,6 +135,8 @@ export default function ProjectDetailPage({
 	const [ratingMsg, setRatingMsg] = useState("");
 	const [ratingStep, setRatingStep] = useState<"idle" | "onchain" | "saving">("idle");
 	const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+	const [ratingSort, setRatingSort] = useState<"recent" | "helpful">("recent");
+	const [userVotes, setUserVotes] = useState<Record<number, boolean>>({});
 
 	useEffect(() => {
 		fetch(`/api/projects/${slug}`)
@@ -146,6 +149,21 @@ export default function ProjectDetailPage({
 			.catch(() => {})
 			.finally(() => setLoading(false));
 	}, [slug]);
+
+	const ratingIds = ratings.map((r) => r.id);
+
+	useEffect(() => {
+		if (!token || ratingIds.length === 0) {
+			setUserVotes({});
+			return;
+		}
+		fetch(`/api/rating-votes?rating_ids=${ratingIds.join(",")}`, {
+			headers: { Authorization: `Bearer ${token}` },
+		})
+			.then((r) => r.json())
+			.then((data) => setUserVotes(data.votes || {}))
+			.catch(() => setUserVotes({}));
+	}, [token, ratingIds.join(",")]);
 
 	useEffect(() => {
 		if (project?.stellar_account_id) {
@@ -251,6 +269,36 @@ export default function ProjectDetailPage({
 		setRatingStep("idle");
 		setSubmitting(false);
 	};
+
+	const toggleHelpful = async (ratingId: number) => {
+		if (!token) return;
+		const res = await fetch("/api/rating-votes", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({ rating_id: ratingId }),
+		});
+		if (!res.ok) return;
+		const data = await res.json();
+		setUserVotes((prev) => ({ ...prev, [ratingId]: data.voted }));
+		setRatings((prev) =>
+			prev.map((r) =>
+				r.id === ratingId ? { ...r, helpful_count: data.helpful_count } : r,
+			),
+		);
+	};
+
+	const sortedRatings = [...ratings].sort((a, b) => {
+		if (ratingSort === "helpful") {
+			const aHelp = a.helpful_count ?? 0;
+			const bHelp = b.helpful_count ?? 0;
+			if (bHelp !== aHelp) return bHelp - aHelp;
+			return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+		}
+		return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+	});
 
 	if (loading) {
 		return (
@@ -743,7 +791,32 @@ export default function ProjectDetailPage({
 						{/* Existing ratings */}
 						{ratings.length > 0 ? (
 							<div className="space-y-4">
-								{ratings.map((rating) => (
+								<div className="flex items-center justify-between">
+									<p className="text-sm text-ash">{ratings.length} rating{ratings.length !== 1 ? "s" : ""}</p>
+									<div className="flex items-center gap-2">
+										<button
+											onClick={() => setRatingSort("recent")}
+											className={`text-xs px-3 py-1.5 rounded-lg transition-all ${
+												ratingSort === "recent"
+													? "bg-nova/20 text-nova-bright border border-nova/30"
+													: "text-ash hover:text-moonlight border border-transparent"
+											}`}
+										>
+											Most Recent
+										</button>
+										<button
+											onClick={() => setRatingSort("helpful")}
+											className={`text-xs px-3 py-1.5 rounded-lg transition-all ${
+												ratingSort === "helpful"
+													? "bg-nova/20 text-nova-bright border border-nova/30"
+													: "text-ash hover:text-moonlight border border-transparent"
+											}`}
+										>
+											Most Helpful
+										</button>
+									</div>
+								</div>
+								{sortedRatings.map((rating) => (
 									<div
 										key={rating.id}
 										className="glass rounded-2xl p-6"
@@ -808,6 +881,20 @@ export default function ProjectDetailPage({
 													On-chain
 												</a>
 											)}
+											<button
+												onClick={() => toggleHelpful(rating.id)}
+												disabled={!token}
+												className={`ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+													userVotes[rating.id]
+														? "bg-solar/15 text-solar-bright border border-solar/20"
+														: "text-ash hover:text-moonlight hover:bg-stardust/30 border border-transparent"
+												} ${!token ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+											>
+												<svg width="12" height="12" viewBox="0 0 24 24" fill={userVotes[rating.id] ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+													<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+												</svg>
+												Helpful{rating.helpful_count ? ` (${rating.helpful_count})` : ""}
+											</button>
 										</div>
 									</div>
 								))}
