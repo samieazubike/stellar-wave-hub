@@ -360,5 +360,5 @@ After deployment, record these for the team:
 
 | Network | Contract ID | WASM hash | Admin | Token |
 |---|---|---|---|---|
-| testnet | `C...` | `...` | `G...` | native XLM SAC |
+| testnet | `CDUSKGWAYMNREDBZZ7OHP3766APMFXI2XOOC3ZTKNTI3QFH4EYR2OLLB` | `71b66229189469d4b4482e941022c7d4894f547ba0b43983d8ab89b3c658cfbc` | `GBXNIMNM4PBFBGI6UZ23HHOIFOMW3ZHOFV6K7ZZZQZH6XCXZW3ZPFUUI` | native XLM SAC |
 | mainnet | `C...` | `...` | `G...` (multisig) | USDC SAC |
