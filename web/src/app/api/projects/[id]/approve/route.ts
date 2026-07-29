@@ -3,6 +3,7 @@ import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { featuredProjectSchema } from "@/lib/validation/schemas/featured";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
+import { writeModerationLog } from "@/lib/moderation-log";
 export const dynamic = "force-dynamic";
 
 const moderationActionLimit = { limit: 30, windowMs: 60_000 };
@@ -30,8 +31,14 @@ export async function PUT(
   try {
     const featured = parsed.data.featured ? 1 : 0;
     const status = featured ? "featured" : "approved";
+    const action = featured ? "feature" : "approve";
 
     await ref.update({ status, featured, updated_at: new Date().toISOString() });
+    await writeModerationLog({
+      actorId: auth.userId,
+      action,
+      projectId: Number(id),
+    });
     const updated = await ref.get();
     return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
   } catch (err) {

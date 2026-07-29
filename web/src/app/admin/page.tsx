@@ -128,6 +128,7 @@ function useProjectAction(token: string | null) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-projects"] });
+      qc.invalidateQueries({ queryKey: ["admin-moderation-log"] });
     },
   });
 }
@@ -155,6 +156,134 @@ function useAdminPromoCodes(token: string | null) {
     },
     enabled: !!token,
   });
+}
+
+interface ModerationLogEntry {
+  id: number;
+  actor_id: number;
+  actor_username: string | null;
+  action: string;
+  project_id: number;
+  project_name: string | null;
+  project_slug: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+function useModerationLog(token: string | null) {
+  return useQuery<ModerationLogEntry[]>({
+    queryKey: ["admin-moderation-log"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/moderation-log", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch moderation log");
+      const data = await res.json();
+      return data.entries || [];
+    },
+    enabled: !!token,
+  });
+}
+
+function ActionBadge({ action }: { action: string }) {
+  const styles: Record<string, string> = {
+    approve: "tag-aurora",
+    feature: "tag-nova",
+    reject: "bg-supernova/10 text-supernova border border-supernova/20",
+    delist: "bg-dust/50 text-ash border border-dust/30",
+    delete: "bg-supernova/15 text-supernova border border-supernova/30",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
+        styles[action] ?? "bg-dust/40 text-ash border-dust/30"
+      }`}
+    >
+      {action}
+    </span>
+  );
+}
+
+function ModerationLogTab({ token }: { token: string | null }) {
+  const { data: entries = [], isLoading } = useModerationLog(token);
+
+  return (
+    <div className="space-y-4">
+      <div className="glass rounded-2xl p-5">
+        <h3 className="font-semibold text-starlight mb-1">Moderation audit log</h3>
+        <p className="text-xs text-ash">
+          Who took which moderation action, on which project, and when.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <Skeletons count={4} />
+      ) : entries.length > 0 ? (
+        <div className="space-y-2">
+          {entries.map((entry) => (
+            <div
+              key={entry.id}
+              className="bg-stardust/30 border border-dust/20 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:border-dust/40 transition-colors"
+            >
+              <div className="min-w-0 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ActionBadge action={entry.action} />
+                  {entry.project_slug ? (
+                    <Link
+                      href={`/projects/${entry.project_slug}`}
+                      className="font-medium text-moonlight hover:text-nova-bright transition-colors truncate"
+                    >
+                      {entry.project_name || `Project #${entry.project_id}`}
+                    </Link>
+                  ) : (
+                    <span className="font-medium text-moonlight truncate">
+                      {entry.project_name || `Project #${entry.project_id}`}
+                      {!entry.project_name && (
+                        <span className="text-ash font-normal text-xs ml-2">(deleted)</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+                {entry.reason && (
+                  <p className="text-xs text-ash truncate" title={entry.reason}>
+                    Reason: {entry.reason}
+                  </p>
+                )}
+              </div>
+              <div className="text-xs text-ash shrink-0 sm:text-right space-y-0.5">
+                <p>
+                  by{" "}
+                  <span className="text-moonlight">
+                    {entry.actor_username || `user #${entry.actor_id}`}
+                  </span>
+                </p>
+                <p>
+                  {new Date(entry.created_at).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          }
+          title="No moderation actions yet"
+          subtitle="Approve, reject, feature, delist, and delete actions will appear here"
+        />
+      )}
+    </div>
+  );
 }
 
 function PromoCodesTab({ token }: { token: string | null }) {
@@ -1346,6 +1475,7 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="promos">Promo Codes</TabsTrigger>
+            <TabsTrigger value="audit">Audit Log</TabsTrigger>
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -1493,6 +1623,10 @@ export default function AdminPage() {
 
           <TabsContent value="promos">
             <PromoCodesTab token={token} />
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <ModerationLogTab token={token} />
           </TabsContent>
         </Tabs>
       </div>
