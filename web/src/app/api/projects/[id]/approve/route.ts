@@ -1,5 +1,5 @@
 import { projectsCol } from "@/lib/db";
-import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { can, requireRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { featuredProjectSchema } from "@/lib/validation/schemas/featured";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
@@ -11,8 +11,8 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = getAuthUser(request);
-  if (!auth || !hasMinRole(auth.role, "admin")) {
+  const auth = requireRole(request, "maintainer");
+  if (!auth) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -26,6 +26,11 @@ export async function PUT(
 
   const parsed = await parseJsonBody(request, featuredProjectSchema);
   if (!parsed.success) return parsed.response;
+
+  const action = parsed.data.featured ? "feature" : "approve";
+  if (!can(auth.role, action)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const featured = parsed.data.featured ? 1 : 0;

@@ -6,7 +6,8 @@
 		"dev": "next dev --experimental-https",
 		"build": "next build",
 		"start": "next start",
-		"lint": "eslint"
+		"lint": "eslint",
+		"test": "node --test --experimental-strip-types --test-isolation=none src/lib/auth.test.mjs"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.2.2",

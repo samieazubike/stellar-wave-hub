@@ -1,13 +1,13 @@
 import { projectsCol, ratingsCol } from "@/lib/db";
-import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { can, requireRole } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = getAuthUser(request);
-  if (!auth || !hasMinRole(auth.role, "admin")) {
+  const auth = requireRole(request, "admin");
+  if (!auth || !can(auth.role, "delete")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
