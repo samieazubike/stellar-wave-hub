@@ -2,6 +2,7 @@ import {projectsCol, usersCol, ratingsCol, nextId} from "@/lib/db";
 import {getAuthUser} from "@/lib/auth";
 import {parseJsonBody} from "@/lib/validation/parse-body";
 import {createProjectSchema} from "@/lib/validation/schemas/projects";
+import {notifyMaintainers} from "@/lib/notifications";
 import slugify from "slugify";
 export const dynamic = "force-dynamic";
 
@@ -174,6 +175,17 @@ export async function POST(request: Request) {
 		};
 
 		await projectsCol.ref.doc(String(numericId)).set(project);
+
+		notifyMaintainers({
+			type: "submission",
+			title: `New submission: ${name}`,
+			body: `${name} was submitted by ${
+				auth.userId
+			} and is pending review.`,
+			link: `/admin`,
+			project_id: numericId,
+		});
+
 		return Response.json(
 			{project: {...project, id: numericId}},
 			{status: 201},
