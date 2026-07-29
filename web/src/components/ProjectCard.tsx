@@ -39,10 +39,10 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
   const tags = project.tags ? project.tags.split(",").slice(0, 3) : [];
 
   return (
-    <Link
-      href={`/projects/${project.slug}`}
+    <div
       className={`group relative glass glass-hover rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 animate-in animate-in-delay-${Math.min(index + 1, 5)}`}
     >
+      <Link href={`/projects/${project.slug}`} className="absolute inset-0 z-0" aria-label={`View ${project.name}`} />
       {/* Featured badge */}
       {project.featured === 1 && (
         <div className="absolute -top-2 -right-2 featured-badge bg-solar/20 text-solar-bright text-xs font-bold px-2.5 py-1 rounded-full border border-solar/30 flex items-center gap-1">
@@ -80,14 +80,15 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
 
       {/* Tags */}
       {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 relative z-10">
           {tags.map((tag) => (
-            <span
+            <Link
               key={tag}
-              className="text-[11px] px-2 py-0.5 rounded-md bg-stardust/80 text-ash font-medium"
+              href={`/explore?tag=${encodeURIComponent(tag.trim())}`}
+              className="text-[11px] px-2 py-0.5 rounded-md bg-stardust/80 text-ash font-medium hover:text-aurora-bright hover:bg-aurora/10 transition-colors"
             >
               {tag.trim()}
-            </span>
+            </Link>
           ))}
         </div>
       )}
@@ -141,6 +142,6 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
           )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

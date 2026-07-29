@@ -12,6 +12,7 @@ export async function GET(request: Request) {
 		const search = url.searchParams.get("search")?.toLowerCase();
 		const substantial = url.searchParams.get("substantial") === "true";
 		const sort = url.searchParams.get("sort") || "newest";
+		const tag = url.searchParams.get("tag")?.toLowerCase();
 		const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
 		const limit = Math.min(
 			50,
@@ -38,13 +39,19 @@ export async function GET(request: Request) {
 			id: d.data().numericId,
 		}));
 
-		// Client-side search filtering (Firestore doesn't support LIKE)
+		// Client-side search and tag filtering (Firestore doesn't support LIKE or array-contains well dynamically here)
 		if (search) {
 			projects = projects.filter(
 				(p) =>
 					(p.name as string)?.toLowerCase().includes(search) ||
 					(p.description as string)?.toLowerCase().includes(search) ||
 					(p.tags as string)?.toLowerCase().includes(search),
+			);
+		}
+		
+		if (tag) {
+			projects = projects.filter(
+				(p) => (p.tags as string)?.toLowerCase().split(',').map(t => t.trim()).includes(tag)
 			);
 		}
 

@@ -65,6 +65,7 @@ function ExplorePageContent() {
 	const [substantialOnly, setSubstantialOnly] = useState(
 		() => searchParams.get("substantial") === "true",
 	);
+	const tag = searchParams.get("tag");
 	const [loading, setLoading] = useState(true);
 
 	const fetchProjects = useCallback(async () => {
@@ -72,6 +73,7 @@ function ExplorePageContent() {
 		const params = new URLSearchParams();
 		if (category !== "All") params.set("category", category.toLowerCase());
 		if (search) params.set("search", search);
+		if (tag) params.set("tag", tag);
 		if (substantialOnly) params.set("substantial", "true");
 		params.set("sort", sort);
 		params.set("page", String(pagination.page));
@@ -86,7 +88,7 @@ function ExplorePageContent() {
 			setProjects([]);
 		}
 		setLoading(false);
-	}, [category, search, sort, substantialOnly, pagination.page]);
+	}, [category, search, tag, sort, substantialOnly, pagination.page]);
 
 	useEffect(() => {
 		fetchProjects();
@@ -100,6 +102,15 @@ function ExplorePageContent() {
 		const newParams = new URLSearchParams(searchParams.toString());
 		if (next) newParams.set("substantial", "true");
 		else newParams.delete("substantial");
+		router.replace(
+			newParams.toString() ? `${pathname}?${newParams}` : pathname,
+			{scroll: false},
+		);
+	};
+
+	const removeTag = () => {
+		const newParams = new URLSearchParams(searchParams.toString());
+		newParams.delete("tag");
 		router.replace(
 			newParams.toString() ? `${pathname}?${newParams}` : pathname,
 			{scroll: false},
@@ -194,7 +205,7 @@ function ExplorePageContent() {
 			</div>
 
 			{/* Category tabs */}
-			<div className="flex gap-2 overflow-x-auto pb-4 mb-8 animate-in animate-in-delay-2 scrollbar-none">
+			<div className="flex gap-2 overflow-x-auto pb-4 mb-4 animate-in animate-in-delay-2 scrollbar-none">
 				{CATEGORIES.map((cat) => (
 					<button
 						key={cat}
@@ -212,6 +223,26 @@ function ExplorePageContent() {
 					</button>
 				))}
 			</div>
+
+			{/* Active Tag */}
+			{tag && (
+				<div className="mb-8 animate-in flex items-center gap-2">
+					<span className="text-sm text-ash">Filtered by tag:</span>
+					<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-aurora/10 text-aurora-bright font-medium text-sm border border-aurora/20">
+						{tag}
+						<button
+							onClick={removeTag}
+							className="hover:text-white transition-colors"
+							aria-label="Remove tag filter"
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
+						</button>
+					</span>
+				</div>
+			)}
 
 			{/* Results */}
 			{loading ? (
