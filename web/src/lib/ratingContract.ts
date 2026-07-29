@@ -13,23 +13,42 @@ import {
   xdr,
 } from "@stellar/stellar-sdk";
 
-const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID;
-const NETWORK = process.env.NEXT_PUBLIC_CONTRACT_NETWORK || "testnet";
+export interface ContractConfig {
+  contractId: string | null;
+  network: string;
+}
 
-const networkPassphrase =
-  NETWORK === "mainnet" ? Networks.PUBLIC : Networks.TESTNET;
+let cachedConfig: ContractConfig | null = null;
+let configPromise: Promise<ContractConfig> | null = null;
 
-const rpcUrl =
-  process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ||
-  (NETWORK === "mainnet"
-    ? "https://mainnet.sorobanrpc.com"
-    : "https://soroban-testnet.stellar.org");
+export async function getContractConfig(): Promise<ContractConfig> {
+  if (cachedConfig) return cachedConfig;
+  if (configPromise) return configPromise;
 
-export const ON_CHAIN_ENABLED = Boolean(CONTRACT_ID);
+  configPromise = fetch("/api/config")
+    .then((r) => r.json())
+    .then((data) => {
+      cachedConfig = {
+        contractId: data.contract_id || process.env.NEXT_PUBLIC_CONTRACT_ID || null,
+        network: data.contract_network || process.env.NEXT_PUBLIC_CONTRACT_NETWORK || "testnet",
+      };
+      return cachedConfig;
+    })
+    .catch(() => {
+      cachedConfig = {
+        contractId: process.env.NEXT_PUBLIC_CONTRACT_ID || null,
+        network: process.env.NEXT_PUBLIC_CONTRACT_NETWORK || "testnet",
+      };
+      return cachedConfig;
+    });
+
+  return configPromise;
+}
 
 export function explorerTxUrl(hash: string): string {
+  const network = cachedConfig?.network || process.env.NEXT_PUBLIC_CONTRACT_NETWORK || "testnet";
   const base =
-    NETWORK === "mainnet"
+    network === "mainnet"
       ? "https://stellar.expert/explorer/public"
       : "https://stellar.expert/explorer/testnet";
   return `${base}/tx/${hash}`;
@@ -37,13 +56,20 @@ export function explorerTxUrl(hash: string): string {
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
-function getServer() {
-  return new StellarRpc.Server(rpcUrl);
-}
+async function getServerAndContract() {
+  const cfg = await getContractConfig();
+  if (!cfg.contractId) throw new Error("Contract not configured");
+  
+  const networkPassphrase = cfg.network === "mainnet" ? Networks.PUBLIC : Networks.TESTNET;
+  const rpcUrl =
+    process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ||
+    (cfg.network === "mainnet"
+      ? "https://mainnet.sorobanrpc.com"
+      : "https://soroban-testnet.stellar.org");
 
-function getContract() {
-  if (!CONTRACT_ID) throw new Error("Contract not configured");
-  return new Contract(CONTRACT_ID);
+  const server = new StellarRpc.Server(rpcUrl);
+  const contract = new Contract(cfg.contractId);
+  return { server, contract, networkPassphrase, contractId: cfg.contractId };
 }
 
 // Simulate a read-only contract call using an ephemeral source account.
@@ -53,9 +79,9 @@ async function simulateView(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: any[] = [],
 ): Promise<unknown> {
-  if (!ON_CHAIN_ENABLED) return null;
-  const server = getServer();
-  const contract = getContract();
+  const cfg = await getContractConfig();
+  if (!cfg.contractId) return null;
+  const { server, contract, networkPassphrase } = await getServerAndContract();
 
   const ephemeral = new Account(Keypair.random().publicKey(), "0");
   const tx = new TransactionBuilder(ephemeral, {
@@ -92,8 +118,7 @@ async function adminWrite(
   const access = await requestAccess();
   if (access.error) throw new Error(access.error.message || "Wallet access denied");
 
-  const server = getServer();
-  const contract = getContract();
+  const { server, contract, networkPassphrase } = await getServerAndContract();
   const account = await server.getAccount(adminAddress);
 
   const tx = new TransactionBuilder(account, {
@@ -130,42 +155,35 @@ async function adminWrite(
 // ── Public reads ─────────────────────────────────────────────────────────────
 
 export async function getRatingFee(): Promise<bigint | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   return (await simulateView("get_rating_fee")) as bigint | null;
 }
 
 export async function getRegistrationFee(): Promise<bigint | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   return (await simulateView("get_registration_fee")) as bigint | null;
 }
 
 export async function getContractVersion(): Promise<string | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   return (await simulateView("get_version")) as string | null;
 }
 
 export async function getWasmVersion(): Promise<number | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   return (await simulateView("get_wasm_version")) as number | null;
 }
 
 export async function getContractAdmin(): Promise<string | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   return (await simulateView("get_admin")) as string | null;
 }
 
 export async function getTreasuryBalance(): Promise<bigint | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   return (await simulateView("get_treasury_balance")) as bigint | null;
 }
 
 export async function getProjectsOnChain(): Promise<string[] | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   return (await simulateView("get_projects")) as string[] | null;
 }
 
 export async function isRegisteredOnChain(projectSlug: string): Promise<boolean> {
-  if (!ON_CHAIN_ENABLED) return false;
+  if (!(await getContractConfig()).contractId) return false;
   return ((await simulateView("is_registered", [
     nativeToScVal(slugToSymbol(projectSlug), { type: "symbol" }),
   ])) as boolean) ?? false;
@@ -175,7 +193,7 @@ export async function hasRatedOnChain(
   userAddress: string,
   projectSlug: string,
 ): Promise<boolean> {
-  if (!ON_CHAIN_ENABLED) return false;
+  if (!(await getContractConfig()).contractId) return false;
   return ((await simulateView("has_rated", [
     nativeToScVal(userAddress, { type: "address" }),
     nativeToScVal(slugToSymbol(projectSlug), { type: "symbol" }),
@@ -191,7 +209,6 @@ export interface OnChainRating {
 export async function getProjectRatingOnChain(
   projectSlug: string,
 ): Promise<OnChainRating | null> {
-  if (!ON_CHAIN_ENABLED) return null;
   const raw = (await simulateView("get_project_rating", [
     nativeToScVal(slugToSymbol(projectSlug), { type: "symbol" }),
   ])) as { count: bigint; sum: bigint } | null;
@@ -216,9 +233,10 @@ function scvToBase64(val: xdr.ScVal): string {
 export async function getProjectRatingFromEvents(
   projectSlug: string,
 ): Promise<OnChainRating | null> {
-  if (!ON_CHAIN_ENABLED || !CONTRACT_ID) return null;
+  const cfg = await getContractConfig();
+  if (!cfg.contractId) return null;
 
-  const server = getServer();
+  const { server, contractId } = await getServerAndContract();
   const symbol = slugToSymbol(projectSlug);
 
   const ratingTopic = scvToBase64(
@@ -235,7 +253,7 @@ export async function getProjectRatingFromEvents(
       filters: [
         {
           type: "contract",
-          contractIds: [CONTRACT_ID],
+          contractIds: [contractId],
           topics: [[ratingTopic, projectTopic]],
         },
       ],
@@ -302,7 +320,8 @@ export async function rateProjectOnChain(
   projectSlug: string,
   score: number,
 ): Promise<string | null> {
-  if (!ON_CHAIN_ENABLED || !CONTRACT_ID) return null;
+  const cfg = await getContractConfig();
+  if (!cfg.contractId) return null;
 
   const symbol = slugToSymbol(projectSlug);
 
@@ -317,8 +336,7 @@ export async function rateProjectOnChain(
   const access = await requestAccess();
   if (access.error) throw new Error(access.error.message || "Wallet access denied");
 
-  const server = getServer();
-  const contract = getContract();
+  const { server, contract, networkPassphrase } = await getServerAndContract();
   const account = await server.getAccount(userAddress);
 
   const tx = new TransactionBuilder(account, {

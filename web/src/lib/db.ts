@@ -26,9 +26,9 @@ export const financialSnapshotsCol = {
 		return col("financial_snapshots");
 	},
 };
-export const submissionNotesCol = {
+export const configCol = {
 	get ref() {
-		return col("submission_notes");
+		return col("app_config");
 	},
 };
 

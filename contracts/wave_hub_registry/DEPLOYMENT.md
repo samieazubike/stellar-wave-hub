@@ -319,7 +319,14 @@ stellar contract invoke \
 
 ## 8. Integrating the contract with the web app
 
-Store these in `web/.env.local`:
+The web application uses a dynamic configuration system to locate the contract. The primary source of truth is the Supabase database (`app_config` table).
+
+To update the contract address without a redeploy:
+1. Log in as an admin in the web app.
+2. Go to the Admin Dashboard (the "Contract State" panel will show current settings).
+3. (Future enhancement: The UI can be expanded to post to the \`/api/admin/contract\` route). Currently, you can manually insert or update the \`contract_id\` and \`contract_network\` keys in the \`app_config\` table via the Supabase dashboard or via an authenticated POST to \`/api/admin/contract\`.
+
+As a fallback, you can still store these in `web/.env.local`:
 
 ```
 NEXT_PUBLIC_CONTRACT_ID=C...        # the contract ID from step 5b
@@ -353,5 +360,5 @@ After deployment, record these for the team:
 
 | Network | Contract ID | WASM hash | Admin | Token |
 |---|---|---|---|---|
-| testnet | `C...` | `...` | `G...` | native XLM SAC |
+| testnet | `CDUSKGWAYMNREDBZZ7OHP3766APMFXI2XOOC3ZTKNTI3QFH4EYR2OLLB` | `71b66229189469d4b4482e941022c7d4894f547ba0b43983d8ab89b3c658cfbc` | `GBXNIMNM4PBFBGI6UZ23HHOIFOMW3ZHOFV6K7ZZZQZH6XCXZW3ZPFUUI` | native XLM SAC |
 | mainnet | `C...` | `...` | `G...` (multisig) | USDC SAC |
