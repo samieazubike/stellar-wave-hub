@@ -1,4 +1,5 @@
 import { projectsCol, usersCol, ratingsCol } from "@/lib/db";
+import { getSupabase } from "@/lib/firebase";
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -53,6 +54,31 @@ export async function GET(
       return { ...r, id: r.numericId ?? d.id, username };
     })
   );
+
+  // Attach helpful vote counts
+  const ratingIds = ratings.map((r) => r.numericId as number).filter(Boolean);
+  if (ratingIds.length > 0) {
+    const supabase = getSupabase();
+    const { data: voteRows } = await supabase
+      .from("rating_votes")
+      .select("rating_id")
+      .in("rating_id", ratingIds);
+
+    const countMap = new Map<number, number>();
+    for (const v of voteRows ?? []) {
+      const rid = Number(v.rating_id);
+      countMap.set(rid, (countMap.get(rid) ?? 0) + 1);
+    }
+
+    for (const r of ratings) {
+      const rid = r.numericId as number | undefined;
+      r.helpful_count = rid ? (countMap.get(rid) ?? 0) : 0;
+    }
+  } else {
+    for (const r of ratings) {
+      r.helpful_count = 0;
+    }
+  }
 
   // Compute averages
   const scores = ratings.map((r) => r.score as number);
