@@ -1,5 +1,5 @@
 import { projectsCol } from "@/lib/db";
-import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { can, requireRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { delistProjectSchema } from "@/lib/validation/schemas/featured";
 export const dynamic = "force-dynamic";
@@ -8,8 +8,8 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = getAuthUser(request);
-  if (!auth || !hasMinRole(auth.role, "admin")) {
+  const auth = requireRole(request, "maintainer");
+  if (!auth || !can(auth.role, "delist")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
