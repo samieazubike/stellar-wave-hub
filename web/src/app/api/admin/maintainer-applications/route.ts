@@ -1,11 +1,11 @@
 import { maintainerApplicationsCol, usersCol } from "@/lib/db";
-import { requireAuth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAuth(request);
+    const auth = getAuthUser(request);
     if (!auth || auth.role !== "admin") {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }

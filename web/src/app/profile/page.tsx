@@ -475,7 +475,10 @@ export default function ProfilePage() {
               try {
                 const res = await fetch("/api/maintainer-applications", {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: { 
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}` 
+                  },
                   body: JSON.stringify({ reason })
                 });
                 const data = await res.json();
