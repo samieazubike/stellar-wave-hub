@@ -5,6 +5,7 @@ import Image from "next/image";
 import {useAuth} from "@/context/AuthContext";
 import {hasMinRole} from "@/lib/roles";
 import {useState} from "react";
+import NotificationsMenu from "@/components/NotificationsMenu";
 
 export default function Navbar() {
 	const {user, logout, loading} = useAuth();
@@ -92,6 +93,7 @@ export default function Navbar() {
 									{user.username}
 								</span>
 							</Link>
+                                <NotificationsMenu />
 								<button
 									onClick={logout}
 									className="btn-ghost text-sm !py-1.5 !px-3"

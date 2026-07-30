@@ -11,6 +11,8 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	auth_challenges: "auth_challenges",
 	counters: "counters",
 	submission_notes: "submission_notes",
+	maintainer_applications: "maintainer_applications",
+	notifications: "notifications",
 };
 
 function resolveTable(collection: string): string {

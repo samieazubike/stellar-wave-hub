@@ -445,6 +445,75 @@ export default function ProfilePage() {
           </form>
         </Form>
       </div>
+
+      {/* Maintainer Application Section */}
+      {user.role === "contributor" && (
+        <div className="glass rounded-2xl p-8 mt-6 animate-in animate-in-delay-3">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border border-purple-500/20 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--nova)" strokeWidth="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg text-starlight">Become a Maintainer</h2>
+              <p className="text-xs text-ash">Apply for a maintainer role to help review projects</p>
+            </div>
+          </div>
+          
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const reason = (form.elements.namedItem("reason") as HTMLTextAreaElement).value;
+              if (!reason.trim()) return;
+              
+              const btn = form.elements.namedItem("submitBtn") as HTMLButtonElement;
+              btn.disabled = true;
+              btn.textContent = "Submitting...";
+              
+              try {
+                const res = await fetch("/api/maintainer-applications", {
+                  method: "POST",
+                  headers: { 
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}` 
+                  },
+                  body: JSON.stringify({ reason })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                alert("Application submitted successfully!");
+                form.reset();
+              } catch (err) {
+                alert(err instanceof Error ? err.message : "Submission failed");
+              } finally {
+                btn.disabled = false;
+                btn.textContent = "Submit Application";
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-moonlight">Why do you want to be a maintainer?</label>
+              <Textarea
+                name="reason"
+                required
+                rows={3}
+                placeholder="Explain your experience and why you would be a good fit..."
+                className="w-full"
+              />
+            </div>
+            <button
+              name="submitBtn"
+              type="submit"
+              className="btn-nova !py-2.5 !px-6"
+            >
+              Submit Application
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
