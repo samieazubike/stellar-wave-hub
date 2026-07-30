@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import {useEffect, useState} from "react";
+import Sparkline from "@/components/Sparkline";
 
 interface ProjectCardProps {
   project: {
@@ -33,9 +35,44 @@ const categoryColors: Record<string, string> = {
   other: "tag-nova",
 };
 
+/**
+ * Fetches the most-recent XLM balance snapshots for a project and returns
+ * them as a plain number array suitable for <Sparkline />.
+ */
+function useSparklineData(projectId: number) {
+  const [values, setValues] = useState<number[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/financials/${projectId}/snapshots?limit=20`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data: {snapshots: {xlm_balance: number}[]}) => {
+        if (cancelled) return;
+        const numbers = (data.snapshots ?? []).map((s) => s.xlm_balance);
+        setValues(numbers);
+      })
+      .catch(() => {
+        if (!cancelled) setValues([]); // treat errors as no data
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  return values; // null = loading, [] = no data, number[] = data ready
+}
+
 export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
   const colorClass = categoryColors[project.category?.toLowerCase()] || "tag-nova";
   const tags = project.tags ? project.tags.split(",").slice(0, 3) : [];
+  const sparkValues = useSparklineData(project.id);
+
+  // Determine trend label for the sparkline footer chip
+  const hasSpark = sparkValues !== null && sparkValues.length >= 2;
+  const isUp =
+    hasSpark && sparkValues[sparkValues.length - 1] >= sparkValues[0];
 
   return (
     <Link
@@ -70,6 +107,28 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
             <p className="text-xs text-ash mt-0.5">by {project.username}</p>
           )}
         </div>
+
+        {/* Sparkline — shown only when data is ready and has ≥2 points */}
+        {hasSpark ? (
+          <div className="shrink-0 flex flex-col items-end gap-0.5">
+            <Sparkline values={sparkValues} width={80} height={28} />
+            <span
+              className={`text-[10px] font-semibold leading-none ${
+                isUp ? "text-aurora-bright" : "text-supernova"
+              }`}
+              aria-label={isUp ? "Balance trending up" : "Balance trending down"}
+            >
+              {isUp ? "▲" : "▼"} XLM
+            </span>
+          </div>
+        ) : sparkValues === null ? (
+          /* Loading placeholder — fixed dimensions prevent layout shift */
+          <div
+            className="skeleton shrink-0 rounded"
+            style={{width: 80, height: 28}}
+            aria-hidden="true"
+          />
+        ) : null /* no data — render nothing, no layout shift */}
       </div>
 
       {/* Description */}
