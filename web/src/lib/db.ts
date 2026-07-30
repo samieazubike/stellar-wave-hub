@@ -31,6 +31,16 @@ export const submissionNotesCol = {
 		return col("submission_notes");
 	},
 };
+export const maintainerApplicationsCol = {
+	get ref() {
+		return col("maintainer_applications");
+	},
+};
+export const notificationsCol = {
+	get ref() {
+		return col("notifications");
+	},
+};
 
 // Auto-incrementing numeric ID
 export async function nextId(collection: string): Promise<number> {
