@@ -281,10 +281,9 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="X"
 		/></a>
 		<br />
-		<sub>Researcher — MERCATO</sub>
+		<sub>Researcher — MERCATO, SafeTrust</sub>
 	</div>
 
-	<!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
