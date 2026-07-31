@@ -11,25 +11,32 @@
   - Backend: https://github.com/safetrustcr/backend-SafeTrust
   - dApp Monorepo: https://github.com/safetrustcr/dApp-SafeTrust
   - Landing Page: https://github.com/safetrustcr/landing-SafeTrust
+  - ZK Privacy Layer: https://github.com/safetrustcr/safetrust-ZK
 - **Organization:** safetrustcr (Costa Rica)
 
 ## Why This Matches the Task
 
 SafeTrust is an active Stellar Wave Program participant at the 4x Points tier (the highest multiplier on Drips) with a substantial multi-repo codebase spanning Next.js frontends, Hasura GraphQL backends, Docker Compose infrastructure, and Stellar blockchain integration via the TrustlessWork API. The project targets the global hospitality and tourism sector — a multi-trillion dollar industry — with a decentralized escrow solution that replaces traditional intermediaries like banks and payment processors with Stellar Soroban smart contracts. At the time of this submission, SafeTrust had not yet been submitted to Stellar Wave Hub.
 
-The project demonstrates a strong real-world use case for Stellar blockchain technology: secure, transparent, and automated deposit holding and release for hotel bookings, vacation rentals, and tourism services. With 21+12+1 stars and 99+93+83 forks across its three main repositories, it has attracted meaningful community engagement during its participation in Stellar Wave cycles.
+The project demonstrates a strong real-world use case for Stellar blockchain technology: secure, transparent, and automated deposit holding and release for hotel bookings, vacation rentals, and tourism services. With **48 stars and 379 forks across its five public repositories (verified July 31, 2026)**, it has attracted meaningful community engagement during its participation in Stellar Wave cycles.
 
 ## Verifiable On-Chain IDs
 
 SafeTrust uses **Trustless Work's permissionless escrow infrastructure** for its on-chain operations rather than deploying custom Soroban contracts. The Trustless Work API provides the smart contract layer, meaning all escrow transactions are executed on Stellar's network through Trustless Work's battle-tested Soroban contracts. The platform connects to Stellar mainnet and testnet via the Trustless Work API for escrow deployment and management.
 
-**Platform Stellar Address (testnet/mainnet):** Configured via `NEXT_PUBLIC_PLATFORM_ADDRESS` in the project's environment configuration. The actual deployed address is managed by the SafeTrust team and set during deployment.
+**Platform Stellar Address (testnet/mainnet):** Configured via `NEXT_PUBLIC_PLATFORM_ADDRESS` in the project's environment configuration. The actual deployed address is managed by the SafeTrust team and set during deployment. Testnet USDC (for funding escrows) is configured via `NEXT_PUBLIC_USDC_ADDRESS`, pre-filled for Stellar testnet.
 
 **Trustless Work Escrow Contract (testnet):**
 The underlying escrow infrastructure used by SafeTrust is Trustless Work's Soroban smart contract, which has been audited by Runtime Verification. Their testnet escrow contract can be verified at:
 - Trustless Work API: https://api.trustlesswork.com
 - Trustless Work Docs: https://docs.trustlesswork.com
 - Trustless Work Smart Contracts: https://github.com/Trustless-Work/Trustless-Work-Smart-Escrow
+
+**Verified on-chain escrow lifecycle (from `dApp-SafeTrust` README and `.env.example`):**
+1. Tenant finds a property and clicks PAY — SafeTrust calls `POST /deployer/single-release` on the TrustlessWork API
+2. The API returns an **unsigned XDR transaction**; the tenant signs it with their Freighter wallet
+3. `POST /helper/send-transaction` broadcasts the signed XDR to the **Stellar network (testnet by default)**
+4. Funds are locked on-chain until release conditions are met
 
 **Stellar Horizon verification (Trustless Work testnet):**
 The Trustless Work escrow engine processes transactions on Stellar testnet and mainnet. SafeTrust's escrow operations are verifiable through the Trustless Work dashboard and Stellar block explorer for each escrow created on the platform.
@@ -48,7 +55,7 @@ The platform is deliberately scoped to the hospitality vertical rather than bein
 
 ## Technical Architecture (Detailed)
 
-SafeTrust is architected across four interconnected repositories that together form a complete decentralized booking and escrow platform:
+SafeTrust is architected across five interconnected repositories that together form a complete decentralized booking and escrow platform:
 
 ### 1. Frontend Layer (`frontend-SafeTrust`)
 
@@ -86,7 +93,11 @@ A **Next.js** (legacy) and **Astro 5** (new, in migration) landing page that exp
 - Motion library for scroll-driven animations
 - Storybook for component development and documentation
 
-### 5. Stellar Integration Architecture
+### 5. ZK Privacy Layer (`safetrust-ZK`)
+
+A newly open-sourced zero-knowledge privacy layer for hospitality escrows on Stellar. Booking amounts are hidden inside **Noir circuits** — only Pedersen commitments and proof hashes go on-chain — preserving escrow integrity while keeping sensitive booking financials private. This extends SafeTrust's roadmap beyond transparent escrow toward confidential, compliance-friendly deposits.
+
+### 6. Stellar Integration Architecture
 
 SafeTrust's Stellar integration is layered rather than monolithic:
 
@@ -124,7 +135,7 @@ SafeTrust's Stellar integration is layered rather than monolithic:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 6. Escrow Lifecycle
+### 7. Escrow Lifecycle
 
 The core workflow follows a structured lifecycle:
 
@@ -154,14 +165,18 @@ The project configuration references Stellar mainnet as the production target wi
 
 ## Community & Ecosystem
 
-- **frontend-SafeTrust:** ⭐ 21 stars, 99 forks, 897 commits, 9 open issues
-- **backend-SafeTrust:** ⭐ 12 stars, 93 forks, 624 commits, 11 open issues
-- **landing-SafeTrust:** ⭐ 12 stars, 83 forks, 404 commits, 6 open issues
-- **dApp-SafeTrust:** ⭐ 1 star, 66 forks, 334 commits, 9 open issues
-- **Total (all repos):** ~46 stars, ~341 forks, ~2,259 commits
+Stats verified July 31, 2026:
+
+- **frontend-SafeTrust:** ⭐ 23 stars, 106 forks, 963 commits, 3 open issues, 2 PRs
+- **backend-SafeTrust:** ⭐ 11 stars, 102 forks, 2 open issues, 1 PR
+- **landing-SafeTrust:** ⭐ 12 stars, 93 forks
+- **dApp-SafeTrust:** ⭐ 2 stars, 78 forks, 686 commits, 2 open issues, 1 PR
+- **safetrust-ZK:** ⭐ 0 stars, 0 forks, 6 open issues (newly open-sourced ZK privacy layer)
+- **Total (all repos):** ~48 stars, ~379 forks
 - **Stellar Wave tier:** 4x Points (highest tier on Drips)
-- **Tech stack:** TypeScript, Next.js, Astro, Hasura GraphQL, PostgreSQL, Docker, Stellar, TrustlessWork API
-- **Testing:** Jest, React Testing Library, Cypress, Karate (backend API tests)
+- **Funding:** Badges for both **Drips Wave** and **GrantFox** grants on the dApp README
+- **Tech stack:** TypeScript, Next.js, Astro, Hasura GraphQL, PostgreSQL, Docker, Stellar, TrustlessWork API, Noir (ZK)
+- **Testing:** Jest, React Testing Library, Cypress, Karate (backend API tests), MSW
 - **Wallet support:** Freighter, Albedo, LOBSTR
 - **CI/CD:** GitHub Actions, CodeRabbit PR reviews
 - **Organization:** safetrustcr (based in Costa Rica)
@@ -169,7 +184,12 @@ The project configuration references Stellar mainnet as the production target wi
 
 ## Submission Details
 
-This is a research submission documentation. The project will be submitted to Stellar Wave Hub via the submission form at https://usestellarwavehub.vercel.app/submit or the POST /api/projects endpoint.
+This research documents SafeTrust's profile for submission to Stellar Wave Hub. Verified as of July 31, 2026 that **SafeTrust is not yet present in the Hub** (checked against `GET /api/projects`, 32 projects listed). Submission is performed via the submission form at https://usestellarwavehub.vercel.app/submit or the `POST /api/projects` endpoint with the following fields:
 
-- **Category:** Payments
-- **Tags:** stellar, escrow, soroban, hospitality, tourism, payments, stellar-wave, defi, trustless-work, p2p, stablecoin, fintech, latin-america
+- **Name:** SafeTrust
+- **Description:** Decentralized P2P escrow platform for the hospitality and tourism industry (min 200 words, original research above)
+- **Category:** `payments`
+- **Tags:** `stellar, escrow, soroban, hospitality, tourism, payments, stellar-wave, defi, trustless-work, p2p, stablecoin, fintech, latin-america`
+- **Stellar network:** `testnet` (mainnet for production)
+- **GitHub repos:** https://github.com/safetrustcr/frontend-SafeTrust, https://github.com/safetrustcr/backend-SafeTrust, https://github.com/safetrustcr/dApp-SafeTrust, https://github.com/safetrustcr/landing-SafeTrust, https://github.com/safetrustcr/safetrust-ZK
+- **Research images:** Architecture diagram and on-chain escrow flow screenshots attached to the Hub submission
