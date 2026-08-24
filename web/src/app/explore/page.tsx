@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import ProjectCard from "@/components/ProjectCard";
 
 const CATEGORIES = [
@@ -46,7 +46,6 @@ interface Pagination {
 }
 
 export default function ExplorePage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -83,7 +82,7 @@ export default function ExplorePage() {
     setLoading(false);
   }, [category, search, sort, pagination.page]);
 
-  // 3) Persist view state in URL query params
+  // 3) Persist view state in URL query params (shallow update)
   useEffect(() => {
     // Build params deterministically from state
     const params = new URLSearchParams();
@@ -95,12 +94,12 @@ export default function ExplorePage() {
 
     const nextUrl = `/explore?${params.toString()}`;
 
-    // Avoid URL->state->URL loops by only pushing when necessary
-    const currentUrl = `/explore?${searchParams.toString()}`;
-    if (currentUrl !== nextUrl) {
-      router.push(nextUrl, { shallow: true });
+    // Use replaceState for "shallow" updates that don't add browser history
+    // This allows work-sharing and back button to work correctly
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", nextUrl);
     }
-  }, [category, search, sort, pagination.page, router, searchParams]);
+  }, [category, search, sort, pagination.page]);
 
   // 1) Initialize view state from URL query params
   useEffect(() => {
