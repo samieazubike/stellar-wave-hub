@@ -10,7 +10,7 @@ import {
 	explorerTxUrl,
 	getRatingFee,
 	hasRatedOnChain,
-	getProjectRatingOnChain,
+	getProjectRatingFromEvents,
 	isRegisteredOnChain,
 	type OnChainRating,
 } from "@/lib/ratingContract";
@@ -57,7 +57,12 @@ interface Averages {
 }
 
 interface FinancialSummary {
-	balances: {asset_code: string; balance: string}[];
+	balances: {
+		asset_type: string;
+		asset_code: string;
+		asset_issuer?: string;
+		balance: string;
+	}[];
 }
 
 function stellarExplorerBase(network?: string) {
@@ -163,7 +168,7 @@ export default function ProjectDetailPage({
 				if (registered) {
 					// Only fetch fee and aggregate if actually registered
 					getRatingFee().then(setContractRatingFee).catch(() => {});
-					getProjectRatingOnChain(project.slug).then(setOnChainRating).catch(() => {});
+					getProjectRatingFromEvents(project.slug).then(setOnChainRating).catch(() => {});
 				}
 			})
 			.catch(() => {});
@@ -227,7 +232,7 @@ export default function ProjectDetailPage({
 
 			// Refresh on-chain aggregate
 			if (onChainActive) {
-				getProjectRatingOnChain(project.slug)
+				getProjectRatingFromEvents(project.slug)
 					.then((r) => setOnChainRating(r))
 					.catch(() => {});
 				setAlreadyRatedOnChain(true);
@@ -853,9 +858,16 @@ export default function ProjectDetailPage({
 													key={i}
 													className="flex items-center justify-between bg-stardust/30 rounded-xl px-5 py-4"
 												>
-													<span className="font-medium text-moonlight">
-														{b.asset_code}
-													</span>
+													<div>
+														<span className="font-medium text-moonlight">
+															{b.asset_code}
+														</span>
+														{b.asset_issuer && (
+															<p className="text-xs text-ash font-mono mt-0.5">
+																Issuer: {b.asset_issuer.slice(0, 8)}...{b.asset_issuer.slice(-4)}
+															</p>
+														)}
+													</div>
 													<span className="font-mono text-plasma-bright font-semibold">
 														{Number(b.balance).toLocaleString()}
 													</span>

@@ -269,7 +269,7 @@ impl WaveHubRegistry {
 
         env.storage().persistent().set(&ur_key, &score);
 
-        let pr_key = DataKey::ProjectRating(project_id);
+        let pr_key = DataKey::ProjectRating(project_id.clone());
         let mut rating: ProjectRating = env
             .storage()
             .persistent()
@@ -278,6 +278,11 @@ impl WaveHubRegistry {
         rating.count += 1;
         rating.sum += score as u64;
         env.storage().persistent().set(&pr_key, &rating);
+
+        env.events().publish(
+            (Symbol::new(&env, "Rating"), project_id),
+            (user, score),
+        );
     }
 
     // ── Fee management (admin) ──────────────────────────────────────────
@@ -613,5 +618,12 @@ mod tests {
         let agg = client.get_project_rating(&pid);
         assert_eq!(agg.count, 1);
         assert_eq!(agg.sum, 5);
+
+        // Verify event emission — event exists with correct topics
+        let events = env.events().all();
+        assert_eq!(events.len(), 1);
+        let (event_contract, topics, _data) = &events[0];
+        assert_eq!(*event_contract, contract_id);
+        assert_eq!(topics.len(), 2);
     }
 }

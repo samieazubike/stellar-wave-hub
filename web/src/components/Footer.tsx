@@ -43,6 +43,12 @@ export default function Footer() {
 								Submit a Project
 							</Link>
 							<Link
+								href="/blogs"
+								className="block text-sm text-ash hover:text-starlight transition-colors"
+							>
+								Blog
+							</Link>
+							<Link
 								href="/register"
 								className="block text-sm text-ash hover:text-starlight transition-colors"
 							>

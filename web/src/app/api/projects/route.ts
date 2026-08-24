@@ -1,5 +1,7 @@
 import {projectsCol, usersCol, ratingsCol, nextId} from "@/lib/db";
 import {getAuthUser} from "@/lib/auth";
+import {parseJsonBody} from "@/lib/validation/parse-body";
+import {createProjectSchema} from "@/lib/validation/schemas/projects";
 import slugify from "slugify";
 export const dynamic = "force-dynamic";
 
@@ -8,6 +10,7 @@ export async function GET(request: Request) {
 		const url = new URL(request.url);
 		const category = url.searchParams.get("category");
 		const search = url.searchParams.get("search")?.toLowerCase();
+		const substantial = url.searchParams.get("substantial") === "true";
 		const sort = url.searchParams.get("sort") || "newest";
 		const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
 		const limit = Math.min(
@@ -23,6 +26,10 @@ export async function GET(request: Request) {
 
 		if (category) {
 			query = query.where("category", "==", category);
+		}
+
+		if (substantial) {
+			query = query.where("is_substantial", "==", true);
 		}
 
 		const snap = await query.get();
@@ -114,29 +121,25 @@ export async function POST(request: Request) {
 	const auth = getAuthUser(request);
 	if (!auth) return Response.json({error: "Unauthorized"}, {status: 401});
 
-	try {
-		const body = await request.json();
-		const {
-			name,
-			description,
-			category,
-			stellar_account_id,
-			stellar_contract_id,
-			stellar_network,
-			tags,
-			website_url,
-			github_url,
-			github_repos,
-			logo_url,
-			research_images,
-		} = body;
+	const parsed = await parseJsonBody(request, createProjectSchema);
+	if (!parsed.success) return parsed.response;
 
-		if (!name || !description || !category) {
-			return Response.json(
-				{error: "Name, description, and category are required"},
-				{status: 400},
-			);
-		}
+	const {
+		name,
+		description,
+		category,
+		stellar_account_id,
+		stellar_contract_id,
+		stellar_network,
+		tags,
+		website_url,
+		github_url,
+		github_repos,
+		logo_url,
+		research_images,
+	} = parsed.data;
+
+	try {
 
 		let slug = slugify(name, {lower: true, strict: true});
 		const existing = await projectsCol.ref

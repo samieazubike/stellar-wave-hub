@@ -311,3 +311,11 @@ export default function ExplorePage() {
     </div>
   );
 }
+
+export default function ExplorePage() {
+	return (
+		<Suspense fallback={null}>
+			<ExplorePageContent />
+		</Suspense>
+	);
+}

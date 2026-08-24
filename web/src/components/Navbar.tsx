@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {useAuth} from "@/context/AuthContext";
+import {hasMinRole} from "@/lib/roles";
 import {useState} from "react";
 
 export default function Navbar() {
@@ -42,6 +43,12 @@ export default function Navbar() {
 						>
 							Queue
 						</Link>
+						<Link
+							href="/blogs"
+							className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+						>
+							Blog
+						</Link>
 						{user && (
 							<>
 								<Link
@@ -56,7 +63,7 @@ export default function Navbar() {
 								>
 									My Projects
 								</Link>
-								{user.role === "admin" && (
+								{hasMinRole(user.role, "admin") && (
 									<Link
 										href="/admin"
 										className="px-4 py-2 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10 transition-all"
@@ -158,6 +165,13 @@ export default function Navbar() {
 					>
 						Queue
 					</Link>
+					<Link
+						href="/blogs"
+						className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+						onClick={() => setMobileOpen(false)}
+					>
+						Blog
+					</Link>
 					{user ? (
 						<>
 							<Link
@@ -181,7 +195,7 @@ export default function Navbar() {
 							>
 								My Projects
 							</Link>
-							{user.role === "admin" && (
+							{hasMinRole(user.role, "admin") && (
 								<Link
 									href="/admin"
 									className="block px-4 py-2.5 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10"
