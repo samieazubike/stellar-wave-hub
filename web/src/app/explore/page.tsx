@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ProjectCard from "@/components/ProjectCard";
 
@@ -45,22 +45,42 @@ interface Pagination {
   pages: number;
 }
 
-export default function ExplorePage() {
+const validSortSet = new Set<string>(SORT_OPTIONS.map((o) => o.value));
+
+function ExplorePageContent() {
   const searchParams = useSearchParams();
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
-    page: 1,
-    limit: 12,
-    total: 0,
-    pages: 0,
+  const [category, setCategory] = useState<string>(() => {
+    const catParam = searchParams.get("category");
+    if (!catParam) return "All";
+    const normalized = catParam.toLowerCase();
+    const match = CATEGORIES.find((c) => c.toLowerCase() === normalized);
+    return match || "All";
   });
-  const [category, setCategory] = useState<string>("All");
-  const [search, setSearch] = useState<string>("");
-  const [sort, setSort] = useState<string>("newest");
-  const [loading, setLoading] = useState(true);
 
-  const validSortSet = new Set(SORT_OPTIONS.map((o) => o.value));
+  const [search, setSearch] = useState<string>(() => {
+    return searchParams.get("search") || "";
+  });
+
+  const [sort, setSort] = useState<string>(() => {
+    const sortParam = searchParams.get("sort");
+    return sortParam && validSortSet.has(sortParam) ? sortParam : "newest";
+  });
+
+  const [pagination, setPagination] = useState<Pagination>(() => {
+    const pageParam = searchParams.get("page");
+    const parsed = pageParam ? Number.parseInt(pageParam, 10) : 1;
+    const initialPage = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
+    return {
+      page: initialPage,
+      limit: 12,
+      total: 0,
+      pages: 0,
+    };
+  });
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -82,60 +102,45 @@ export default function ExplorePage() {
     setLoading(false);
   }, [category, search, sort, pagination.page]);
 
-  // 3) Persist view state in URL query params (shallow update)
+  // Update query params shallowly on filter changes
   useEffect(() => {
-    // Build params deterministically from state
     const params = new URLSearchParams();
     if (category !== "All") params.set("category", category.toLowerCase());
-    if (search) params.set("search", search);
-    if (sort) params.set("sort", sort);
-    // Always include page so it round-trips
-    params.set("page", String(pagination.page));
+    if (search.trim()) params.set("search", search.trim());
+    if (sort !== "newest") params.set("sort", sort);
+    if (pagination.page > 1) params.set("page", String(pagination.page));
 
-    const nextUrl = `/explore?${params.toString()}`;
+    const queryString = params.toString();
+    const nextUrl = queryString ? `/explore?${queryString}` : "/explore";
 
-    // Use replaceState for "shallow" updates that don't add browser history
-    // This allows work-sharing and back button to work correctly
-    if (typeof window !== "undefined") {
+    if (
+      typeof window !== "undefined" &&
+      window.location.search !== (queryString ? `?${queryString}` : "")
+    ) {
       window.history.replaceState(null, "", nextUrl);
     }
   }, [category, search, sort, pagination.page]);
 
-  // 1) Initialize view state from URL query params
+  // Sync state when query params change externally (e.g. browser back/forward buttons)
   useEffect(() => {
-    const categoryParam = searchParams.get("category");
-    const searchParam = searchParams.get("search");
+    const catParam = searchParams.get("category");
+    const nextCategory = catParam
+      ? CATEGORIES.find((c) => c.toLowerCase() === catParam.toLowerCase()) || "All"
+      : "All";
+    const nextSearch = searchParams.get("search") || "";
     const sortParam = searchParams.get("sort");
+    const nextSort = sortParam && validSortSet.has(sortParam) ? sortParam : "newest";
     const pageParam = searchParams.get("page");
+    const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : 1;
+    const nextPage = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
 
-    let nextCategory = "All";
-    if (categoryParam) {
-      const normalized = categoryParam.toLowerCase();
-      const match = CATEGORIES.find((c) => c.toLowerCase() === normalized);
-      if (match) nextCategory = match;
-    }
+    setCategory((prev) => (prev !== nextCategory ? nextCategory : prev));
+    setSearch((prev) => (prev !== nextSearch ? nextSearch : prev));
+    setSort((prev) => (prev !== nextSort ? nextSort : prev));
+    setPagination((prev) => (prev.page !== nextPage ? { ...prev, page: nextPage } : prev));
+  }, [searchParams]);
 
-    let nextSearch = searchParam ?? "";
-
-    let nextSort = "newest";
-    if (sortParam && validSortSet.has(sortParam)) {
-      nextSort = sortParam;
-    }
-
-    let nextPage = 1;
-    if (pageParam) {
-      const parsed = Number.parseInt(pageParam, 10);
-      if (Number.isFinite(parsed) && parsed >= 1) nextPage = parsed;
-    }
-
-    setCategory(nextCategory);
-    setSearch(nextSearch);
-    setSort(nextSort);
-    setPagination((p) => ({ ...p, page: nextPage }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 2) Fetch when view state changes
+  // Fetch projects whenever category, search, sort, or pagination page changes
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
@@ -313,9 +318,10 @@ export default function ExplorePage() {
 }
 
 export default function ExplorePage() {
-	return (
-		<Suspense fallback={null}>
-			<ExplorePageContent />
-		</Suspense>
-	);
+  return (
+    <Suspense fallback={null}>
+      <ExplorePageContent />
+    </Suspense>
+  );
 }
+
