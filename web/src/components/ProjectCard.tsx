@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {useEffect, useState} from "react";
 
 interface ProjectCardProps {
   project: {
@@ -17,6 +18,7 @@ interface ProjectCardProps {
     username?: string;
     logo_url?: string;
     stellar_contract_id?: string;
+    financial_snapshots?: {created_at?: string; balances?: {balance: string}[]}[];
   };
   index?: number;
 }
@@ -37,6 +39,24 @@ const categoryColors: Record<string, string> = {
 export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
   const colorClass = categoryColors[project.category?.toLowerCase()] || "tag-nova";
   const tags = project.tags ? project.tags.split(",").slice(0, 3) : [];
+  const [snapshots, setSnapshots] = useState<{balances?: {balance: string}[]}[]>(project.financial_snapshots ?? []);
+  useEffect(() => {
+    if (!project.stellar_contract_id && !project.id) return;
+    fetch(`/api/financials/${project.id}/summary`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => data?.snapshots && setSnapshots(data.snapshots))
+      .catch(() => {});
+  }, [project.id, project.stellar_contract_id]);
+  const points = snapshots.map((snapshot) =>
+    (snapshot.balances ?? []).reduce((total, balance) => total + Number(balance.balance || 0), 0),
+  );
+  const min = points.length ? Math.min(...points) : 0;
+  const max = points.length ? Math.max(...points) : 1;
+  const sparkline = points.map((point, i) => {
+    const x = points.length === 1 ? 50 : (i / (points.length - 1)) * 100;
+    const y = 30 - ((point - min) / (max - min || 1)) * 24;
+    return `${x},${y}`;
+  }).join(" ");
 
   return (
     <Link
@@ -77,6 +97,14 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
       <p className="text-sm text-moonlight/80 leading-relaxed line-clamp-2 flex-1">
         {project.description}
       </p>
+
+      {points.length > 0 && (
+        <div className="h-8" aria-label="Balance trend over time">
+          <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="h-full w-full" role="img">
+            <polyline points={sparkline} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" className="text-aurora-bright" />
+          </svg>
+        </div>
+      )}
 
       {/* Tags */}
       {tags.length > 0 && (

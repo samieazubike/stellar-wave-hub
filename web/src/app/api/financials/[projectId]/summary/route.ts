@@ -1,4 +1,4 @@
-import {projectsCol} from "@/lib/db";
+import {projectsCol, financialSnapshotsCol} from "@/lib/db";
 import {getAccountSummary} from "@/lib/stellarService";
 export const dynamic = "force-dynamic";
 
@@ -25,9 +25,18 @@ export async function GET(
 
 	try {
 		const summary = await getAccountSummary(stellarAccountId);
+		const snapshots = await financialSnapshotsCol.ref
+			.where("project_id", "==", project.numericId)
+			.orderBy("created_at", "asc")
+			.limit(30)
+			.get();
 		return Response.json({
 			project: {id: project.numericId, name: project.name},
 			summary,
+			snapshots: snapshots.docs.map((snapshot) => ({
+				created_at: snapshot.data().created_at,
+				balances: snapshot.data().snapshot_data?.balances ?? [],
+			})),
 		});
 	} catch (err) {
 		console.error("Financial summary error:", err);
