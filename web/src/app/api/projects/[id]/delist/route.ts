@@ -14,12 +14,14 @@ export async function PUT(
   const doc = await ref.get();
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
 
+  const parsed = await parseJsonBody(request, delistProjectSchema);
+  if (!parsed.success) return parsed.response;
+
   try {
-    const body = await request.json().catch(() => ({}));
     await ref.update({
       status: "delisted",
       featured: 0,
-      rejection_reason: body.reason || "Delisted by admin",
+      rejection_reason: parsed.data.reason || "Delisted by admin",
       updated_at: new Date().toISOString(),
     });
     const updated = await ref.get();

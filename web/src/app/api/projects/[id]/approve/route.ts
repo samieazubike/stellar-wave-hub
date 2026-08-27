@@ -2,6 +2,8 @@ import { projectsCol } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
+const moderationActionLimit = { limit: 30, windowMs: 60_000 };
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -9,14 +11,19 @@ export async function PUT(
   const auth = requireAdmin(request);
   if (auth instanceof Response) return auth;
 
+  const rateLimit = checkRateLimit(`maintainer:${auth.userId}:moderation-action`, moderationActionLimit);
+  if (!rateLimit.allowed) return rateLimitExceededResponse(rateLimit.retryAfterSeconds);
+
   const { id } = await params;
   const ref = projectsCol.ref.doc(id);
   const doc = await ref.get();
   if (!doc.exists) return Response.json({ error: "Project not found" }, { status: 404 });
 
+  const parsed = await parseJsonBody(request, featuredProjectSchema);
+  if (!parsed.success) return parsed.response;
+
   try {
-    const body = await request.json().catch(() => ({}));
-    const featured = body.featured ? 1 : 0;
+    const featured = parsed.data.featured ? 1 : 0;
     const status = featured ? "featured" : "approved";
 
     await ref.update({ status, featured, updated_at: new Date().toISOString() });

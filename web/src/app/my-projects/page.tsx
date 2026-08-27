@@ -159,6 +159,12 @@ export default function MyProjectsPage() {
 									</div>
 								)}
 								<Link
+									href={`/projects/${project.slug}/edit`}
+									className="btn-ghost text-sm !py-1.5 !px-3"
+								>
+									Edit
+								</Link>
+								<Link
 									href={`/projects/${project.slug}`}
 									className="btn-ghost text-sm !py-1.5 !px-3"
 								>

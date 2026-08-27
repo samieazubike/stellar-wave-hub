@@ -1,6 +1,7 @@
 "use client";
 
-import {useEffect, useState, useCallback} from "react";
+import {useEffect, useState, useCallback, Suspense} from "react";
+import {useRouter, useSearchParams, usePathname} from "next/navigation";
 import ProjectCard from "@/components/ProjectCard";
 
 const CATEGORIES = [
@@ -35,6 +36,8 @@ interface Project {
 	avg_rating?: number;
 	rating_count?: number;
 	username?: string;
+	is_substantial?: boolean;
+	stellar_contract_id?: string;
 }
 
 interface Pagination {
@@ -44,7 +47,11 @@ interface Pagination {
 	pages: number;
 }
 
-export default function ExplorePage() {
+function ExplorePageContent() {
+	const router = useRouter();
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
+
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [pagination, setPagination] = useState<Pagination>({
 		page: 1,
@@ -55,6 +62,9 @@ export default function ExplorePage() {
 	const [category, setCategory] = useState("All");
 	const [search, setSearch] = useState("");
 	const [sort, setSort] = useState("newest");
+	const [substantialOnly, setSubstantialOnly] = useState(
+		() => searchParams.get("substantial") === "true",
+	);
 	const [loading, setLoading] = useState(true);
 
 	const fetchProjects = useCallback(async () => {
@@ -62,6 +72,7 @@ export default function ExplorePage() {
 		const params = new URLSearchParams();
 		if (category !== "All") params.set("category", category.toLowerCase());
 		if (search) params.set("search", search);
+		if (substantialOnly) params.set("substantial", "true");
 		params.set("sort", sort);
 		params.set("page", String(pagination.page));
 		params.set("limit", "12");
@@ -75,11 +86,25 @@ export default function ExplorePage() {
 			setProjects([]);
 		}
 		setLoading(false);
-	}, [category, search, sort, pagination.page]);
+	}, [category, search, sort, substantialOnly, pagination.page]);
 
 	useEffect(() => {
 		fetchProjects();
 	}, [fetchProjects]);
+
+	const toggleSubstantial = () => {
+		const next = !substantialOnly;
+		setSubstantialOnly(next);
+		setPagination((p) => ({...p, page: 1}));
+
+		const newParams = new URLSearchParams(searchParams.toString());
+		if (next) newParams.set("substantial", "true");
+		else newParams.delete("substantial");
+		router.replace(
+			newParams.toString() ? `${pathname}?${newParams}` : pathname,
+			{scroll: false},
+		);
+	};
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -140,6 +165,32 @@ export default function ExplorePage() {
 						</option>
 					))}
 				</select>
+
+				{/* Substantial only toggle */}
+				<button
+					type="button"
+					aria-pressed={substantialOnly}
+					onClick={toggleSubstantial}
+					className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+						substantialOnly
+							? "bg-nova text-white glow-nova"
+							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+					}`}
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					>
+						<polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+					</svg>
+					Substantial only
+				</button>
 			</div>
 
 			{/* Category tabs */}
@@ -256,5 +307,13 @@ export default function ExplorePage() {
 				</div>
 			)}
 		</div>
+	);
+}
+
+export default function ExplorePage() {
+	return (
+		<Suspense fallback={null}>
+			<ExplorePageContent />
+		</Suspense>
 	);
 }

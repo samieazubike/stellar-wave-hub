@@ -9,6 +9,7 @@ on:
 permissions:
   pull-requests: write
   contents: read
+  issues: write
 
 jobs:
   check-format:
@@ -114,10 +115,10 @@ jobs:
                   '(`https://github.com/your-username`).'
                 );
               }
-              if (!/https:\/\/github\.com\/[A-Za-z0-9_-]+\.png/.test(checkIn)) {
+              if (!/<img\s+[^>]*src="https:\/\/github\.com\/[A-Za-z0-9_-]+\.png/.test(checkIn) && !/avatars\.githubusercontent\.com/.test(checkIn)) {
                 errors.push(
                   '**Missing avatar image**: Your block must include your GitHub avatar ' +
-                  '(`https://github.com/your-username.png`).'
+                  '(`https://github.com/your-username.png` or an avatars.githubusercontent.com link).'
                 );
               }
               if (!/<sub><b>[^<]+<\/b><\/sub>/.test(checkIn)) {
@@ -125,12 +126,12 @@ jobs:
                   '**Missing name**: Include your display name as `<sub><b>Your Name</b></sub>`.'
                 );
               }
-              if (!/<img src="https:\/\/img\.shields\.io\/badge\/-GitHub/.test(checkIn)) {
+              if (!/<img\s+[^>]*src="https:\/\/img\.shields\.io\/badge\/-GitHub/.test(checkIn)) {
                 errors.push(
                   '**Missing GitHub badge**: Include the GitHub badge from the template.'
                 );
               }
-              if (!/<sub>[A-Za-z][\w\s]* — .+<\/sub>/.test(checkIn)) {
+              if (!/<sub>[A-Za-z][\w\s]*\s*[\-—]\s*.+<\/sub>/.test(checkIn)) {
                 errors.push(
                   '**Missing role/projects line**: Include a role line such as ' +
                   '`<sub>Researcher — StellarPay, LumenSwap</sub>`.'
@@ -182,23 +183,30 @@ jobs:
                 '> Remove the X badge line if you don\'t have an X account.',
               ].join('\n');
 
-              if (existing) {
-                await github.rest.issues.updateComment({
-                  owner:      context.repo.owner,
-                  repo:       context.repo.repo,
-                  comment_id: existing.id,
-                  body,
-                });
+              if (context.payload.pull_request.head.repo?.fork) {
+                console.log('Skipping PR comment on fork-based PR (token limitation)');
+                core.setFailed('Contributor format check failed. See logs for details.');
               } else {
-                await github.rest.issues.createComment({
-                  owner:        context.repo.owner,
-                  repo:         context.repo.repo,
-                  issue_number: prNumber,
-                  body,
-                });
-              }
+                if (existing) {
+                  await github.rest.issues.updateComment({
+                    owner:      context.repo.owner,
+                    repo:       context.repo.repo,
+                    comment_id: existing.id,
+                    body,
+                  });
+                } else {
+                  // CHANGED: Use pulls API instead of issues API for better fork support
+                  await github.rest.pulls.createReview({
+                    owner:       context.repo.owner,
+                    repo:        context.repo.repo,
+                    pull_number: prNumber,
+                    body:        body,
+                    event:       'COMMENT',
+                  });
+                }
 
-              core.setFailed('Contributor format check failed. See the PR comment for details.');
+                core.setFailed('Contributor format check failed. See the PR comment for details.');
+              }
 
             } else {
               // All checks passed – update any previous failure comment

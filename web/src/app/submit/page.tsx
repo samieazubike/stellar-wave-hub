@@ -64,11 +64,6 @@ const submitSchema = z.object({
     .string()
     .url("Please enter a valid URL")
     .or(z.literal("")),
-  github_url: z
-    .string()
-    .min(1, "GitHub URL is required")
-    .url("Please enter a valid URL")
-    .refine((val) => val.includes("github.com"), "Must be a GitHub URL"),
   logo_url: z
     .string()
     .url("Please enter a valid URL")
@@ -84,6 +79,10 @@ export default function SubmitPage() {
   const [researchFiles, setResearchFiles] = useState<File[]>([]);
   const [researchPreviews, setResearchPreviews] = useState<string[]>([]);
   const [researchError, setResearchError] = useState("");
+  const [repos, setRepos] = useState<{ label: string; url: string }[]>([
+    { label: "", url: "" },
+  ]);
+  const [reposError, setReposError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,7 +127,6 @@ export default function SubmitPage() {
       stellar_network: "mainnet",
       tags: "",
       website_url: "",
-      github_url: "",
       logo_url: "",
     },
   });
@@ -136,6 +134,21 @@ export default function SubmitPage() {
   const onSubmit = async (values: SubmitValues) => {
     setError("");
     setResearchError("");
+    setReposError("");
+
+    // Validate repos — at least one valid repo required
+    const validRepos = repos.filter((r) => r.url.trim() !== "");
+    if (validRepos.length === 0) {
+      setReposError("At least one GitHub repository is required");
+      return;
+    }
+    const invalidRepo = validRepos.find(
+      (r) => !r.label.trim() || !/^https?:\/\/.*github\.com\/.+/.test(r.url.trim()),
+    );
+    if (invalidRepo) {
+      setReposError("Each repo needs a label and a valid GitHub URL");
+      return;
+    }
 
     if (researchFiles.length === 0) {
       setResearchError("At least one research image is required");
@@ -155,9 +168,10 @@ export default function SubmitPage() {
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) throw new Error(uploadData.error || "Image upload failed");
 
-      // 2. Submit project with image URLs
+      // 2. Submit project with image URLs + repos
       const payload = {
         ...values,
+        github_repos: validRepos.map((r) => ({ label: r.label.trim(), url: r.url.trim() })),
         research_images: uploadData.urls,
       };
       const res = await fetch("/api/projects", {
@@ -351,19 +365,69 @@ export default function SubmitPage() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="github_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>GitHub URL *</FormLabel>
-                  <FormControl>
-                    <Input type="url" placeholder="https://github.com/..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div className="md:col-span-2 space-y-3">
+              <label className="text-sm font-medium text-moonlight">
+                GitHub Repositories *
+              </label>
+              <p className="text-xs text-ash -mt-1">
+                Add one or more repos (e.g. frontend, backend, smart contract)
+              </p>
+
+              {repos.map((repo, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <div className="w-36 shrink-0">
+                    <Input
+                      placeholder="Label"
+                      value={repo.label}
+                      onChange={(e) => {
+                        const updated = [...repos];
+                        updated[idx] = { ...updated[idx], label: e.target.value };
+                        setRepos(updated);
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="url"
+                      placeholder="https://github.com/org/repo"
+                      value={repo.url}
+                      onChange={(e) => {
+                        const updated = [...repos];
+                        updated[idx] = { ...updated[idx], url: e.target.value };
+                        setRepos(updated);
+                      }}
+                    />
+                  </div>
+                  {repos.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setRepos(repos.filter((_, i) => i !== idx))}
+                      className="shrink-0 w-9 h-9 rounded-lg bg-supernova/10 hover:bg-supernova/20 text-supernova flex items-center justify-center transition-colors mt-0.5"
+                      title="Remove"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {repos.length < 6 && (
+                <button
+                  type="button"
+                  onClick={() => setRepos([...repos, { label: "", url: "" }])}
+                  className="text-sm text-nova-bright hover:text-nova transition-colors flex items-center gap-1"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Add another repo
+                </button>
               )}
-            />
+
+              {reposError && (
+                <p className="text-sm text-supernova">{reposError}</p>
+              )}
+            </div>
 
             <FormField
               control={form.control}

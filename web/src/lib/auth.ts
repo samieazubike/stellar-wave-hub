@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { ROLES, hasMinRole } from "./roles";
 
 const JWT_SECRET = process.env.JWT_SECRET || "stellar-wave-hub-dev-secret";
+
+export { ROLES, hasMinRole };
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);

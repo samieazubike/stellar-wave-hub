@@ -8,7 +8,7 @@ create table if not exists public.users (
   username text not null,
   email text,
   password_hash text,
-  role text not null default 'contributor',
+  role text not null default 'contributor' check (role in ('contributor', 'maintainer', 'admin')),
   stellar_address text,
   github_url text,
   twitter_url text,
@@ -36,6 +36,7 @@ create table if not exists public.projects (
   tags text,
   website_url text,
   github_url text,
+  github_repos jsonb default '[]'::jsonb,
   logo_url text,
   research_images jsonb default '[]'::jsonb,
   stellar_network text not null default 'mainnet' check (stellar_network in ('testnet', 'mainnet')),
@@ -65,6 +66,7 @@ create table if not exists public.ratings (
   innovation_score integer,
   usability_score integer,
   review_text text,
+  tx_hash text,
   created_at timestamptz not null default now(),
   constraint ratings_project_id_fkey
     foreign key (project_id)
