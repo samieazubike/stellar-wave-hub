@@ -36,8 +36,10 @@ Stellar Wave Hub solves three gaps in the current Wave ecosystem:
 **User roles:**
 
 - **Contributor** — Browse, submit, and rate projects
-- **Admin** — Review and approve/reject submissions, mark projects as featured
+- **Admin** — Review and approve/reject submissions, mark projects as featured, delist/delete projects, and manage access control
 - **Visitor** _(stretch)_ — Read-only access without registration
+
+> **Role enforcement:** All destructive/owner actions (project **delist** and **delete**) are restricted to `admin` only, enforced server-side via the `requireAdmin` RBAC guard in `web/src/lib/auth.ts`. Non-admin users — including any future elevated roles like `maintainer` — are denied with a `403 Forbidden`, and the corresponding controls are hidden from the UI.
 
 ---
 
@@ -236,7 +238,8 @@ Authorization: Bearer <jwt_token>
 | PUT    | `/api/projects/:id`         | Required | Edit own project                                                                     |
 | PUT    | `/api/projects/:id/approve` | Admin    | Approve (optionally feature)                                                         |
 | PUT    | `/api/projects/:id/reject`  | Admin    | Reject with optional reason                                                          |
-| DELETE | `/api/projects/:id`         | Admin    | Delete a project                                                                     |
+| PUT    | `/api/projects/:id/delist`  | Admin    | Delist an approved/featured project from the public directory                        |
+| DELETE | `/api/projects/:id/delete`  | Admin    | Permanently delete a project and its ratings                                         |
 
 ### Ratings
 

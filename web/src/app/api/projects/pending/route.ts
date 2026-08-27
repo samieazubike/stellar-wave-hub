@@ -1,12 +1,10 @@
 import { projectsCol, usersCol } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const auth = getAuthUser(request);
-  if (!auth || auth.role !== "admin") {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = requireAdmin(request);
+  if (auth instanceof Response) return auth;
 
   const snap = await projectsCol.ref
     .where("status", "==", "submitted")
