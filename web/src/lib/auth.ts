@@ -31,3 +31,19 @@ export function getAuthUser(request: Request): { userId: number; role: string } 
   if (!header?.startsWith("Bearer ")) return null;
   return verifyToken(header.slice(7));
 }
+
+/**
+ * RBAC guard: enforces that only an authenticated `admin` may proceed.
+ * Used by destructive / owner-only route handlers (delete, delist, approve,
+ * reject, admin listings). Non-admins (including a future `maintainer` role)
+ * are denied with a 403.
+ */
+export function requireAdmin(
+  request: Request
+): { userId: number; role: string } | Response {
+  const auth = getAuthUser(request);
+  if (!auth || auth.role !== "admin") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return auth;
+}

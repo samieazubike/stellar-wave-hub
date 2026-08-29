@@ -710,9 +710,11 @@ function PendingCard({
 function ProjectRow({
   project,
   action,
+  isAdmin,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  isAdmin: boolean;
 }) {
   const isLoading = action.isPending;
 
@@ -748,72 +750,77 @@ function ProjectRow({
       </div>
 
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
-        {(project.status === "approved" || project.status === "featured") && (
-          <DelistDialog
-            project={project}
-            isPending={isLoading}
-            onConfirm={(reason) =>
-              action.mutate({
-                projectId: project.id,
-                action: "delist",
-                body: { reason },
-              })
-            }
-          />
+        {/* Destructive owner actions are admin-only */}
+        {isAdmin && (
+          <>
+            {(project.status === "approved" || project.status === "featured") && (
+              <DelistDialog
+                project={project}
+                isPending={isLoading}
+                onConfirm={(reason) =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "delist",
+                    body: { reason },
+                  })
+                }
+              />
+            )}
+            {(project.status === "rejected" || project.status === "delisted") && (
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: false },
+                  })
+                }
+                className="bg-aurora/10 hover:bg-aurora/20 text-aurora-bright/80 hover:text-aurora-bright border border-aurora/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+              >
+                Re-approve
+              </button>
+            )}
+            {project.status !== "featured" &&
+              (project.status === "approved" || project.status === "featured") && (
+                <button
+                  disabled={isLoading}
+                  onClick={() =>
+                    action.mutate({
+                      projectId: project.id,
+                      action: "approve",
+                      body: { featured: true },
+                    })
+                  }
+                  className="bg-solar/10 hover:bg-solar/20 text-solar-bright/80 hover:text-solar-bright border border-solar/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                >
+                  Feature
+                </button>
+              )}
+            {project.featured === 1 && (
+              <button
+                disabled={isLoading}
+                onClick={() =>
+                  action.mutate({
+                    projectId: project.id,
+                    action: "approve",
+                    body: { featured: false },
+                  })
+                }
+                className="bg-dust/30 hover:bg-dust/50 text-ash hover:text-moonlight border border-dust/20 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+              >
+                Unfeature
+              </button>
+            )}
+            <DeleteDialog
+              project={project}
+              isPending={isLoading}
+              onConfirm={() =>
+                action.mutate({ projectId: project.id, action: "delete" })
+              }
+            />
+          </>
         )}
-        {(project.status === "rejected" || project.status === "delisted") && (
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: false },
-              })
-            }
-            className="bg-aurora/10 hover:bg-aurora/20 text-aurora-bright/80 hover:text-aurora-bright border border-aurora/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
-          >
-            Re-approve
-          </button>
-        )}
-        {project.status !== "featured" &&
-          (project.status === "approved" || project.status === "featured") && (
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: true },
-              })
-            }
-            className="bg-solar/10 hover:bg-solar/20 text-solar-bright/80 hover:text-solar-bright border border-solar/10 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
-          >
-            Feature
-          </button>
-        )}
-        {project.featured === 1 && (
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: false },
-              })
-            }
-            className="bg-dust/30 hover:bg-dust/50 text-ash hover:text-moonlight border border-dust/20 font-medium text-xs px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
-          >
-            Unfeature
-          </button>
-        )}
-        <DeleteDialog
-          project={project}
-          isPending={isLoading}
-          onConfirm={() =>
-            action.mutate({ projectId: project.id, action: "delete" })
-          }
-        />
       </div>
     </div>
   );
@@ -1389,8 +1396,8 @@ export default function AdminPage() {
               <Skeletons />
             ) : filteredApproved.length > 0 ? (
               <div className="space-y-2">
-                {filteredApproved.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                {approved.map((p) => (
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={user.role === "admin"} />
                 ))}
               </div>
             ) : (
@@ -1414,8 +1421,8 @@ export default function AdminPage() {
               <Skeletons />
             ) : filteredFeatured.length > 0 ? (
               <div className="space-y-2">
-                {filteredFeatured.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                {featured.map((p) => (
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={user.role === "admin"} />
                 ))}
               </div>
             ) : (
@@ -1440,7 +1447,7 @@ export default function AdminPage() {
                 {filteredAll
                   .filter((p) => p.status === "rejected" || p.status === "delisted")
                   .map((p) => (
-                    <ProjectRow key={p.id} project={p} action={action} />
+                    <ProjectRow key={p.id} project={p} action={action} isAdmin={user.role === "admin"} />
                   ))}
               </div>
             ) : (
@@ -1464,8 +1471,8 @@ export default function AdminPage() {
               <Skeletons count={5} />
             ) : filteredAll.length > 0 ? (
               <div className="space-y-2">
-                {filteredAll.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                {all.map((p) => (
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={user.role === "admin"} />
                 ))}
               </div>
             ) : (
