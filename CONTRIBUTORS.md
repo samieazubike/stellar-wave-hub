@@ -287,6 +287,18 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
+		<a href="https://github.com/k-deejah">
+			<img
+				src="https://github.com/k-deejah.png"
+				width="80"
+				style="border-radius:50%"
+				alt="k-deejah"
+			/>
+			<br />
+			<sub><b>k-deejah</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/k-deejah"
 		<a href="https://github.com/kiro-ai">
 			<img
 				src="https://github.com/kiro-ai.png"
@@ -304,6 +316,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="GitHub"
 		/></a>
 		<br />
+		<sub>Researcher — Blend Protocol</sub>
 		<sub>Researcher — Sanctifier</sub>
 	</div>
 
