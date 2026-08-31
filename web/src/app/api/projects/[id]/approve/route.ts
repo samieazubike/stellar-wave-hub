@@ -1,4 +1,4 @@
-import { projectsCol } from "@/lib/db";
+import { projectsCol, createNotification } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { featuredProjectSchema } from "@/lib/validation/schemas/featured";
@@ -33,7 +33,19 @@ export async function PUT(
 
     await ref.update({ status, featured, updated_at: new Date().toISOString() });
     const updated = await ref.get();
-    return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
+    const projectData = updated.data()!;
+
+    await createNotification({
+      user_id: projectData.user_id as number,
+      project_id: projectData.numericId as number,
+      project_name: projectData.name as string,
+      status,
+      message: featured
+        ? `Your project "${projectData.name}" has been featured.`
+        : `Your project "${projectData.name}" has been approved.`,
+    });
+
+    return Response.json({ project: { ...projectData, id: projectData.numericId } });
   } catch (err) {
     console.error("Approve error:", err);
     return Response.json({ error: "Internal server error" }, { status: 500 });

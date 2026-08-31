@@ -31,6 +31,32 @@ export const submissionNotesCol = {
 		return col("submission_notes");
 	},
 };
+export const notificationsCol = {
+	get ref() {
+		return col("notifications");
+	},
+};
+
+export async function createNotification(input: {
+  user_id: number;
+  project_id: number;
+  project_name: string;
+  status: string;
+  message: string;
+}) {
+  const numericId = await nextId("notifications");
+  await notificationsCol.ref.doc(String(numericId)).set({
+    numericId,
+    user_id: input.user_id,
+    project_id: input.project_id,
+    project_name: input.project_name,
+    status: input.status,
+    message: input.message,
+    read: false,
+    created_at: new Date().toISOString(),
+  });
+  return numericId;
+}
 
 // Auto-incrementing numeric ID
 export async function nextId(collection: string): Promise<number> {

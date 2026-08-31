@@ -1239,14 +1239,26 @@ export default function AdminPage() {
             </div>
             <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
           </div>
-          <a
-            href="https://github.com/samieazubike/stellar-wave-hub/blob/main/docs/MAINTAINERS.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-ghost text-sm !py-2 !px-3"
-          >
-            Maintainer Guide
-          </a>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/revenue"
+              className="btn-nova text-sm !py-2 !px-3 inline-flex items-center gap-1.5"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+              Revenue Dashboard
+            </Link>
+            <a
+              href="https://github.com/samieazubike/stellar-wave-hub/blob/main/docs/MAINTAINERS.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost text-sm !py-2 !px-3"
+            >
+              Maintainer Guide
+            </a>
+          </div>
         </div>
         <p className="text-ash ml-[52px]">Manage project submissions, approvals, and listings</p>
       </div>
