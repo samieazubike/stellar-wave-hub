@@ -58,6 +58,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
+		<a href="https://github.com/monalisa">
+			<img
+				src="https://github.com/monalisa.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Mona Lisa"
+			/>
+			<br />
+			<sub><b>Mona Lisa</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/monalisa"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Kotani Pay</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
 		<a href="https://github.com/samieazubike">
 			<img
 				src="https://github.com/samieazubike.png"
