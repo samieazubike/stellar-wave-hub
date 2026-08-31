@@ -30,6 +30,10 @@ Soroswap's contracts are deployed on the Stellar Mainnet via Soroban. Instead of
 
 The factory and router are verifiable on Stellar network explorers (like Stellar.Expert) where active liquidity provisioning and trading operations take place.
 
+## Architecture Screenshot
+
+![Soroswap Decentralized Architecture on the Soroban Network](soroswap-architecture.jpg)
+
 ## Suggested Hub Submission
 
 - **Name:** Soroswap
