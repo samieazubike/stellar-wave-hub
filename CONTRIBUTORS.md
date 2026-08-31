@@ -53,6 +53,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 
 <!-- CONTRIBUTORS-START -->
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/blend-researcher">
+			<img
+				src="https://github.com/blend-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Blend Researcher"
+			/>
+			<br />
+			<sub><b>Blend Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/blend-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Blend</sub>
+	</div>
+
 ```html
 <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
 	<div
