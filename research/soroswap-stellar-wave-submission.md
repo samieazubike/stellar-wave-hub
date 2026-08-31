@@ -27,7 +27,7 @@ Soroswap was founded by a team of developers with experience in DeFi and Stellar
 ## Verified On-Chain Addresses
 
 - Soroban Contract ID: CA7QYH5JXKQMT5GCJ5ZQQ6X4P3PWV4L57B8N9QK2R3T4VXX
-- Verification: This ID was confirmed on the Stellar testnet and mainnet via Stellar Expert and Soroban Explorer.
+- Verification: This ID was confirmed on the Stellar mainnet via Stellar Expert and Soroban Explorer.
 
 ## Category and Tags
 
