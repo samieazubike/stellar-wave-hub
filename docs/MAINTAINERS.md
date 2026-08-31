@@ -14,24 +14,33 @@ As a maintainer you're expected to:
 
 ## Roles & Permissions
 
-There are two roles in the system today: `contributor` (the default for every new account) and `admin`. There is no separate intermediate "maintainer" role in code — anyone referred to as a maintainer is an `admin`. Roles live on `users.role` and are not self-assignable; see [Becoming a maintainer](#becoming-a-maintainer).
+There are three roles in the system: `contributor` (default for new accounts), `maintainer` (elevated trust — can review submissions but not manage the system), and `admin` (full access). Roles are stored in `users.role` and are not self-assignable; see [Becoming a maintainer](#becoming-a-maintainer).
 
-| Action | Contributor | Admin |
-|---|---|---|
-| Submit a project | ✅ | ✅ |
-| Rate / review approved projects | ✅ | ✅ |
-| Edit their own project | ✅ | ✅ |
-| Edit *any* project | ❌ | ✅ |
-| Edit/delete their own rating | ✅ | ✅ |
-| Edit/delete *any* rating | ❌ | ✅ |
-| Approve / feature a submission | ❌ | ✅ |
-| Reject / delist a project | ❌ | ✅ |
-| Permanently delete a project | ❌ | ✅ |
-| View the pending approval queue (data) | ❌ (public `/queue` page only shows the same list read-only) | ✅ |
-| Access `/admin` | ❌ | ✅ |
+The `maintainer` role was added to allow trusted community members to review and manage submissions without granting full admin access. In code, `hasMinRole(user.role, "admin")` checks for `admin` only, while `hasMinRole(user.role, "maintainer")` grants access to both `maintainer` and `admin` (due to the numerical hierarchy: contributor=0, maintainer=1, admin=2).
 
-This matrix reflects the actual `auth.role !== "admin"` gates enforced in:
-`web/src/app/api/projects/[id]/approve/route.ts`, `.../reject/route.ts`, `.../delist/route.ts`, `.../delete/route.ts`, `.../edit/route.ts` (admin-or-owner), `web/src/app/api/admin/projects/route.ts`, `web/src/app/api/projects/pending/route.ts`, `web/src/app/api/ratings/[id]/route.ts` (admin-or-owner), and the `/admin` page itself.
+| Action | Contributor | Maintainer | Admin |
+|---|---|---|---|
+| Submit a project | ✅ | ✅ | ✅ |
+| Rate / review approved projects | ✅ | ✅ | ✅ |
+| Edit their own project | ✅ | ✅ | ✅ |
+| Edit *any* project | ❌ | ❌ | ✅ |
+| Edit/delete their own rating | ✅ | ✅ | ✅ |
+| Edit/delete *any* rating | ❌ | ❌ | ✅ |
+| Approve / feature a submission | ❌ | ✅ | ✅ |
+| Reject / delist a project | ❌ | ✅ | ✅ |
+| Permanently delete a project | ❌ | ❌ | ✅ |
+| View the pending approval queue (data) | ❌ | ✅ (read-only on `/queue`) | ✅ |
+| Access `/admin` | ❌ | ❌ | ✅ |
+
+**Code references:**
+- `web/src/lib/roles.ts` — role hierarchy and `hasMinRole()`
+- `web/src/app/api/projects/[id]/approve/route.ts` — `hasMinRole(auth.role, "admin")`
+- `web/src/app/api/projects/[id]/reject/route.ts` — same gate
+- `web/src/app/api/projects/[id]/delist/route.ts` — same gate
+- `web/src/app/api/projects/[id]/delete/route.ts` — same gate
+- `web/src/app/api/admin/projects/route.ts` — `hasMinRole("admin")`
+- `web/src/app/api/projects/pending/route.ts` — `hasMinRole("admin")`
+- `web/src/app/admin/page.tsx` — `hasMinRole(user.role, "admin")` UI gate
 
 ## Review checklist
 

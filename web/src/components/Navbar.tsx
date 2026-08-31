@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {useAuth} from "@/context/AuthContext";
 import {hasMinRole} from "@/lib/roles";
+import RoleBadge from "@/components/RoleBadge";
 import {useState} from "react";
 
 export default function Navbar() {
@@ -91,6 +92,7 @@ export default function Navbar() {
 								<span className="text-sm font-medium text-moonlight">
 									{user.username}
 								</span>
+								<RoleBadge />
 							</Link>
 								<button
 									onClick={logout}

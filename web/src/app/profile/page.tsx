@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
+import RoleBadge from "@/components/RoleBadge";
 import Link from "next/link";
 import {
   Form,
@@ -180,7 +181,7 @@ export default function ProfilePage() {
             <h1 className="font-display font-bold text-3xl text-starlight">{user.username}</h1>
             <div className="flex items-center gap-3 text-sm text-ash mt-0.5">
               <span>{user.email || "No email"}</span>
-              <span className="tag tag-nova text-xs">{user.role}</span>
+              <RoleBadge />
               {user.created_at && (
                 <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
               )}

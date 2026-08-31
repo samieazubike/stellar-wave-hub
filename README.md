@@ -33,11 +33,27 @@ Stellar Wave Hub solves three gaps in the current Wave ecosystem:
 | **Quality signal** | Multi-dimensional rating system (Overall, Purpose, Innovation, Usability)           |
 | **Transparency**   | Live on-chain financial tracker via Stellar Horizon API                             |
 
-**User roles:**
+---
 
-- **Contributor** — Browse, submit, and rate projects
-- **Admin** — Review and approve/reject submissions, mark projects as featured
-- **Visitor** _(stretch)_ — Read-only access without registration
+## Roles & Permissions
+
+Stellar Wave Hub has three roles, each with a distinct permission set. Roles are stored in the `role` column of the `users` table and checked by the `hasMinRole()` helper in route handlers and UI components.
+
+| Role | Description | Browse & read | Submit projects | Rate & review | Edit own project | Edit own rating | Manage submissions (approve/reject) | Edit any project/rating | View pending queue | Access `/admin` dashboard |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Contributor** | Default role for new accounts | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Maintainer** | Elevated trust — can review submissions | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ (read-only) | ❌ |
+| **Admin** | Full system access | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+**How roles are assigned:**
+- All new accounts are created as `contributor` by default.
+- The `maintainer` and `admin` roles are granted by an existing admin by updating the `users.role` column directly in the database. There is no self-service role upgrade flow yet.
+- The `hasMinRole()` function enforces a numerical hierarchy: `contributor` (0) < `maintainer` (1) < `admin` (2).
+
+**Code references for permission checks:**
+- Route handlers: `approve/route.ts`, `reject/route.ts`, `delist/route.ts`, `delete/route.ts`, `edit/route.ts`, `admin/projects/route.ts`, `projects/pending/route.ts`, `ratings/[id]/route.ts`
+- UI: `AdminPage`, `Navbar`, `SubmissionNotes`
+- Role definition: `web/src/lib/roles.ts`
 
 ---
 
