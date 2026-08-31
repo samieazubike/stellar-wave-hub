@@ -80,7 +80,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="X"
 		/></a>
 		<br />
-		<sub>Maintainer — Stellar Wave Hub</sub>
+		<sub>Maintainer — Stellar Wave Hub, StellarRent</sub>
 	</div>
 
 	<div
