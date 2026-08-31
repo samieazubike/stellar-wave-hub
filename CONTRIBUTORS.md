@@ -299,12 +299,25 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		</a>
 		<br />
 		<a href="https://github.com/k-deejah"
+		<a href="https://github.com/kiro-ai">
+			<img
+				src="https://github.com/kiro-ai.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Kiro AI"
+			/>
+			<br />
+			<sub><b>Kiro AI</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/kiro-ai"
 			><img
 				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
 				alt="GitHub"
 		/></a>
 		<br />
 		<sub>Researcher — Blend Protocol</sub>
+		<sub>Researcher — Sanctifier</sub>
 	</div>
 
 	<!-- Add your <div> above this line -->
