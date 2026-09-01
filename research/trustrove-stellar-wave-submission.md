@@ -149,13 +149,16 @@ GET https://api.stellar.expert/explorer/testnet/account/GDDWFYWXCSBI6RNS5TV2ZZSB
 
 ---
 
-## Submission Details
+## Hub Submission Confirmation
 
 - **Hub URL:** https://usestellarwavehub.vercel.app
-- **Slug:** `trustrove`
-- **Status:** `submitted`
-- **Submitted:** 2026-08-31
+- **Hub project ID:** `128`
+- **Hub slug:** `trustrove`
+- **Submission status:** `submitted` (awaiting Hub administrator review)
+- **Submitted network:** `testnet`
+- **Uploaded research image:** https://dlwcywvybsedgmcggmjn.supabase.co/storage/v1/object/public/research-images/79/1788267162214-44nqob.png
 - **Submitted by:** Halimatyemisi
+- **Submitted:** 2026-09-01
 
 ---
 
