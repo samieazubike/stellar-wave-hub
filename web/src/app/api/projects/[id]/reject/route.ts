@@ -3,6 +3,7 @@ import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { rejectProjectSchema } from "@/lib/validation/schemas/featured";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
+import { writeModerationLog } from "@/lib/moderation-log";
 export const dynamic = "force-dynamic";
 
 const moderationActionLimit = { limit: 30, windowMs: 60_000 };
@@ -33,6 +34,12 @@ export async function PUT(
       status: "rejected",
       rejection_reason: reason,
       updated_at: new Date().toISOString(),
+    });
+    await writeModerationLog({
+      actorId: auth.userId,
+      action: "reject",
+      projectId: Number(doc.data()!.numericId),
+      reason,
     });
     const updated = await ref.get();
     const projectData = updated.data()!;

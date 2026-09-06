@@ -2,6 +2,7 @@ import { projectsCol, createNotification } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { delistProjectSchema } from "@/lib/validation/schemas/featured";
+import { writeModerationLog } from "@/lib/moderation-log";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -28,6 +29,12 @@ export async function PUT(
       featured: 0,
       rejection_reason: reason,
       updated_at: new Date().toISOString(),
+    });
+    await writeModerationLog({
+      actorId: auth.userId,
+      action: "delist",
+      projectId: Number(doc.data()!.numericId),
+      reason,
     });
     const updated = await ref.get();
     const projectData = updated.data()!;
