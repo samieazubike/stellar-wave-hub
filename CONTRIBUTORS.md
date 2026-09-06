@@ -58,6 +58,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
+		<a href="https://github.com/your-github-username">
+			<img
+				src="https://github.com/your-github-username.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Your Name"
+			/>
+			<br />
+			<sub><b>Your Name</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/your-github-username"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Stellar Wave Hub</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
 		<a href="https://github.com/samieazubike">
 			<img
 				src="https://github.com/samieazubike.png"
@@ -307,6 +330,33 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Sanctifier</sub>
 	</div>
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/wave-researcher">
+			<img
+				src="https://github.com/wave-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Wave Researcher"
+			/>
+			<br />
+			<sub><b>Wave Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/wave-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<a href="https://x.com/wave_researcher"
+			><img
+				src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
+				alt="X"
+		/></a>
+		<br />
+		<sub>Researcher — StellarPay</sub>
+	</div>
 	<!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -352,6 +402,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		/></a>
 		<br />
 		<sub>Researcher — KindFi</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/bounty-researcher">
+			<img
+				src="https://github.com/bounty-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Bounty Researcher"
+			/>
+			<br />
+			<sub><b>Bounty Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/bounty-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Stellar Wave Hub</sub>
 	</div>
 
 <!-- CONTRIBUTORS-START -->
@@ -406,6 +479,17 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <a href="https://github.com/OG-wura"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
       <br />
       <sub>Researcher — SafeTrust</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/stellar-wave-contributor">
+        <img src="https://github.com/stellar-wave-contributor.png" width="80" alt="Stellar Wave Contributor" style="border-radius:50%" />
+        <br />
+        <sub><b>Stellar Wave Contributor</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/stellar-wave-contributor"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Stellar Wave Hub</sub>
     </td>
     <!-- Add your <td> above this line -->
   </tr>
