@@ -53,8 +53,54 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 
 <!-- CONTRIBUTORS-START -->
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/blend-researcher">
+			<img
+				src="https://github.com/blend-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Blend Researcher"
+			/>
+			<br />
+			<sub><b>Blend Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/blend-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Blend</sub>
+	</div>
+
 ```html
 <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/monalisa">
+			<img
+				src="https://github.com/monalisa.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Mona Lisa"
+			/>
+			<br />
+			<sub><b>Mona Lisa</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/monalisa"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Kotani Pay</sub>
+	</div>
+
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
@@ -255,6 +301,17 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
   <br />
   <sub>Researcher — PetChain, CurrentDao, Stellar Tipjar, Lance, PromptHash, Hunty</sub>
 </div>
+<div style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px">
+  <a href="https://github.com/stellar-researcher">
+    <img src="https://github.com/stellar-researcher.png" width="80" style="border-radius:50%" alt="Stellar Researcher" />
+    <br />
+    <sub><b>Stellar Researcher</b></sub>
+  </a>
+  <br />
+  <a href="https://github.com/stellar-researcher"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+  <br />
+  <sub>Researcher — Soroswap</sub>
+</div>
 <!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -352,6 +409,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		/></a>
 		<br />
 		<sub>Researcher — KindFi</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/stellar-wave-researcher">
+			<img
+				src="https://github.com/stellar-wave-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Stellar Wave Researcher"
+			/>
+			<br />
+			<sub><b>Stellar Wave Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/stellar-wave-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Aqua</sub>
 	</div>
 
 <!-- CONTRIBUTORS-START -->
