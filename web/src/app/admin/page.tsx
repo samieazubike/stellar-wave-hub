@@ -128,8 +128,156 @@ function useProjectAction(token: string | null) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-projects"] });
+      qc.invalidateQueries({ queryKey: ["admin-moderation-log"] });
     },
   });
+}
+
+interface ModerationLogEntry {
+  id: number;
+  actor_id: number;
+  actor_username: string | null;
+  action: string;
+  project_id: number;
+  project_name: string | null;
+  project_slug: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+function useModerationLog(token: string | null) {
+  return useQuery<ModerationLogEntry[]>({
+    queryKey: ["admin-moderation-log"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/moderation-log", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load moderation log");
+      return data.entries || [];
+    },
+    enabled: !!token,
+  });
+}
+
+function ActionBadge({ action }: { action: string }) {
+  const styles: Record<string, string> = {
+    approve: "tag-aurora",
+    feature: "tag-nova",
+    unfeature: "bg-solar/10 text-solar-bright border border-solar/20",
+    reject: "bg-supernova/10 text-supernova border border-supernova/20",
+    delist: "bg-dust/50 text-ash border border-dust/30",
+    delete: "bg-supernova/15 text-supernova border border-supernova/30",
+  };
+
+  return (
+    <span className={`tag ${styles[action] || "bg-dust/40 text-ash border border-dust/30"}`}>
+      {action}
+    </span>
+  );
+}
+
+function ModerationLogTab({ token }: { token: string | null }) {
+  const {
+    data: entries = [],
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useModerationLog(token);
+
+  return (
+    <div className="space-y-4">
+      <div className="glass rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h3 className="font-semibold text-starlight mb-1">Moderation Audit Log</h3>
+          <p className="text-sm text-ash">
+            A chronological record of who approved, rejected, featured, delisted, or deleted a project.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="btn-ghost text-sm !py-2 !px-3 shrink-0 disabled:opacity-50"
+        >
+          {isFetching ? "Refreshing…" : "Refresh log"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <Skeletons count={4} />
+      ) : isError ? (
+        <div className="bg-supernova/10 border border-supernova/20 rounded-xl px-5 py-4">
+          <p className="font-medium text-supernova">Could not load the audit log</p>
+          <p className="text-sm text-supernova/80 mt-1">
+            {error instanceof Error ? error.message : "Please try again."}
+          </p>
+        </div>
+      ) : entries.length > 0 ? (
+        <div className="glass rounded-2xl overflow-hidden">
+          <div className="hidden md:grid grid-cols-[120px_1fr_180px_180px] gap-4 px-5 py-3 border-b border-dust/20 text-xs uppercase tracking-wider text-ash">
+            <span>Action</span>
+            <span>Project / Reason</span>
+            <span>Actor</span>
+            <span>When</span>
+          </div>
+          <div className="divide-y divide-dust/20">
+            {entries.map((entry) => (
+              <div
+                key={entry.id}
+                className="grid md:grid-cols-[120px_1fr_180px_180px] gap-3 md:gap-4 px-5 py-4 hover:bg-stardust/20 transition-colors"
+              >
+                <div><ActionBadge action={entry.action} /></div>
+                <div className="min-w-0">
+                  {entry.project_slug ? (
+                    <Link
+                      href={`/projects/${entry.project_slug}`}
+                      className="font-medium text-moonlight hover:text-nova-bright transition-colors"
+                    >
+                      {entry.project_name || `Project #${entry.project_id}`}
+                    </Link>
+                  ) : (
+                    <p className="font-medium text-moonlight">
+                      Project #{entry.project_id}
+                      <span className="text-xs font-normal text-ash ml-2">deleted or unavailable</span>
+                    </p>
+                  )}
+                  {entry.reason && (
+                    <p className="text-xs text-ash mt-1 break-words">Reason: {entry.reason}</p>
+                  )}
+                </div>
+                <p className="text-sm text-moonlight">
+                  <span className="md:hidden text-ash">Actor: </span>
+                  {entry.actor_username || `User #${entry.actor_id}`}
+                </p>
+                <time className="text-sm text-ash" dateTime={entry.created_at}>
+                  {new Date(entry.created_at).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </time>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <EmptyState
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+          }
+          title="No moderation actions yet"
+          subtitle="New approve, reject, feature, delist, and delete actions will appear here"
+        />
+      )}
+    </div>
+  );
 }
 
 interface PromoCode {
@@ -1194,6 +1342,7 @@ export default function AdminPage() {
   const { user, token } = useAuth();
   const action = useProjectAction(token);
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("pending");
 
   const { data: pending = [], isLoading: pendingLoading } = usePendingProjects(token);
   const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
@@ -1240,6 +1389,19 @@ export default function AdminPage() {
             <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("audit")}
+              className="btn-ghost text-sm !py-2 !px-3 inline-flex items-center gap-1.5"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+              Audit Log
+            </button>
             <Link
               href="/admin/revenue"
               className="btn-nova text-sm !py-2 !px-3 inline-flex items-center gap-1.5"
@@ -1328,7 +1490,7 @@ export default function AdminPage() {
       
       {/* Tabs */}
       <div className="animate-in animate-in-delay-3">
-        <Tabs defaultValue="pending">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap">
             <TabsTrigger value="pending">
               Pending
@@ -1358,6 +1520,7 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="promos">Promo Codes</TabsTrigger>
+            <TabsTrigger value="audit">Audit Log</TabsTrigger>
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -1505,6 +1668,10 @@ export default function AdminPage() {
 
           <TabsContent value="promos">
             <PromoCodesTab token={token} />
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <ModerationLogTab token={token} />
           </TabsContent>
         </Tabs>
       </div>
