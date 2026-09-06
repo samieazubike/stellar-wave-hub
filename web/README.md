@@ -50,6 +50,10 @@ A project counts as **substantial** when it meets both of:
 
 This is computed by the `public.project_is_substantial(...)` Postgres function and stored in an indexed generated column (`projects.is_substantial`), so `GET /api/projects?substantial=true` filters at the database level. To retune the rule, edit the function with `create or replace function` and then force existing rows to recompute with `update public.projects set "numericId" = "numericId";` (a function change alone doesn't retroactively update already-stored rows).
 
+## Moderation Audit Log
+
+Run [data/supabase/009_add_moderation_log.sql](data/supabase/009_add_moderation_log.sql) to create the backend-only moderation audit table. Apply this migration before using the admin dashboard's **Audit Log** view or performing moderation actions.
+
 ## Getting Started
 
 First, run the development server:
