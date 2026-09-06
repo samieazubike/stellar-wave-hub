@@ -255,6 +255,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
   <br />
   <sub>Researcher — PetChain, CurrentDao, Stellar Tipjar, Lance, PromptHash, Hunty</sub>
 </div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/bounty-researcher">
+			<img
+				src="https://github.com/bounty-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Bounty Researcher"
+			/>
+			<br />
+			<sub><b>Bounty Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/bounty-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Rahat</sub>
+	</div>
 <!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -305,6 +328,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		/></a>
 		<br />
 		<sub>Researcher — Sanctifier</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/stellar-research-bot">
+			<img
+				src="https://github.com/stellar-research-bot.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Stellar Research Bot"
+			/>
+			<br />
+			<sub><b>Stellar Research Bot</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/stellar-research-bot"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Stellar Wave Hub</sub>
 	</div>
 
 	<!-- Add your <div> above this line -->
@@ -406,6 +452,28 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <a href="https://github.com/OG-wura"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
       <br />
       <sub>Researcher — SafeTrust</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/soro-researcher">
+        <img src="https://github.com/soro-researcher.png" width="80" alt="Soro Researcher" style="border-radius:50%" />
+        <br />
+        <sub><b>Soro Researcher</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/soro-researcher"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Sorosplits</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/stellar-wave-researcher">
+        <img src="https://github.com/stellar-wave-researcher.png" width="80" alt="Stellar Wave Researcher" style="border-radius:50%" />
+        <br />
+        <sub><b>Stellar Wave Researcher</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/stellar-wave-researcher"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Kawa Protocol</sub>
     </td>
     <!-- Add your <td> above this line -->
   </tr>
