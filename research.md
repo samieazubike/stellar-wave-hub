@@ -1,62 +1,41 @@
-# Research: Sorokit
+# Research: Stellar-Save
 
 ## Project Name
+Stellar-Save
 
-Sorokit
+## Description
+Stellar-Save is a decentralized rotational savings and credit association (ROSCA) built entirely on Stellar Soroban smart contracts. It brings the traditional, community-based savings systems—popularly known in many African countries and globally—onto the blockchain. These time-tested financial mechanisms involve members forming a group, contributing a fixed amount regularly (e.g., weekly or monthly), and rotating who receives the full pool of contributions at the end of each cycle. 
 
-## Category
+By migrating this system to the blockchain, Stellar-Save makes rotational savings transparent, trustless, and programmable. Traditionally, these systems rely heavily on absolute trust within a small community or a central coordinator, which limits their scale and can lead to mismanagement. Stellar-Save automates the entire process through smart contracts, ensuring that once members contribute their share in native XLM (or future supported tokens), the payouts execute automatically when the cycle is complete. It removes the need for manual coordination and guarantees that funds are disbursed fairly and transparently. Members can easily join with any Stellar wallet (such as Freighter, Lobstr, or Albedo) and track the status of their group's contributions and payouts verifiable directly on-chain. The system is designed to be highly accessible for anyone looking to build financial discipline within their communities without relying on traditional banking infrastructure.
 
-Developer Tooling (UI/Frontend)
+## The Problem the Project Solves
+Traditional rotational savings groups (ROSCAs) are limited by geography, require a highly trusted central coordinator to collect and distribute funds, and lack transparency. This often results in disputes or loss of funds. Stellar-Save solves this by decentralizing the process, using smart contracts to hold contributions in escrow and automate payouts trustlessly, enabling global participation without geographical or administrative barriers.
 
-## Tags
+## How the Project Uses Stellar
+Stellar-Save leverages the Stellar network's speed and low fees. Specifically, it uses Soroban smart contracts to manage group creation, track individual contributions, securely hold funds in escrow during the cycle, and automate the distribution of the final payout pool to the rotating recipient. It integrates the Stellar Horizon API for fetching transaction history and utilizes Soroban events for real-time state updates across the frontend. It currently supports native XLM.
 
-soroban, react, ui-kit, frontend, stellar, wallet-connection, components, tailwind
+## Technical Approach
+The project employs a robust four-layer architecture:
+1. **User Layer:** Interaction via Stellar wallets (Freighter, Lobstr, Albedo).
+2. **Frontend Layer:** A Single Page Application (SPA) built with React, TypeScript, and Vite, using Material-UI for components and React Query for state management.
+3. **Blockchain Layer:** Soroban smart contracts written in Rust to handle the core ROSCA logic (groups, contributions, payouts).
+4. **Data Layer:** Uses on-chain storage, Soroban events, and the Horizon API for historical data and real-time syncing.
+It also includes an Expo React Native setup for mobile accessibility.
 
-## Links
+## Team and Community Information
+The project is actively maintained on GitHub by the user **Xoulomon** (and potentially other community contributors) as part of the Stellar open-source ecosystem, particularly associated with the Stellar Wave Program.
 
-- Repo (Wave-approved): https://github.com/Sorokit/ui
-- Built on: shadcn/ui, Radix primitives
+## Verified Stellar Account ID / Soroban Contract ID
+Since the contracts are dynamically deployed to Futurenet/Testnet during development cycles, specific global contract IDs rotate. However, the maintainer's associated Stellar ecosystem presence and project commits can be verified through the GitHub repository [Xoulomon/Stellar-Save](https://github.com/Xoulomon/Stellar-Save). (Note: Actual deployed testnet contract IDs are generated per deployment via `soroban contract deploy`).
 
-## Verified Stellar/Soroban identifier
+## Category and Relevant Tags
+**Category:** DeFi / Social Impact
+**Tags:** #Soroban, #SmartContracts, #ROSCA, #DeFi, #Savings, #Web3
 
-**Contract / Account ID:**
-As a frontend UI Kit and presentation layer, Sorokit does not deploy its own smart contracts to the Stellar mainnet. Instead, it serves as a utility library for developers to connect their own Soroban contract IDs and Stellar Account IDs. Integrations connect to the network using standard wallet adapters (like Freighter) and interact with arbitrary `Contract ID`s provided by the developers.
-
-## Original description
-
-Sorokit is a specialized, open-source React UI kit built specifically to accelerate the development of Stellar and Soroban-based applications. In the rapidly evolving Web3 ecosystem, frontend development can often become a bottleneck, as teams repeatedly build similar components for wallet connections, transaction signing, and account displays. Sorokit addresses this friction by providing a suite of drop-in, highly customizable UI primitives. 
-
-Built on top of robust modern web technologies like shadcn/ui, Tailwind CSS, and Radix primitives, the library is strictly a presentation layer. This means it intentionally avoids bundling complex blockchain logic, allowing developers to maintain clean separation of concerns. It seamlessly integrates with underlying connection layers like `sorokit-core`, enabling developers to easily construct intuitive and responsive user interfaces for decentralized applications (dApps).
-
-By using Sorokit, developers can significantly reduce their time-to-market. Instead of grappling with the nuances of UI state management for Stellar interactions—such as handling wallet connection states, network switching, and transaction feedback—they can leverage Sorokit's pre-built components. The project is actively maintained on GitHub, participating in the Stellar Wave program, and continually expanding its library with components like `AddressDisplay`, `TopBar`, and `Sidebar` to meet the diverse needs of the Stellar developer community.
-
-## Problem it solves
-
-Building high-quality, accessible user interfaces for blockchain applications is notoriously time-consuming. Developers frequently reinvent the wheel for common components like wallet connection modals, account address formatting, and transaction status indicators. Sorokit solves this by offering a minimal, pre-styled (yet fully customizable) React UI kit tailored for the Stellar ecosystem. It allows teams to focus on their dApp's core business logic and smart contract interactions rather than spending weeks perfecting standard Web3 UI elements.
-
-## How it uses Stellar
-
-- **Wallet Integration:** Sorokit provides components that interface with Stellar wallets (like Freighter), facilitating smooth user authentication and transaction signing processes.
-- **Soroban Interactions:** The kit includes parameters and design patterns designed to accommodate Soroban contract invocations and data reads, making it easier to present complex smart contract interactions in a user-friendly manner.
-- **Account & Network Management:** It offers dedicated UI elements for displaying Stellar Account IDs, handling network selection (e.g., Mainnet vs. Testnet), and formatting asset balances native to the Stellar network.
-
-## Technical approach
-
-- **Presentation-First:** Sorokit is strictly a presentation layer. It abstracts away the UI complexities but leaves the heavy lifting of blockchain communication to `sorokit-core` or the developer's preferred Stellar SDK.
-- **Modern Tech Stack:** It leverages **shadcn/ui**, **Tailwind CSS**, and **Radix primitives**. This ensures that the components are not only visually appealing out of the box but also highly accessible and easily themeable to match any brand's design system.
-- **Component-Based Architecture:** The library is modular, offering granular components like `AddressDisplay` and `TopBar`, allowing developers to import only what they need without bloating their application size.
-
-## Team / community
-
-Sorokit is an open-source project actively developed within the Stellar ecosystem and hosted on GitHub under the `Sorokit` organization. It is a participating project in the Stellar Wave program (often associated with Drips Wave), which incentivizes community contributions to its codebase. The project fosters collaboration through its public repository, where developers can report issues, request features, and contribute directly to the UI kit's expansion.
+## Supporting Screenshots
+- **Architecture Diagram:** Available at `docs/architecture-diagram.svg` within the repository.
+- **Project Structure:** Features frontend, mobile, and contract codebases integrated into a monorepo.
 
 ## Sources
-
-1. https://github.com/Sorokit/ui (Main repository and documentation)
-2. Stellar Wave Program listings and GitHub issues labeled with "Stellar Wave" for Sorokit.
-3. Web search confirmations regarding Sorokit's tech stack (shadcn/ui, Tailwind CSS) and its role as a minimal React UI kit for Stellar.
-
-## Screenshots
-
-*(Note: As this is a UI tooling library, actual integration screens depend on the developer's implementation. A typical screenshot would showcase the component gallery or a demo app using the `TopBar` and `AddressDisplay` components connected to a Stellar wallet.)*
-![Sorokit GitHub Repository](https://github.com/Sorokit/ui/raw/main/screenshot.png)
+- GitHub Repository: [Xoulomon/Stellar-Save](https://github.com/Xoulomon/Stellar-Save)
+- README and Architecture Docs: [Stellar-Save README](https://github.com/Xoulomon/Stellar-Save/blob/main/README.md)
