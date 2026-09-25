@@ -12,7 +12,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = getAuthUser(request);
-  if (!auth || !hasMinRole(auth.role, "admin")) {
+  if (!auth || !hasMinRole(auth.role, "maintainer")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
