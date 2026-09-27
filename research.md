@@ -1,138 +1,62 @@
-# Research: Sub Rosa
-
-Live project page: https://usestellarwavehub.vercel.app/projects/sub-rosa-1788247664619
+# Research: Sorokit
 
 ## Project Name
 
-Sub Rosa
+Sorokit
 
 ## Category
 
-Infrastructure (DeFi-adjacent — sealed-bid coordination / auction primitives)
+Developer Tooling (UI/Frontend)
 
 ## Tags
 
-soroban, sealed-bid, auctions, escrow, procurement, drand, commit-reveal, sdk
+soroban, react, ui-kit, frontend, stellar, wallet-connection, components, tailwind
 
 ## Links
 
-- Repo (Wave-approved): https://github.com/karagozemin/Sub-Rosa
-- Site/docs: https://www.sub-rosa.online/#/docs
-- npm SDK: https://www.npmjs.com/package/@sub-rosa/sdk
-- Skill doc (own integration reference): https://raw.githubusercontent.com/karagozemin/Sub-Rosa/main/skills/sub-rosa/SKILL.md
-- Listed in Stellar's community skills directory: https://skills.stellar.org
+- Repo (Wave-approved): https://github.com/Sorokit/ui
+- Built on: shadcn/ui, Radix primitives
 
 ## Verified Stellar/Soroban identifier
 
-**Contract ID (Stellar mainnet / "public" network):**
-`CDQOFNCJE5Z4ZZL76DU5652FOUKJVEIZWHFGCZVWH63UYBGPSZIPC325`
-
-Verified via stellar.expert:
-https://stellar.expert/explorer/public/contract/CDQOFNCJE5Z4ZZL76DU5652FOUKJVEIZWHFGCZVWH63UYBGPSZIPC325
+**Contract / Account ID:**
+As a frontend UI Kit and presentation layer, Sorokit does not deploy its own smart contracts to the Stellar mainnet. Instead, it serves as a utility library for developers to connect their own Soroban contract IDs and Stellar Account IDs. Integrations connect to the network using standard wallet adapters (like Freighter) and interact with arbitrary `Contract ID`s provided by the developers.
 
 ## Original description
 
-Sub Rosa is infrastructure for running sealed, time-locked coordination
-rounds on Stellar — sealed-bid auctions, confidential procurement or RFP
-rounds, and similar processes where participants need to commit to a bid or
-proposal privately and have it revealed only at a predetermined, publicly
-verifiable moment. Rather than building an end-user marketplace, it ships as
-an embeddable SDK (`@sub-rosa/sdk`) that other Stellar applications import
-to run these rounds themselves.
+Sorokit is a specialized, open-source React UI kit built specifically to accelerate the development of Stellar and Soroban-based applications. In the rapidly evolving Web3 ecosystem, frontend development can often become a bottleneck, as teams repeatedly build similar components for wallet connections, transaction signing, and account displays. Sorokit addresses this friction by providing a suite of drop-in, highly customizable UI primitives. 
 
-The protocol offers two modes. `Auction` handles cases where a Stellar
-payment asset is being exchanged for a Stellar-based lot asset: the lot is
-custodied at round creation, bids are sealed and later revealed, and
-settlement — paying the seller, transferring the lot to the winner, and
-refunding losing bidders — happens atomically in one settlement call.
-`ReceiptOnly` is for cases where no asset custody is needed at all, such as
-confidential procurement or judging rounds, and produces a verifiable
-receipt rather than moving funds.
+Built on top of robust modern web technologies like shadcn/ui, Tailwind CSS, and Radix primitives, the library is strictly a presentation layer. This means it intentionally avoids bundling complex blockchain logic, allowing developers to maintain clean separation of concerns. It seamlessly integrates with underlying connection layers like `sorokit-core`, enabling developers to easily construct intuitive and responsive user interfaces for decentralized applications (dApps).
 
-Timing is anchored to the Drand randomness beacon (specifically its
-`quicknet` network) rather than Stellar ledger numbers, so a round's reveal
-window is tied to an externally verifiable, unpredictable trigger instead of
-an operator-controlled clock. The lifecycle — open, reveal, clear, and (for
-auctions) settle — is designed to be run permissionlessly by independent
-"keepers," with retry-safe reveal calls and a grace-period void/recovery
-path if a round stalls.
-
-Notably, the project's own documentation is explicit that its "Core v2"
-contracts have testnet proofs and a capped-mainnet deployment but have not
-yet had an independent funds-handling audit, and instructs integrators to
-keep participant and value caps in place until that happens — an unusually
-candid security disclosure for a project at this stage.
+By using Sorokit, developers can significantly reduce their time-to-market. Instead of grappling with the nuances of UI state management for Stellar interactions—such as handling wallet connection states, network switching, and transaction feedback—they can leverage Sorokit's pre-built components. The project is actively maintained on GitHub, participating in the Stellar Wave program, and continually expanding its library with components like `AddressDisplay`, `TopBar`, and `Sidebar` to meet the diverse needs of the Stellar developer community.
 
 ## Problem it solves
 
-Auctions, procurement rounds, and similar processes often need bids or
-proposals to stay private until a fair, tamper-resistant reveal moment.
-Doing this correctly on-chain (sealed commitment, externally-verifiable
-timing, atomic settlement, safe recovery if something stalls) is nontrivial
-to build from scratch for every app that needs it; Sub Rosa packages that
-logic as a reusable primitive.
+Building high-quality, accessible user interfaces for blockchain applications is notoriously time-consuming. Developers frequently reinvent the wheel for common components like wallet connection modals, account address formatting, and transaction status indicators. Sorokit solves this by offering a minimal, pre-styled (yet fully customizable) React UI kit tailored for the Stellar ecosystem. It allows teams to focus on their dApp's core business logic and smart contract interactions rather than spending weeks perfecting standard Web3 UI elements.
 
 ## How it uses Stellar
 
-- Round state, commitments, and settlement logic run as a Soroban smart
-  contract deployed on mainnet (see verified contract ID above).
-- Auction-mode settlement moves Stellar assets (via Stellar Asset Contract/SAC)
-  atomically between custody, seller, and winner in a single transaction.
-- Reveal timing is derived from the Drand quicknet beacon rather than
-  Stellar ledger sequence numbers, decoupling the "when" from the chain's
-  own block cadence while still executing on Stellar.
+- **Wallet Integration:** Sorokit provides components that interface with Stellar wallets (like Freighter), facilitating smooth user authentication and transaction signing processes.
+- **Soroban Interactions:** The kit includes parameters and design patterns designed to accommodate Soroban contract invocations and data reads, making it easier to present complex smart contract interactions in a user-friendly manner.
+- **Account & Network Management:** It offers dedicated UI elements for displaying Stellar Account IDs, handling network selection (e.g., Mainnet vs. Testnet), and formatting asset balances native to the Stellar network.
 
 ## Technical approach
 
-- SDK-first design: integrators are pointed to high-level templates
-  (`createAssetAuctionRound`, `createSealedProposalRound`) rather than
-  raw contract calls, with lower-level packages (`@sub-rosa/tlock`,
-  `@sub-rosa/round-bindings`) available for protocol-level work.
-- Strict deployment-tuple pinning (RPC URL + network passphrase + contract
-  ID + expected WASM hash) with a client-side precheck before any operation,
-  to prevent cross-network contract-ID mixups.
-- Every wallet-signed action goes through a `preflight*V2` simulation step
-  before a signature is requested, and typed errors/fee estimates are
-  surfaced on failure rather than asking the user to blind-sign.
-- Lifecycle is explicitly permissionless: reveals are per-participant and
-  idempotent (safe to retry), a public "keeper" role advances round state,
-  and there's a documented grace-period `voidV2` path for stalled rounds.
-- Exports a canonical, independently-verifiable "Core v2 receipt"
-  (`exportReceiptV2`/`verifyReceiptV2`) for off-chain proof of round
-  outcomes, separate from raw transaction hashes.
+- **Presentation-First:** Sorokit is strictly a presentation layer. It abstracts away the UI complexities but leaves the heavy lifting of blockchain communication to `sorokit-core` or the developer's preferred Stellar SDK.
+- **Modern Tech Stack:** It leverages **shadcn/ui**, **Tailwind CSS**, and **Radix primitives**. This ensures that the components are not only visually appealing out of the box but also highly accessible and easily themeable to match any brand's design system.
+- **Component-Based Architecture:** The library is modular, offering granular components like `AddressDisplay` and `TopBar`, allowing developers to import only what they need without bloating their application size.
 
 ## Team / community
 
-Maintained under the GitHub handle `karagozemin`. No public team page,
-company entity, or additional named contributors found — appears to be a
-small/solo-maintainer open-source project at this stage. Listed in Stellar's
-official community skills directory (skills.stellar.org) and built as part
-of the "Build On Stellar Hackathon – IBW 2026" cohort, per the Drips Wave
-repo listing.
+Sorokit is an open-source project actively developed within the Stellar ecosystem and hosted on GitHub under the `Sorokit` organization. It is a participating project in the Stellar Wave program (often associated with Drips Wave), which incentivizes community contributions to its codebase. The project fosters collaboration through its public repository, where developers can report issues, request features, and contribute directly to the UI kit's expansion.
 
 ## Sources
 
-1. https://github.com/karagozemin/Sub-Rosa (repo, Wave-approval listing text)
-2. https://raw.githubusercontent.com/karagozemin/Sub-Rosa/main/skills/sub-rosa/SKILL.md
-   (project's own integration/security reference doc — primary technical source)
-3. https://skills.stellar.org (confirms inclusion in Stellar's official
-   community skills directory, with SDK feature summary)
-4. https://www.npmjs.com/package/@sub-rosa/sdk (published SDK package)
-5. https://www.drips.network/wave/stellar/repos (confirms Wave Program
-   approval status and hackathon origin)
-6. https://stellar.expert/explorer/public/contract/CDQOFNCJE5Z4ZZL76DU5652FOUKJVEIZWHFGCZVWH63UYBGPSZIPC325
-   (on-chain contract verification — checked directly in-browser)
+1. https://github.com/Sorokit/ui (Main repository and documentation)
+2. Stellar Wave Program listings and GitHub issues labeled with "Stellar Wave" for Sorokit.
+3. Web search confirmations regarding Sorokit's tech stack (shadcn/ui, Tailwind CSS) and its role as a minimal React UI kit for Stellar.
 
 ## Screenshots
 
-### npm package page
-
-![Sub Rosa npm package](./sub-rosa/npm-page.png)
-
-### SKILL.md — Auction vs ReceiptOnly modes
-
-![Sub Rosa mode table](./sub-rosa/skill-md-table.png)
-
-### Verified contract on Stellar Expert
-
-![Sub Rosa contract on stellar.expert](./sub-rosa/stellar-expert-contract.png)
+*(Note: As this is a UI tooling library, actual integration screens depend on the developer's implementation. A typical screenshot would showcase the component gallery or a demo app using the `TopBar` and `AddressDisplay` components connected to a Stellar wallet.)*
+![Sorokit GitHub Repository](https://github.com/Sorokit/ui/raw/main/screenshot.png)
