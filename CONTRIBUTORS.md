@@ -58,6 +58,28 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 	>
+		<a href="https://github.com/stellar-wave-researcher">
+			<img
+				src="https://github.com/stellar-wave-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Stellar Wave Researcher"
+			/>
+			<br />
+			<sub><b>Stellar Wave Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/stellar-wave-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Dedium</sub>
+	</div>
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
 		<a href="https://github.com/samieazubike">
 			<img
 				src="https://github.com/samieazubike.png"
@@ -354,6 +376,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — KindFi</sub>
 	</div>
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/soroswap-researcher">
+			<img
+				src="https://github.com/soroswap-researcher.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Soroswap Researcher"
+			/>
+			<br />
+			<sub><b>Soroswap Researcher</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/soroswap-researcher"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Soroswap</sub>
+	</div>
+
 <!-- CONTRIBUTORS-START -->
 <table>
   <tr>
@@ -406,6 +451,17 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <a href="https://github.com/OG-wura"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
       <br />
       <sub>Researcher — SafeTrust</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/stellar-researcher">
+        <img src="https://github.com/stellar-researcher.png" width="80" alt="Stellar Researcher" style="border-radius:50%" />
+        <br />
+        <sub><b>Stellar Researcher</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/stellar-researcher"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — LumenSwap</sub>
     </td>
     <!-- Add your <td> above this line -->
   </tr>

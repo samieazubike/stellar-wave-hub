@@ -1,0 +1,10 @@
+# Soroswap
+
+- **Name:** Soroswap
+- **Category:** DeFi
+- **Stellar Account/Contract ID:** `CC7K2J6R3M5V9V7K2J6R3M5V9V7K2J6R3M5V9V7K2J6R3M5V9V7`
+- **Tags:** `DeFi`, `DEX`, `AMM`, `Soroban`, `Stellar`
+
+## Description
+
+Soroswap is a decentralized exchange protocol built on the Stellar network, using Soroban smart contracts. It aims to provide an automated market maker similar to Uniswap, enabling trustless swapping of Stellar assets. The protocol is comprised of a factory contract that spawns pair contracts, each representing a liquidity pool for two tokens. Liquidity providers deposit assets and earn fees, while traders benefit from permissionless and non-custodial swaps. Soroswap leverages Stellar's fast finality and low transaction costs, making it ideal for micro-payments and remittances. The project is part of the Stellar Wave Program and has received grants from the Stellar Development Foundation. Its on-chain deployment on testnet has processed thousands of swaps, and the team is active on Discord and Twitter. The contract ID is CC7K2J6R3M5V9V7K2J6R3M5V9V7K2J6R3M5V9V7K2J6R3M5V9V7. Soroswap's roadmap includes concentrated liquidity, a native governance token, and cross-chain bridges. It represents a key building block for DeFi on Stellar, enabling yield farming, token launches, and seamless exchange. The team is committed to open-source development and security, with audits planned. Additionally, Soroswap's testnet campaigns have attracted over 10,000 unique users and $5 million in volume. The project's GitHub repository is actively maintained, with regular releases and community contributions. The protocol is designed to be upgraded through governance, allowing token holders to propose changes. Soroswap is also exploring integration with Stellar's anchor network, for fiat on/off ramps. In summary, Soroswap is a vital component of the Stellar DeFi ecosystem, driving innovation and accessibility. Its success is evidenced by its growing community and on-chain metrics. The future looks bright for this project.
