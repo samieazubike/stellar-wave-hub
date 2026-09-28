@@ -61,6 +61,23 @@ create index if not exists projects_category_idx on public.projects (category);
 create index if not exists projects_created_at_idx on public.projects (created_at desc);
 create index if not exists projects_user_id_idx on public.projects (user_id);
 
+-- Maintainer category assignments
+-- Associates maintainers with the categories they can moderate
+create table if not exists public.maintainer_categories (
+  "userId" bigint not null,
+  category text not null,
+  created_at timestamptz not null default now(),
+  constraint maintainer_categories_pkey
+    primary key ("userId", category),
+  constraint maintainer_categories_user_id_fkey
+    foreign key ("userId")
+    references public.users ("numericId")
+    on delete cascade
+);
+
+create index if not exists maintainer_categories_user_id_idx on public.maintainer_categories ("userId");
+create index if not exists maintainer_categories_category_idx on public.maintainer_categories (category);
+
 create table if not exists public.ratings (
   "numericId" bigint primary key,
   project_id bigint not null,

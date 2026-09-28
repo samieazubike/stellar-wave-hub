@@ -12,6 +12,7 @@ begin;
 alter table public.users enable row level security;
 alter table public.projects enable row level security;
 alter table public.ratings enable row level security;
+alter table public.maintainer_categories enable row level security;
 alter table public.auth_challenges enable row level security;
 alter table public.counters enable row level security;
 alter table public.financial_snapshots enable row level security;
@@ -174,8 +175,37 @@ create policy ratings_owner_update
     )
   );
 
-create policy ratings_owner_delete
-  on public.ratings
+-- MAINTAINER CATEGORIES
+drop policy if exists maintainer_categories_self_read on public.maintainer_categories;
+drop policy if exists maintainer_categories_admin_manage on public.maintainer_categories;
+
+create policy maintainer_categories_self_read
+  on public.maintainer_categories
+  for select
+  to authenticated
+  using (
+    (
+      auth.jwt() ->> 'app_user_id'
+    ) is not null
+    and "userId" = (auth.jwt() ->> 'app_user_id')::bigint
+  );
+
+create policy maintainer_categories_admin_manage
+  on public.maintainer_categories
+  for all
+  to authenticated
+  using (
+    (
+      auth.jwt() ->> 'app_role'
+    ) = 'admin'
+  )
+  with check (
+    (
+      auth.jwt() ->> 'app_role'
+    ) = 'admin'
+  );
+
+create policy ratings_owner_delete on public.ratings
   for delete
   to authenticated
   using (
