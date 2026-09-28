@@ -407,6 +407,18 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <br />
       <sub>Researcher — SafeTrust</sub>
     </td>
+   <td align="center">
+     <a href="https://github.com/Sycosmile">
+       <img src="https://github.com/Sycosmile.png" width="80" alt="Sycosmile" style="border-radius:50%" />
+       <br />
+       <sub><b>Syco</b></sub>
+     </a>
+     <br />
+     <a href="https://github.com/Sycosmile"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+     <a href="https://x.com/Sycosmile"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+     <br />
+     <sub>Researcher — Boundless</sub>
+   </td>
     <!-- Add your <td> above this line -->
   </tr>
 </table>
