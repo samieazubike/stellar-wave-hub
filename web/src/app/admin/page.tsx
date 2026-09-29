@@ -44,6 +44,19 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
+const CATEGORIES = [
+	"defi",
+	"payments",
+	"infrastructure",
+	"tooling",
+	"nft",
+	"dao",
+	"social",
+	"gaming",
+	"rwa",
+	"other",
+];
+
 interface Project {
   id: number;
   name: string;

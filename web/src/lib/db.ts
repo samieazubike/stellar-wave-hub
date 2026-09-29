@@ -11,6 +11,11 @@ export const usersCol = {
 		return col("users");
 	},
 };
+export const maintainerCategoriesCol = {
+	get ref() {
+		return col("maintainer_categories");
+	},
+};
 export const projectsCol = {
 	get ref() {
 		return col("projects");
