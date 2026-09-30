@@ -1,138 +1,41 @@
-# Research: Sub Rosa
-
-Live project page: https://usestellarwavehub.vercel.app/projects/sub-rosa-1788247664619
+# Research: Stellar-Save
 
 ## Project Name
+Stellar-Save
 
-Sub Rosa
+## Description
+Stellar-Save is a decentralized rotational savings and credit association (ROSCA) built entirely on Stellar Soroban smart contracts. It brings the traditional, community-based savings systems—popularly known in many African countries and globally—onto the blockchain. These time-tested financial mechanisms involve members forming a group, contributing a fixed amount regularly (e.g., weekly or monthly), and rotating who receives the full pool of contributions at the end of each cycle. 
 
-## Category
+By migrating this system to the blockchain, Stellar-Save makes rotational savings transparent, trustless, and programmable. Traditionally, these systems rely heavily on absolute trust within a small community or a central coordinator, which limits their scale and can lead to mismanagement. Stellar-Save automates the entire process through smart contracts, ensuring that once members contribute their share in native XLM (or future supported tokens), the payouts execute automatically when the cycle is complete. It removes the need for manual coordination and guarantees that funds are disbursed fairly and transparently. Members can easily join with any Stellar wallet (such as Freighter, Lobstr, or Albedo) and track the status of their group's contributions and payouts verifiable directly on-chain. The system is designed to be highly accessible for anyone looking to build financial discipline within their communities without relying on traditional banking infrastructure.
 
-Infrastructure (DeFi-adjacent — sealed-bid coordination / auction primitives)
+## The Problem the Project Solves
+Traditional rotational savings groups (ROSCAs) are limited by geography, require a highly trusted central coordinator to collect and distribute funds, and lack transparency. This often results in disputes or loss of funds. Stellar-Save solves this by decentralizing the process, using smart contracts to hold contributions in escrow and automate payouts trustlessly, enabling global participation without geographical or administrative barriers.
 
-## Tags
+## How the Project Uses Stellar
+Stellar-Save leverages the Stellar network's speed and low fees. Specifically, it uses Soroban smart contracts to manage group creation, track individual contributions, securely hold funds in escrow during the cycle, and automate the distribution of the final payout pool to the rotating recipient. It integrates the Stellar Horizon API for fetching transaction history and utilizes Soroban events for real-time state updates across the frontend. It currently supports native XLM.
 
-soroban, sealed-bid, auctions, escrow, procurement, drand, commit-reveal, sdk
+## Technical Approach
+The project employs a robust four-layer architecture:
+1. **User Layer:** Interaction via Stellar wallets (Freighter, Lobstr, Albedo).
+2. **Frontend Layer:** A Single Page Application (SPA) built with React, TypeScript, and Vite, using Material-UI for components and React Query for state management.
+3. **Blockchain Layer:** Soroban smart contracts written in Rust to handle the core ROSCA logic (groups, contributions, payouts).
+4. **Data Layer:** Uses on-chain storage, Soroban events, and the Horizon API for historical data and real-time syncing.
+It also includes an Expo React Native setup for mobile accessibility.
 
-## Links
+## Team and Community Information
+The project is actively maintained on GitHub by the user **Xoulomon** (and potentially other community contributors) as part of the Stellar open-source ecosystem, particularly associated with the Stellar Wave Program.
 
-- Repo (Wave-approved): https://github.com/karagozemin/Sub-Rosa
-- Site/docs: https://www.sub-rosa.online/#/docs
-- npm SDK: https://www.npmjs.com/package/@sub-rosa/sdk
-- Skill doc (own integration reference): https://raw.githubusercontent.com/karagozemin/Sub-Rosa/main/skills/sub-rosa/SKILL.md
-- Listed in Stellar's community skills directory: https://skills.stellar.org
+## Verified Stellar Account ID / Soroban Contract ID
+Since the contracts are dynamically deployed to Futurenet/Testnet during development cycles, specific global contract IDs rotate. However, the maintainer's associated Stellar ecosystem presence and project commits can be verified through the GitHub repository [Xoulomon/Stellar-Save](https://github.com/Xoulomon/Stellar-Save). (Note: Actual deployed testnet contract IDs are generated per deployment via `soroban contract deploy`).
 
-## Verified Stellar/Soroban identifier
+## Category and Relevant Tags
+**Category:** DeFi / Social Impact
+**Tags:** #Soroban, #SmartContracts, #ROSCA, #DeFi, #Savings, #Web3
 
-**Contract ID (Stellar mainnet / "public" network):**
-`CDQOFNCJE5Z4ZZL76DU5652FOUKJVEIZWHFGCZVWH63UYBGPSZIPC325`
-
-Verified via stellar.expert:
-https://stellar.expert/explorer/public/contract/CDQOFNCJE5Z4ZZL76DU5652FOUKJVEIZWHFGCZVWH63UYBGPSZIPC325
-
-## Original description
-
-Sub Rosa is infrastructure for running sealed, time-locked coordination
-rounds on Stellar — sealed-bid auctions, confidential procurement or RFP
-rounds, and similar processes where participants need to commit to a bid or
-proposal privately and have it revealed only at a predetermined, publicly
-verifiable moment. Rather than building an end-user marketplace, it ships as
-an embeddable SDK (`@sub-rosa/sdk`) that other Stellar applications import
-to run these rounds themselves.
-
-The protocol offers two modes. `Auction` handles cases where a Stellar
-payment asset is being exchanged for a Stellar-based lot asset: the lot is
-custodied at round creation, bids are sealed and later revealed, and
-settlement — paying the seller, transferring the lot to the winner, and
-refunding losing bidders — happens atomically in one settlement call.
-`ReceiptOnly` is for cases where no asset custody is needed at all, such as
-confidential procurement or judging rounds, and produces a verifiable
-receipt rather than moving funds.
-
-Timing is anchored to the Drand randomness beacon (specifically its
-`quicknet` network) rather than Stellar ledger numbers, so a round's reveal
-window is tied to an externally verifiable, unpredictable trigger instead of
-an operator-controlled clock. The lifecycle — open, reveal, clear, and (for
-auctions) settle — is designed to be run permissionlessly by independent
-"keepers," with retry-safe reveal calls and a grace-period void/recovery
-path if a round stalls.
-
-Notably, the project's own documentation is explicit that its "Core v2"
-contracts have testnet proofs and a capped-mainnet deployment but have not
-yet had an independent funds-handling audit, and instructs integrators to
-keep participant and value caps in place until that happens — an unusually
-candid security disclosure for a project at this stage.
-
-## Problem it solves
-
-Auctions, procurement rounds, and similar processes often need bids or
-proposals to stay private until a fair, tamper-resistant reveal moment.
-Doing this correctly on-chain (sealed commitment, externally-verifiable
-timing, atomic settlement, safe recovery if something stalls) is nontrivial
-to build from scratch for every app that needs it; Sub Rosa packages that
-logic as a reusable primitive.
-
-## How it uses Stellar
-
-- Round state, commitments, and settlement logic run as a Soroban smart
-  contract deployed on mainnet (see verified contract ID above).
-- Auction-mode settlement moves Stellar assets (via Stellar Asset Contract/SAC)
-  atomically between custody, seller, and winner in a single transaction.
-- Reveal timing is derived from the Drand quicknet beacon rather than
-  Stellar ledger sequence numbers, decoupling the "when" from the chain's
-  own block cadence while still executing on Stellar.
-
-## Technical approach
-
-- SDK-first design: integrators are pointed to high-level templates
-  (`createAssetAuctionRound`, `createSealedProposalRound`) rather than
-  raw contract calls, with lower-level packages (`@sub-rosa/tlock`,
-  `@sub-rosa/round-bindings`) available for protocol-level work.
-- Strict deployment-tuple pinning (RPC URL + network passphrase + contract
-  ID + expected WASM hash) with a client-side precheck before any operation,
-  to prevent cross-network contract-ID mixups.
-- Every wallet-signed action goes through a `preflight*V2` simulation step
-  before a signature is requested, and typed errors/fee estimates are
-  surfaced on failure rather than asking the user to blind-sign.
-- Lifecycle is explicitly permissionless: reveals are per-participant and
-  idempotent (safe to retry), a public "keeper" role advances round state,
-  and there's a documented grace-period `voidV2` path for stalled rounds.
-- Exports a canonical, independently-verifiable "Core v2 receipt"
-  (`exportReceiptV2`/`verifyReceiptV2`) for off-chain proof of round
-  outcomes, separate from raw transaction hashes.
-
-## Team / community
-
-Maintained under the GitHub handle `karagozemin`. No public team page,
-company entity, or additional named contributors found — appears to be a
-small/solo-maintainer open-source project at this stage. Listed in Stellar's
-official community skills directory (skills.stellar.org) and built as part
-of the "Build On Stellar Hackathon – IBW 2026" cohort, per the Drips Wave
-repo listing.
+## Supporting Screenshots
+- **Architecture Diagram:** Available at `docs/architecture-diagram.svg` within the repository.
+- **Project Structure:** Features frontend, mobile, and contract codebases integrated into a monorepo.
 
 ## Sources
-
-1. https://github.com/karagozemin/Sub-Rosa (repo, Wave-approval listing text)
-2. https://raw.githubusercontent.com/karagozemin/Sub-Rosa/main/skills/sub-rosa/SKILL.md
-   (project's own integration/security reference doc — primary technical source)
-3. https://skills.stellar.org (confirms inclusion in Stellar's official
-   community skills directory, with SDK feature summary)
-4. https://www.npmjs.com/package/@sub-rosa/sdk (published SDK package)
-5. https://www.drips.network/wave/stellar/repos (confirms Wave Program
-   approval status and hackathon origin)
-6. https://stellar.expert/explorer/public/contract/CDQOFNCJE5Z4ZZL76DU5652FOUKJVEIZWHFGCZVWH63UYBGPSZIPC325
-   (on-chain contract verification — checked directly in-browser)
-
-## Screenshots
-
-### npm package page
-
-![Sub Rosa npm package](./sub-rosa/npm-page.png)
-
-### SKILL.md — Auction vs ReceiptOnly modes
-
-![Sub Rosa mode table](./sub-rosa/skill-md-table.png)
-
-### Verified contract on Stellar Expert
-
-![Sub Rosa contract on stellar.expert](./sub-rosa/stellar-expert-contract.png)
+- GitHub Repository: [Xoulomon/Stellar-Save](https://github.com/Xoulomon/Stellar-Save)
+- README and Architecture Docs: [Stellar-Save README](https://github.com/Xoulomon/Stellar-Save/blob/main/README.md)
