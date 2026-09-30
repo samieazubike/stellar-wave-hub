@@ -1,8 +1,8 @@
-# Contributors
+#Contributors
 
 Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself below when you make your first contribution.
 
-## How to Add Yourself
+##How to Add Yourself
 
 1. Fork the repo and create a branch
 2. Copy the template below and fill in your details
