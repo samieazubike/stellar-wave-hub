@@ -281,7 +281,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="X"
 		/></a>
 		<br />
-		<sub>Researcher — MERCATO</sub>
+		<sub>Researcher — MERCATO, SafeTrust</sub>
 	</div>
 
 	<div
