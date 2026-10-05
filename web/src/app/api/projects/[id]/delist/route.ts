@@ -1,4 +1,4 @@
-import { projectsCol } from "@/lib/db";
+import { projectsCol, createNotification } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { delistProjectSchema } from "@/lib/validation/schemas/featured";
@@ -22,14 +22,25 @@ export async function PUT(
   if (!parsed.success) return parsed.response;
 
   try {
+    const reason = parsed.data.reason || "Delisted by admin";
     await ref.update({
       status: "delisted",
       featured: 0,
-      rejection_reason: parsed.data.reason || "Delisted by admin",
+      rejection_reason: reason,
       updated_at: new Date().toISOString(),
     });
     const updated = await ref.get();
-    return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
+    const projectData = updated.data()!;
+
+    await createNotification({
+      user_id: projectData.user_id as number,
+      project_id: projectData.numericId as number,
+      project_name: projectData.name as string,
+      status: "delisted",
+      message: `Your project "${projectData.name}" has been delisted. Reason: ${reason}`,
+    });
+
+    return Response.json({ project: { ...projectData, id: projectData.numericId } });
   } catch (err) {
     console.error("Delist error:", err);
     return Response.json({ error: "Internal server error" }, { status: 500 });

@@ -1,4 +1,4 @@
-import { projectsCol } from "@/lib/db";
+import { projectsCol, createNotification } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { rejectProjectSchema } from "@/lib/validation/schemas/featured";
@@ -28,13 +28,24 @@ export async function PUT(
   if (!parsed.success) return parsed.response;
 
   try {
+    const reason = parsed.data.reason || null;
     await ref.update({
       status: "rejected",
-      rejection_reason: parsed.data.reason || null,
+      rejection_reason: reason,
       updated_at: new Date().toISOString(),
     });
     const updated = await ref.get();
-    return Response.json({ project: { ...updated.data(), id: updated.data()!.numericId } });
+    const projectData = updated.data()!;
+
+    await createNotification({
+      user_id: projectData.user_id as number,
+      project_id: projectData.numericId as number,
+      project_name: projectData.name as string,
+      status: "rejected",
+      message: `Your project "${projectData.name}" has been rejected.${reason ? ` Reason: ${reason}` : ""}`,
+    });
+
+    return Response.json({ project: { ...projectData, id: projectData.numericId } });
   } catch (err) {
     console.error("Reject error:", err);
     return Response.json({ error: "Internal server error" }, { status: 500 });

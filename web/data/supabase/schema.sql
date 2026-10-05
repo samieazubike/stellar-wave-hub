@@ -42,6 +42,10 @@ create table if not exists public.projects (
   stellar_network text not null default 'mainnet' check (stellar_network in ('testnet', 'mainnet')),
   user_id bigint not null,
   featured integer not null default 0,
+  featured_tx_hash text,
+  featured_amount numeric default 100,
+  featured_expires_at timestamptz,
+  promo_code text,
   rejection_reason text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -56,6 +60,23 @@ create index if not exists projects_status_idx on public.projects (status);
 create index if not exists projects_category_idx on public.projects (category);
 create index if not exists projects_created_at_idx on public.projects (created_at desc);
 create index if not exists projects_user_id_idx on public.projects (user_id);
+
+-- Maintainer category assignments
+-- Associates maintainers with the categories they can moderate
+create table if not exists public.maintainer_categories (
+  "userId" bigint not null,
+  category text not null,
+  created_at timestamptz not null default now(),
+  constraint maintainer_categories_pkey
+    primary key ("userId", category),
+  constraint maintainer_categories_user_id_fkey
+    foreign key ("userId")
+    references public.users ("numericId")
+    on delete cascade
+);
+
+create index if not exists maintainer_categories_user_id_idx on public.maintainer_categories ("userId");
+create index if not exists maintainer_categories_category_idx on public.maintainer_categories (category);
 
 create table if not exists public.ratings (
   "numericId" bigint primary key,
@@ -115,6 +136,18 @@ create table if not exists public.financial_snapshots (
 
 create index if not exists financial_snapshots_project_id_idx on public.financial_snapshots (project_id);
 create index if not exists financial_snapshots_created_at_idx on public.financial_snapshots (created_at desc);
+
+create table if not exists public.promo_codes (
+  id bigserial primary key,
+  code text not null,
+  percent_off integer not null check (percent_off > 0 and percent_off <= 100),
+  max_uses integer check (max_uses is null or max_uses > 0),
+  uses integer not null default 0,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists promo_codes_code_key on public.promo_codes (upper(code));
 
 -- Seed counters used by nextId()
 insert into public.counters (name, value)

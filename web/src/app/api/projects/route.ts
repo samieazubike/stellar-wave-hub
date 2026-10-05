@@ -3,6 +3,7 @@ import {getAuthUser} from "@/lib/auth";
 import {parseJsonBody} from "@/lib/validation/parse-body";
 import {createProjectSchema} from "@/lib/validation/schemas/projects";
 import slugify from "slugify";
+import {getSupabase} from "@/lib/firebase";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -18,35 +19,36 @@ export async function GET(request: Request) {
 			Math.max(1, Number(url.searchParams.get("limit")) || 12),
 		);
 
-		// Query approved/featured projects
-		let query = projectsCol.ref.where("status", "in", [
-			"approved",
-			"featured",
-		]);
+		const supabase = getSupabase();
+		let query = supabase
+			.from("projects")
+			.select("*", { count: "exact" })
+			.in("status", ["approved", "featured"]);
 
 		if (category) {
-			query = query.where("category", "==", category);
+			query = query.ilike("category", category);
 		}
 
 		if (substantial) {
-			query = query.where("is_substantial", "==", true);
+			query = query.eq("is_substantial", true);
 		}
 
-		const snap = await query.get();
-		let projects: Record<string, unknown>[] = snap.docs.map((d) => ({
-			...d.data(),
-			id: d.data().numericId,
+		if (search && search.trim()) {
+			const cleanSearch = search.replace(/[%_\,()]/g, " ").trim();
+			if (cleanSearch) {
+				query = query.or(
+					`name.ilike.%${cleanSearch}%,description.ilike.%${cleanSearch}%,tags.ilike.%${cleanSearch}%`,
+				);
+			}
+		}
+
+		const { data, count, error } = await query;
+		if (error) throw error;
+
+		let projects: Record<string, unknown>[] = (data || []).map((row) => ({
+			...row,
+			id: row.numericId,
 		}));
-
-		// Client-side search filtering (Firestore doesn't support LIKE)
-		if (search) {
-			projects = projects.filter(
-				(p) =>
-					(p.name as string)?.toLowerCase().includes(search) ||
-					(p.description as string)?.toLowerCase().includes(search) ||
-					(p.tags as string)?.toLowerCase().includes(search),
-			);
-		}
 
 		// Fetch ratings for avg computation
 		const ratingsSnap = await ratingsCol.ref.get();
@@ -103,7 +105,7 @@ export async function GET(request: Request) {
 			return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
 		});
 
-		const total = enriched.length;
+		const total = count ?? enriched.length;
 		const offset = (page - 1) * limit;
 		const paged = enriched.slice(offset, offset + limit);
 

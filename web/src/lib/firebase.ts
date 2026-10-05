@@ -11,6 +11,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	auth_challenges: "auth_challenges",
 	counters: "counters",
 	submission_notes: "submission_notes",
+	promo_codes: "promo_codes",
 };
 
 function resolveTable(collection: string): string {
