@@ -182,7 +182,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="GitHub"
 		/></a>
 		<br />
-		<sub>Researcher — Tansu Soroban Wave</sub>
+		<sub>Researcher — Tansu Soroban Wave, Trustless Work</sub>
 	</div>
 
 	<div
