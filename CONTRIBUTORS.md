@@ -307,6 +307,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — Sanctifier</sub>
 	</div>
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/Syringe7">
+			<img
+				src="https://github.com/Syringe7.png"
+				width="80"
+				style="border-radius:50%"
+				alt="Syringe7"
+			/>
+			<br />
+			<sub><b>Syringe7</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/Syringe7"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Stellar MarketPay</sub>
+	</div>
+
 	<!-- Add your <div> above this line -->
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
