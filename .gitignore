@@ -33,3 +33,6 @@ contracts/**/*.wasm
 /.next/*
 /.next/trace*
 /out/
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
