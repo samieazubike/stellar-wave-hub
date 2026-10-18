@@ -6,7 +6,8 @@
 		"dev": "next dev --experimental-https",
 		"build": "next build",
 		"start": "next start",
-		"lint": "eslint"
+		"lint": "eslint",
+		"test": "node --test --experimental-strip-types 'src/**/*.test.ts'"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.2.2",

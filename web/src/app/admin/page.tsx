@@ -111,6 +111,98 @@ function usePendingProjects(token: string | null) {
   });
 }
 
+interface WeeklyStat {
+  week_start: string;
+  submissions: number;
+  approvals: number;
+}
+
+function useSubmissionStats(token: string | null) {
+  return useQuery<WeeklyStat[]>({
+    queryKey: ["admin-stats-submissions"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/stats/submissions", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch submission stats");
+      const data = await res.json();
+      return data.weeks || [];
+    },
+    enabled: !!token,
+  });
+}
+
+// ─── Submissions-per-week chart ─────────────────────────────────────
+
+function SubmissionsChart({ token }: { token: string | null }) {
+  const { data: weeks = [], isLoading, isError } = useSubmissionStats(token);
+
+  const width = 640;
+  const height = 200;
+  const pad = { top: 12, right: 12, bottom: 28, left: 32 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+  const max = Math.max(1, ...weeks.flatMap((w) => [w.submissions, w.approvals]));
+  const groupW = weeks.length > 0 ? plotW / weeks.length : plotW;
+  const barW = Math.max(2, groupW / 2 - 4);
+  const y = (v: number) => pad.top + plotH - (v / max) * plotH;
+
+  return (
+    <div className="glass rounded-2xl p-6 mb-8 animate-in animate-in-delay-2">
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <h3 className="font-semibold text-starlight">Submissions per week</h3>
+        <div className="flex items-center gap-4 text-xs text-ash">
+          <span className="flex items-center gap-1.5">
+            <svg width="10" height="10" aria-hidden="true"><rect width="10" height="10" rx="2" fill="var(--nova-bright)" /></svg>
+            Submissions
+          </span>
+          <span className="flex items-center gap-1.5">
+            <svg width="10" height="10" aria-hidden="true"><rect width="10" height="10" rx="2" fill="var(--aurora-bright)" /></svg>
+            Approvals
+          </span>
+        </div>
+      </div>
+      {isLoading ? (
+        <div className="skeleton h-20 rounded-xl" />
+      ) : isError ? (
+        <p className="text-supernova text-xs">Failed to load submission stats.</p>
+      ) : (
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-auto"
+          role="img"
+          aria-label="Submissions and approvals per week over the last 12 weeks"
+        >
+          {Array.from(new Set([0, Math.round(max / 2), max])).map((v) => (
+            <g key={v}>
+              <line x1={pad.left} x2={width - pad.right} y1={y(v)} y2={y(v)} stroke="var(--dust)" strokeWidth="1" />
+              <text x={pad.left - 6} y={y(v) + 3} textAnchor="end" fontSize="10" fill="var(--ash)">
+                {v}
+              </text>
+            </g>
+          ))}
+          {weeks.map((w, i) => {
+            const x = pad.left + i * groupW + (groupW - barW * 2 - 2) / 2;
+            return (
+              <g key={w.week_start}>
+                <rect x={x} y={y(w.submissions)} width={barW} height={pad.top + plotH - y(w.submissions)} rx="2" fill="var(--nova-bright)">
+                  <title>{`Week of ${w.week_start}: ${w.submissions} submissions`}</title>
+                </rect>
+                <rect x={x + barW + 2} y={y(w.approvals)} width={barW} height={pad.top + plotH - y(w.approvals)} rx="2" fill="var(--aurora-bright)">
+                  <title>{`Week of ${w.week_start}: ${w.approvals} approvals`}</title>
+                </rect>
+                <text x={pad.left + i * groupW + groupW / 2} y={height - 10} textAnchor="middle" fontSize="10" fill="var(--ash)">
+                  {w.week_start.slice(5)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
+    </div>
+  );
+}
+
 // ─── Action hooks ───────────────────────────────────────────────────
 
 function useProjectAction(token: string | null) {
@@ -1331,6 +1423,8 @@ export default function AdminPage() {
           <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Total</p>
         </div>
       </div>
+
+      <SubmissionsChart token={token} />
 
       {/* Mutation feedback */}
       {action.isError && (
