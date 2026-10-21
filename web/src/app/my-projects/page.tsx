@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
+import {FeatureButton} from "@/components/FeatureButton";
 import Link from "next/link";
 
 interface Project {
@@ -140,6 +141,22 @@ export default function MyProjectsPage() {
 								</p>
 							</div>
 							<div className="flex items-center gap-3 shrink-0">
+								{(project.status === "approved" || project.status === "featured") && token && (
+									<FeatureButton
+										projectId={project.id}
+										token={token}
+										stellarAddress={user.stellar_address}
+										onActivated={() =>
+											setProjects((current) =>
+												current.map((item) =>
+													item.id === project.id
+														? {...item, featured: 1, status: "featured"}
+														: item,
+												),
+											)
+										}
+									/>
+								)}
 								{project.avg_rating && (
 									<div className="flex items-center gap-1">
 										<svg

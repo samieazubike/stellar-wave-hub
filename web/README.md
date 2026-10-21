@@ -8,8 +8,17 @@ Create a `.env` file in `web/` with:
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 JWT_SECRET=your-secret-key-change-this
-STELLAR_HORIZON_URL=https://horizon.stellar.org
+STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
+NEXT_PUBLIC_CONTRACT_NETWORK=testnet
+NEXT_PUBLIC_FEATURED_TIERS=7:15,30:50,90:120
+FEATURED_PAYMENT_ADDRESS=your_stellar_public_key
 ```
+
+If `STELLAR_HORIZON_URL` is omitted, Horizon is selected from
+`NEXT_PUBLIC_CONTRACT_NETWORK`. `NEXT_PUBLIC_FEATURED_TIERS` defaults to
+`7:15,30:50,90:120` (days: XLM). Apply
+[data/supabase/009_add_spotlight_payments.sql](data/supabase/009_add_spotlight_payments.sql)
+to existing databases before accepting spotlight payments.
 
 ## Supabase Setup
 
@@ -23,6 +32,7 @@ This creates all required tables and indexes used by the API routes:
 - `auth_challenges`
 - `counters`
 - `financial_snapshots`
+- `payments`
 
 ## Optional RLS Policies
 
