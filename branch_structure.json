@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "fix/issue-417-admin-leaderboard-of-moderators",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "fix/issue-417-admin-leaderboard-of-moderators": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "fix/issue-417-admin-leaderboard-of-moderators",
+    "origin"
+  ]
+}

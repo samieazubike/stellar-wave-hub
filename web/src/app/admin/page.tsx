@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { hasMinRole } from "@/lib/roles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1362,6 +1362,7 @@ export default function AdminPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="all">All Projects</TabsTrigger>
+            <TabsTrigger value="moderators">Moderators</TabsTrigger>
             <TabsTrigger value="contract">
               Contract
               {ON_CHAIN_ENABLED && (
@@ -1496,6 +1497,11 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
+          {/* ── Moderators tab ── */}
+          <TabsContent value="moderators">
+            <ModeratorsTab token={token} />
+          </TabsContent>
+
           {/* ── Contract tab ── */}
           <TabsContent value="contract">
             {user?.stellar_address ? (
@@ -1518,6 +1524,10 @@ export default function AdminPage() {
 
           <TabsContent value="promos">
             <PromoCodesTab token={token} />
+          </TabsContent>
+
+          <TabsContent value="moderators">
+            <ModeratorsTab token={token} />
           </TabsContent>
         </Tabs>
       </div>

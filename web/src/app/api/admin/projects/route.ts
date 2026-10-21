@@ -12,6 +12,8 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const status = url.searchParams.get("status"); // "approved", "featured", "submitted", "rejected", or null for all
     const search = url.searchParams.get("search")?.toLowerCase();
+    const moderator = url.searchParams.get("moderator"); // optional: filter by moderator user_id
+    const since = url.searchParams.get("since"); // optional ISO date for time-window filtering
 
     let snap;
     if (status) {
@@ -24,6 +26,18 @@ export async function GET(request: Request) {
       ...d.data(),
       id: d.data().numericId,
     }));
+
+    if (moderator) {
+      const modId = Number(moderator);
+      projects = projects.filter((p) => (p.moderator_id as number) === modId);
+    }
+
+    if (since) {
+      projects = projects.filter((p) => {
+        const ts = (p.moderated_at as string) || (p.created_at as string);
+        return ts ? ts >= since : false;
+      });
+    }
 
     if (search) {
       projects = projects.filter(
