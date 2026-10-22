@@ -1829,7 +1829,9 @@ function ContractPanel({ adminAddress, token }: { adminAddress: string; token: s
   }, []);
 
   useEffect(() => {
-    if (ON_CHAIN_ENABLED) fetchInfo();
+    if (ON_CHAIN_ENABLED) {
+      void Promise.resolve().then(fetchInfo);
+    }
   }, [fetchInfo]);
 
   async function run(label: string, fn: () => Promise<string>) {

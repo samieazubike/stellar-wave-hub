@@ -26,8 +26,9 @@ export async function getRecentTransactions(accountId: string, limit = 20) {
     .order("desc")
     .call();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return payments.records.map((r: any) => ({
+  return payments.records
+    .filter((r) => r.type === "payment")
+    .map((r) => ({
     id: r.id,
     type: r.type,
     created_at: r.created_at,
@@ -37,7 +38,7 @@ export async function getRecentTransactions(accountId: string, limit = 20) {
     from: r.from,
     to: r.to,
     transaction_hash: r.transaction_hash,
-  }));
+    }));
 }
 
 export async function getContractInvocations(accountId: string, limit = 20) {
@@ -48,10 +49,9 @@ export async function getContractInvocations(accountId: string, limit = 20) {
     .order("desc")
     .call();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return ops.records
-    .filter((r: any) => r.type === "invoke_host_function")
-    .map((r: any) => ({
+    .filter((r) => r.type === "invoke_host_function")
+    .map((r) => ({
       id: r.id,
       type: r.type,
       created_at: r.created_at,

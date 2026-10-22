@@ -69,22 +69,18 @@ export default function MaintainerDashboardPage() {
   const queryClient = useQueryClient();
   const { user, token, loading: authLoading } = useAuth();
   const [filterScopeOnly, setFilterScopeOnly] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
   // Authentication & Authorization checks
   useEffect(() => {
     if (authLoading) return;
 
     if (!user) {
-      setRedirectCountdown(3);
       const timer = setTimeout(() => {
         router.replace("/login?redirect=/maintainer");
       }, 3000);
       return () => clearTimeout(timer);
     }
-
     if (!hasMinRole(user.role, "maintainer")) {
-      setRedirectCountdown(3);
       const timer = setTimeout(() => {
         router.replace("/explore");
       }, 3000);
@@ -173,11 +169,9 @@ export default function MaintainerDashboardPage() {
               Return to Explore
             </Link>
           </div>
-          {redirectCountdown !== null && (
-            <p className="text-xs text-ash/70 mt-4">
-              Redirecting to sign-in in {redirectCountdown}s...
-            </p>
-          )}
+          <p className="text-xs text-ash/70 mt-4">
+            Redirecting to sign-in in 3s...
+          </p>
         </div>
       </div>
     );
@@ -227,11 +221,9 @@ export default function MaintainerDashboardPage() {
               Read Maintainer Guide
             </a>
           </div>
-          {redirectCountdown !== null && (
-            <p className="text-xs text-ash/70 mt-4">
-              Redirecting to Explore in {redirectCountdown}s...
-            </p>
-          )}
+          <p className="text-xs text-ash/70 mt-4">
+            Redirecting to Explore in 3s...
+          </p>
         </div>
       </div>
     );

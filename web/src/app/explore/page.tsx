@@ -158,7 +158,7 @@ function ExplorePageContent() {
 	}, [category, search, sort, substantialOnly, page]);
 
 	useEffect(() => {
-		fetchProjects();
+		void Promise.resolve().then(fetchProjects);
 	}, [fetchProjects]);
 
 	const toggleSubstantial = () =>

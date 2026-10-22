@@ -1,6 +1,7 @@
 import {createClient, type SupabaseClient} from "@supabase/supabase-js";
 
-type Row = Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase rows vary by collection.
+type Row = Record<string, any>;
 type FilterOp = "==" | "in";
 
 const TABLE_BY_COLLECTION: Record<string, string> = {
@@ -146,7 +147,7 @@ class DocRef {
 class QueryDocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any>,
+		private readonly row: Row,
 	) {}
 
 	get id(): string {
@@ -154,7 +155,7 @@ class QueryDocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> {
+	data(): Row {
 		return this.row;
 	}
 }
@@ -162,7 +163,7 @@ class QueryDocumentSnapshot {
 class DocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any> | null,
+		private readonly row: Row | null,
 	) {}
 
 	get exists(): boolean {
@@ -175,7 +176,7 @@ class DocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> | undefined {
+	data(): Row | undefined {
 		return this.row ?? undefined;
 	}
 }
