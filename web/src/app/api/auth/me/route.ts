@@ -24,6 +24,7 @@ export async function GET(request: Request) {
       discord_username: u.discord_username,
       telegram_url: u.telegram_url,
       website_url: u.website_url,
+      avatar_url: u.avatar_url,
       bio: u.bio,
       created_at: u.created_at,
     },
@@ -46,6 +47,7 @@ export async function PUT(request: Request) {
     discord_username,
     telegram_url,
     website_url,
+    avatar_url,
   } = parsed.data;
 
   try {
@@ -59,6 +61,7 @@ export async function PUT(request: Request) {
     if (discord_username !== undefined) updates.discord_username = discord_username;
     if (telegram_url !== undefined) updates.telegram_url = telegram_url;
     if (website_url !== undefined) updates.website_url = website_url;
+    if (avatar_url !== undefined) updates.avatar_url = avatar_url;
 
     const ref = usersCol.ref.doc(String(auth.userId));
     await ref.update(updates);
@@ -77,6 +80,7 @@ export async function PUT(request: Request) {
         discord_username: u.discord_username,
         telegram_url: u.telegram_url,
         website_url: u.website_url,
+        avatar_url: u.avatar_url,
         bio: u.bio,
       },
     });

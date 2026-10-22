@@ -2,9 +2,14 @@ import { usersCol, nextId } from "@/lib/db";
 import { hashPassword, signToken } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { registerSchema } from "@/lib/validation/schemas/auth";
+import { checkRateLimit, getClientIp, rateLimitExceededResponse } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`register:${ip}`, { limit: 5, windowMs: 60 * 60_000 });
+  if (!rl.allowed) return rateLimitExceededResponse(rl.retryAfterSeconds);
+
   const parsed = await parseJsonBody(request, registerSchema);
   if (!parsed.success) return parsed.response;
 

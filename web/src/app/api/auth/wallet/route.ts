@@ -4,11 +4,16 @@ import { usersCol, nextId } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { walletAuthSchema } from "@/lib/validation/schemas/auth";
+import { checkRateLimit, getClientIp, rateLimitExceededResponse } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 function challengesCol() { return firestore.collection("auth_challenges"); }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`wallet:${ip}`, { limit: 20, windowMs: 60_000 });
+  if (!rl.allowed) return rateLimitExceededResponse(rl.retryAfterSeconds);
+
   const parsed = await parseJsonBody(request, walletAuthSchema);
   if (!parsed.success) return parsed.response;
 

@@ -188,6 +188,30 @@ export default function AdminRevenuePage() {
         </div>
       </div>
 
+      {/* Top Contributors Leaderboard Link */}
+      <div className="glass rounded-2xl p-6 mb-10 animate-in animate-in-delay-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="font-semibold text-lg text-starlight mb-1 flex items-center gap-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--solar-bright)" strokeWidth="2">
+              <path d="M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" />
+            </svg>
+            Top Contributors
+          </h3>
+          <p className="text-ash text-sm">
+            View the leaderboard of top contributors ranked by XP, with weekly and all-time tabs.
+          </p>
+        </div>
+        <Link
+          href="/leaderboard"
+          className="btn-nova text-sm inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
+        >
+          View Leaderboard
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </Link>
+      </div>
+
       {/* Revenue Over Time & Recent Purchases */}
       <div className="space-y-8 animate-in animate-in-delay-2">
         {/* Revenue over time breakdown */}

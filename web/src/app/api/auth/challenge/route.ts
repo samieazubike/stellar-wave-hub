@@ -8,6 +8,7 @@ import {
   BASE_FEE,
 } from "@stellar/stellar-sdk";
 import firestore from "@/lib/firebase";
+import { checkRateLimit, getClientIp, rateLimitExceededResponse } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 function challengesCol() { return firestore.collection("auth_challenges"); }
@@ -16,6 +17,10 @@ function challengesCol() { return firestore.collection("auth_challenges"); }
 const serverKeypair = Keypair.random();
 
 export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`challenge:${ip}`, { limit: 20, windowMs: 60_000 });
+  if (!rl.allowed) return rateLimitExceededResponse(rl.retryAfterSeconds);
+
   const url = new URL(request.url);
   const publicKey = url.searchParams.get("publicKey");
 

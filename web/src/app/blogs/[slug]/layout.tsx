@@ -15,9 +15,13 @@ export function generateStaticParams() {
 export async function generateMetadata({params}: Props): Promise<Metadata> {
 	const {slug} = await params;
 	const post = getBlogBySlug(slug);
+	const canonical = new URL(`/blogs/${slug}`, siteUrl).toString();
 
 	if (!post) {
-		return {title: "Post Not Found"};
+		return {
+			title: "Post Not Found",
+			alternates: {canonical},
+		};
 	}
 
 	const title = post.title;
@@ -27,7 +31,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 	return {
 		title,
 		description,
-		alternates: {canonical: `/blogs/${slug}`},
+		alternates: {canonical},
 		openGraph: {
 			type: "article",
 			title,

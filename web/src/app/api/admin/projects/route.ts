@@ -1,21 +1,35 @@
 import { projectsCol, usersCol, ratingsCol } from "@/lib/db";
-import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { getAuthUser, getMaintainerCategories, hasMinRole } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const auth = getAuthUser(request);
-  if (!auth || !hasMinRole(auth.role, "admin")) {
+  const status = new URL(request.url).searchParams.get("status");
+  const isPendingView = status === "pending" || status === "submitted";
+  if (
+    !auth ||
+    !hasMinRole(auth.role, "maintainer") ||
+    (auth.role !== "admin" && !isPendingView)
+  ) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
     const url = new URL(request.url);
-    const status = url.searchParams.get("status"); // "approved", "featured", "submitted", "rejected", or null for all
     const search = url.searchParams.get("search")?.toLowerCase();
+    const queryStatus = status === "pending" ? "submitted" : status;
 
     let snap;
-    if (status) {
-      snap = await projectsCol.ref.where("status", "==", status).get();
+    if (queryStatus) {
+      let query = projectsCol.ref.where("status", "==", queryStatus);
+      if (auth.role === "maintainer") {
+        const categories = await getMaintainerCategories(auth.userId);
+        if (categories.length === 0) {
+          return Response.json({ projects: [] });
+        }
+        query = query.where("category", "in", categories);
+      }
+      snap = await query.get();
     } else {
       snap = await projectsCol.ref.get();
     }

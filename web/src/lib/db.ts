@@ -26,6 +26,11 @@ export const ratingsCol = {
 		return col("ratings");
 	},
 };
+export const reportsCol = {
+	get ref() {
+		return col("reports");
+	},
+};
 export const financialSnapshotsCol = {
 	get ref() {
 		return col("financial_snapshots");
@@ -36,16 +41,56 @@ export const submissionNotesCol = {
 		return col("submission_notes");
 	},
 };
+export const maintainerApplicationsCol = {
+	get ref() {
+		return col("maintainer_applications");
+	},
+};
+export const ratingVotesCol = {
+	get ref() {
+		return col("rating_votes");
+	},
+};
+export const projectUpdatesCol = {
+	get ref() {
+		return col("project_updates");
+	},
+};
 export const notificationsCol = {
 	get ref() {
 		return col("notifications");
 	},
 };
 
+export type ModerationAction = "approve" | "reject" | "feature" | "delist" | "delete";
+
+/**
+ * Record a moderation action in the audit log. Never throws: a logging
+ * failure must not undo a moderation decision that already succeeded.
+ */
+export async function logModerationAction(input: {
+  actor_id: number;
+  action: ModerationAction;
+  project_id: number;
+  reason?: string | null;
+}) {
+  try {
+    const {error} = await getSupabase().from("moderation_log").insert({
+      actor_id: input.actor_id,
+      action: input.action,
+      project_id: input.project_id,
+      reason: input.reason ?? null,
+    });
+    if (error) throw error;
+  } catch (err) {
+    console.error("Failed to write moderation log:", err);
+  }
+}
+
 export async function createNotification(input: {
   user_id: number;
-  project_id: number;
-  project_name: string;
+  project_id?: number | null;
+  project_name?: string | null;
   status: string;
   message: string;
 }) {
@@ -53,8 +98,8 @@ export async function createNotification(input: {
   await notificationsCol.ref.doc(String(numericId)).set({
     numericId,
     user_id: input.user_id,
-    project_id: input.project_id,
-    project_name: input.project_name,
+    project_id: input.project_id ?? null,
+    project_name: input.project_name ?? null,
     status: input.status,
     message: input.message,
     read: false,

@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import VerifiedBadge from "./VerifiedBadge";
+import { useCompare } from "@/context/CompareContext";
 
 interface ProjectCardProps {
   project: {
@@ -19,6 +22,8 @@ interface ProjectCardProps {
     stellar_contract_id?: string;
     rating_velocity?: number;
     created_at?: string;
+    owner_verified_at?: string | null;
+    stellar_account_id?: string | null;
   };
   index?: number;
   badge?: {
@@ -41,13 +46,15 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function ProjectCard({ project, index = 0, badge }: ProjectCardProps) {
+  const { isSelected, toggleProject, projects } = useCompare();
   const colorClass = categoryColors[project.category?.toLowerCase()] || "tag-nova";
   const tags = project.tags ? project.tags.split(",").slice(0, 3) : [];
+  const selected = isSelected(project.id);
+  const compareLimitReached = projects.length >= 3 && !selected;
 
   return (
-    <Link
-      href={`/projects/${project.slug}`}
-      className={`group relative glass glass-hover rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 animate-in animate-in-delay-${Math.min(index + 1, 5)}`}
+    <article
+      className={`group relative glass glass-hover rounded-2xl p-6 flex flex-col transition-all duration-300 animate-in animate-in-delay-${Math.min(index + 1, 5)}`}
     >
       {/* Featured badge or section badge */}
       {project.featured === 1 ? (
@@ -106,13 +113,31 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
       ) : null}
 
       {/* Header */}
+      <Link
+        href={`/projects/${project.slug}`}
+        className="flex flex-1 flex-col gap-4"
+      >
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-lg font-bold text-nova-bright group-hover:from-nova/40 group-hover:to-plasma/40 transition-all">
-          {project.name[0]}
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-lg font-bold text-nova-bright group-hover:from-nova/40 group-hover:to-plasma/40 transition-all overflow-hidden">
+          {project.logo_url ? (
+            <Image
+              src={project.logo_url}
+              alt={`${project.name} logo`}
+              width={44}
+              height={44}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            project.name[0]
+          )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-starlight group-hover:text-nova-bright transition-colors truncate">
-            {project.name}
+          <h3 className="font-semibold text-starlight group-hover:text-nova-bright transition-colors truncate flex items-center gap-1.5">
+            <span className="truncate">{project.name}</span>
+            <VerifiedBadge
+              verifiedAt={project.owner_verified_at}
+              account={project.stellar_account_id}
+            />
           </h3>
           {project.username && (
             <p className="text-xs text-ash mt-0.5">by {project.username}</p>
@@ -188,6 +213,35 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
           )}
         </div>
       </div>
-    </Link>
+      </Link>
+      <button
+        type="button"
+        onClick={() =>
+          toggleProject({
+            id: project.id,
+            name: project.name,
+            slug: project.slug,
+          })
+        }
+        disabled={compareLimitReached}
+        aria-pressed={selected}
+        aria-label={
+          selected
+            ? `Remove ${project.name} from comparison`
+            : compareLimitReached
+              ? `Comparison limit reached; ${project.name} cannot be added`
+              : `Add ${project.name} to comparison`
+        }
+        title={compareLimitReached ? "Choose up to 3 projects" : undefined}
+        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+          selected
+            ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
+            : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
+        } disabled:cursor-not-allowed disabled:opacity-45`}
+      >
+        <span aria-hidden="true">{selected ? "✓" : "+"}</span>
+        {selected ? "Added to compare" : "Add to compare"}
+      </button>
+    </article>
   );
 }

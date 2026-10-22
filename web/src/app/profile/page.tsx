@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
+import RoleBadge from "@/components/RoleBadge";
 import {
   Form,
   FormField,
@@ -16,6 +19,30 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Award,
+  FileCheck2,
+  FolderPlus,
+  Link2,
+  Sparkles,
+} from "lucide-react";
+import type { Achievement } from "@/lib/achievements";
+
+const ACHIEVEMENT_ICONS = {
+  "first-review": FileCheck2,
+  "ten-reviews": Award,
+  "first-project": FolderPlus,
+  "on-chain-reviewer": Link2,
+  "early-supporter": Sparkles,
+} as const;
+
+const ACHIEVEMENT_ACCENTS = {
+  "first-review": "text-plasma-bright bg-plasma/10 border-plasma/20",
+  "ten-reviews": "text-solar-bright bg-solar/10 border-solar/20",
+  "first-project": "text-aurora-bright bg-aurora/10 border-aurora/20",
+  "on-chain-reviewer": "text-nova-bright bg-nova/10 border-nova/20",
+  "early-supporter": "text-rose-300 bg-rose-400/10 border-rose-300/20",
+} as const;
 
 const profileSchema = z.object({
   username: z
@@ -52,12 +79,61 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>;
 
+const AVATAR_SIZE = 256;
+
+/** Center-crops an image to a square and downsizes it to AVATAR_SIZE px. */
+async function cropToSquare(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = AVATAR_SIZE;
+  canvas.height = AVATAR_SIZE;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not process image");
+  ctx.drawImage(
+    bitmap,
+    (bitmap.width - side) / 2,
+    (bitmap.height - side) / 2,
+    side,
+    side,
+    0,
+    0,
+    AVATAR_SIZE,
+    AVATAR_SIZE,
+  );
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/webp", 0.9),
+  );
+  if (!blob) throw new Error("Could not process image");
+  return new File([blob], "avatar.webp", { type: "image/webp" });
+}
+
 export default function ProfilePage() {
   const { user, token, refreshUser } = useAuth();
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+
+  const achievementsQuery = useQuery<Achievement[]>({
+    queryKey: ["achievements", user?.id],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/achievements/me", {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load achievements");
+      return data.achievements;
+    },
+    enabled: !!user && !!token,
+  });
+  const achievements = achievementsQuery.data ?? [];
+  const achievementsLoading = achievementsQuery.isLoading;
+  const achievementsError = achievementsQuery.error?.message ?? "";
 
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -91,6 +167,57 @@ export default function ProfilePage() {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed");
+    }
+  };
+
+  const saveAvatarUrl = async (avatarUrl: string | null) => {
+    const res = await fetch("/api/auth/me", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ avatar_url: avatarUrl }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to save avatar");
+    await refreshUser();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setAvatarError("");
+    setAvatarUploading(true);
+    try {
+      const cropped = await cropToSquare(file);
+      const formData = new FormData();
+      formData.append("files", cropped);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      await saveAvatarUrl(data.urls[0]);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Avatar upload failed");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    setAvatarError("");
+    setAvatarUploading(true);
+    try {
+      await saveAvatarUrl(null);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Failed to remove avatar");
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -173,21 +300,118 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="mb-8 animate-in">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-nova to-plasma flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-nova/20">
-            {user.username[0].toUpperCase()}
-          </div>
+          <Avatar
+            username={user.username}
+            avatarUrl={user.avatar_url}
+            className="w-16 h-16 text-2xl shadow-lg shadow-nova/20"
+          />
           <div>
             <h1 className="font-display font-bold text-3xl text-starlight">{user.username}</h1>
             <div className="flex items-center gap-3 text-sm text-ash mt-0.5">
               <span>{user.email || "No email"}</span>
-              <span className="tag tag-nova text-xs">{user.role}</span>
+              <RoleBadge role={user.role as "contributor" | "maintainer" | "admin"} />
               {user.created_at && (
                 <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+              )}
+            </div>
+            <div>
+              <div className="mt-2 flex items-center gap-3 text-sm">
+                <label className="btn-ghost !py-1 !px-3 text-xs cursor-pointer">
+                  {avatarUploading ? "Uploading..." : "Change avatar"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={avatarUploading}
+                    onChange={handleAvatarChange}
+                  />
+                </label>
+                {user.avatar_url && (
+                  <button
+                    type="button"
+                    onClick={handleAvatarRemove}
+                    disabled={avatarUploading}
+                    className="text-xs text-ash hover:text-starlight"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {avatarError && (
+                <p className="text-xs text-supernova mt-1">{avatarError}</p>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Achievement badges */}
+      <section
+        aria-labelledby="achievements-heading"
+        className="glass rounded-2xl p-6 mb-6 animate-in animate-in-delay-1"
+      >
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-plasma-bright">
+              Community milestones
+            </p>
+            <h2 id="achievements-heading" className="font-semibold text-lg text-starlight mt-1">
+              Achievements
+            </h2>
+          </div>
+          {!achievementsLoading && (
+            <span className="rounded-full border border-dust/30 bg-stardust/50 px-3 py-1 text-xs text-ash">
+              {achievements.filter((achievement) => achievement.earned).length} / {achievements.length} earned
+            </span>
+          )}
+        </div>
+
+        {achievementsError ? (
+          <p role="alert" className="rounded-xl border border-supernova/20 bg-supernova/10 px-4 py-3 text-sm text-supernova">
+            {achievementsError}
+          </p>
+        ) : achievementsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" aria-label="Loading achievements">
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item} className="h-24 rounded-xl border border-dust/20 bg-stardust/30 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {achievements.map((achievement) => {
+              const Icon = ACHIEVEMENT_ICONS[achievement.id];
+              return (
+                <article
+                  key={achievement.id}
+                  className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${
+                    achievement.earned
+                      ? "border-aurora/20 bg-aurora/[0.04]"
+                      : "border-dust/20 bg-stardust/20 opacity-65"
+                  }`}
+                  aria-label={`${achievement.name}: ${achievement.earned ? "earned" : "not yet earned"}`}
+                >
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${ACHIEVEMENT_ACCENTS[achievement.id]}`}>
+                    <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-starlight">
+                      {achievement.name}
+                    </h3>
+                    <p className="mt-0.5 text-xs leading-relaxed text-ash">
+                      {achievement.description}
+                    </p>
+                    <p className={`mt-2 text-[10px] font-medium uppercase tracking-wider ${
+                      achievement.earned ? "text-aurora-bright" : "text-ash/70"
+                    }`}>
+                      {achievement.earned ? "Earned" : achievement.progress}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {/* Wallet Section */}
       <div className="glass rounded-2xl p-6 mb-6 animate-in animate-in-delay-1">
@@ -445,6 +669,75 @@ export default function ProfilePage() {
           </form>
         </Form>
       </div>
+
+      {/* Maintainer Application Section */}
+      {user.role === "contributor" && (
+        <div className="glass rounded-2xl p-8 mt-6 animate-in animate-in-delay-3">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border border-purple-500/20 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--nova)" strokeWidth="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg text-starlight">Become a Maintainer</h2>
+              <p className="text-xs text-ash">Apply for a maintainer role to help review projects</p>
+            </div>
+          </div>
+          
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const reason = (form.elements.namedItem("reason") as HTMLTextAreaElement).value;
+              if (!reason.trim()) return;
+              
+              const btn = form.elements.namedItem("submitBtn") as HTMLButtonElement;
+              btn.disabled = true;
+              btn.textContent = "Submitting...";
+              
+              try {
+                const res = await fetch("/api/maintainer-applications", {
+                  method: "POST",
+                  headers: { 
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}` 
+                  },
+                  body: JSON.stringify({ reason })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                alert("Application submitted successfully!");
+                form.reset();
+              } catch (err) {
+                alert(err instanceof Error ? err.message : "Submission failed");
+              } finally {
+                btn.disabled = false;
+                btn.textContent = "Submit Application";
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-moonlight">Why do you want to be a maintainer?</label>
+              <Textarea
+                name="reason"
+                required
+                rows={3}
+                placeholder="Explain your experience and why you would be a good fit..."
+                className="w-full"
+              />
+            </div>
+            <button
+              name="submitBtn"
+              type="submit"
+              className="btn-nova !py-2.5 !px-6"
+            >
+              Submit Application
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

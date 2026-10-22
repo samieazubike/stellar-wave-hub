@@ -16,6 +16,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { isApiFetchError } from "@/lib/api-fetch";
+import { useRetryCountdown } from "@/lib/use-retry-countdown";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -29,6 +31,11 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [walletLoading, setWalletLoading] = useState(false);
+  const {
+    remainingSeconds,
+    start: startRetryCountdown,
+    clear: clearRetryCountdown,
+  } = useRetryCountdown();
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -37,11 +44,16 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginValues) => {
     setError("");
+    clearRetryCountdown();
     try {
       await login(values.email, values.password);
       router.push("/explore");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      if (isApiFetchError(err) && err.status === 429) {
+        startRetryCountdown(err.retryAfterSeconds ?? 1);
+      } else {
+        setError(err instanceof Error ? err.message : "Login failed");
+      }
     }
   };
 
@@ -76,6 +88,14 @@ export default function LoginPage() {
           {error && (
             <div className="bg-supernova/10 border border-supernova/20 text-supernova rounded-xl px-4 py-3 text-sm">
               {error}
+            </div>
+          )}
+          {remainingSeconds > 0 && (
+            <div
+              role="status"
+              className="rounded-xl border border-solar/20 bg-solar/10 px-4 py-3 text-sm text-solar-bright"
+            >
+              Too many attempts. Try again in {remainingSeconds}s.
             </div>
           )}
 
@@ -140,7 +160,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={form.formState.isSubmitting}
+                disabled={form.formState.isSubmitting || remainingSeconds > 0}
                 className="btn-nova w-full !py-3 text-center disabled:opacity-50"
               >
                 {form.formState.isSubmitting ? "Signing in..." : "Sign In"}

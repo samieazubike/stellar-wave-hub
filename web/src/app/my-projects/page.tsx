@@ -13,6 +13,7 @@ interface Project {
 	category: string;
 	status: string;
 	featured: number;
+	featured_expires_at?: string | null;
 	avg_rating?: number;
 	rating_count?: number;
 	created_at: string;
@@ -25,6 +26,52 @@ const statusStyles: Record<string, string> = {
 	featured: "tag-aurora",
 	rejected: "tag-supernova",
 };
+
+// Spotlight renewal nudge: prompt a repeat purchase once the spotlight is close to ending.
+const RENEWAL_WINDOW_DAYS = 3;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function getSpotlightDaysLeft(featuredExpiresAt?: string | null): number | null {
+	if (!featuredExpiresAt) return null;
+
+	const expiresAt = new Date(featuredExpiresAt).getTime();
+	if (Number.isNaN(expiresAt)) return null;
+
+	const remainingMs = expiresAt - Date.now();
+	if (remainingMs <= 0) return null;
+
+	const daysLeft = Math.ceil(remainingMs / DAY_MS);
+	return daysLeft <= RENEWAL_WINDOW_DAYS ? daysLeft : null;
+}
+
+function SpotlightRenewalBanner({
+	expiresAt,
+	slug,
+}: {
+	expiresAt?: string | null;
+	slug: string;
+}) {
+	const daysLeft = getSpotlightDaysLeft(expiresAt);
+	if (daysLeft === null) return null;
+
+	return (
+		<div
+			role="status"
+			className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-solar/25 bg-solar/10 px-4 py-3"
+		>
+			<p className="text-sm text-solar-bright">
+				Spotlight expires in {daysLeft} {daysLeft === 1 ? "day" : "days"} —
+				renew to stay on the home page.
+			</p>
+			<Link
+				href={`/projects/${slug}`}
+				className="btn-nova text-sm !py-1.5 !px-3 inline-flex shrink-0 self-start sm:self-auto"
+			>
+				Renew
+			</Link>
+		</div>
+	);
+}
 
 export default function MyProjectsPage() {
 	const {user, token} = useAuth();
@@ -103,7 +150,7 @@ export default function MyProjectsPage() {
 					{projects.map((project) => (
 						<div
 							key={project.id}
-							className="glass glass-hover rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center gap-4"
+							className="glass glass-hover rounded-2xl p-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-4"
 						>
 							<div className="flex-1 min-w-0">
 								<div className="flex items-center gap-3 mb-1">
@@ -188,6 +235,10 @@ export default function MyProjectsPage() {
 									View
 								</Link>
 							</div>
+							<SpotlightRenewalBanner
+								expiresAt={project.featured_expires_at}
+								slug={project.slug}
+							/>
 						</div>
 					))}
 				</div>

@@ -16,6 +16,9 @@ alter table public.maintainer_categories enable row level security;
 alter table public.auth_challenges enable row level security;
 alter table public.counters enable row level security;
 alter table public.financial_snapshots enable row level security;
+alter table public.reports enable row level security;
+alter table public.project_updates enable row level security;
+alter table public.treasury_snapshots enable row level security;
 
 -- USERS
 drop policy if exists users_public_read on public.users;
@@ -129,7 +132,10 @@ create policy projects_owner_delete
     )
   );
 
+alter table public.rating_votes enable row level security;
+
 -- RATINGS
+
 drop policy if exists ratings_public_read on public.ratings;
 drop policy if exists ratings_owner_insert on public.ratings;
 drop policy if exists ratings_owner_update on public.ratings;
@@ -218,7 +224,43 @@ create policy ratings_owner_delete on public.ratings
     )
   );
 
--- BACKEND-ONLY TABLES (auth_challenges, counters, financial_snapshots)
+-- RATING VOTES (Helpful review upvotes)
+drop policy if exists rating_votes_public_read on public.rating_votes;
+drop policy if exists rating_votes_owner_insert on public.rating_votes;
+drop policy if exists rating_votes_owner_delete on public.rating_votes;
+
+create policy rating_votes_public_read
+  on public.rating_votes
+  for select
+  to anon, authenticated
+  using (true);
+
+create policy rating_votes_owner_insert
+  on public.rating_votes
+  for insert
+  to authenticated
+  with check (
+    (
+      auth.jwt() ->> 'app_user_id'
+    ) is not null
+    and user_id = (auth.jwt() ->> 'app_user_id')::bigint
+  );
+
+create policy rating_votes_owner_delete
+  on public.rating_votes
+  for delete
+  to authenticated
+  using (
+    (
+      auth.jwt() ->> 'app_user_id'
+    ) is not null
+    and (
+      user_id = (auth.jwt() ->> 'app_user_id')::bigint
+      or coalesce(auth.jwt() ->> 'app_role', '') in ('admin', 'maintainer')
+    )
+  );
+
+-- BACKEND-ONLY TABLES (auth_challenges, counters, financial_snapshots, treasury_snapshots)
 -- No anon/authenticated policies are added. With RLS enabled, direct client access is denied.
 -- Server-side use with SUPABASE_SERVICE_ROLE_KEY remains allowed.
 

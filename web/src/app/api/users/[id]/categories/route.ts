@@ -1,6 +1,12 @@
 import {usersCol} from "@/lib/db";
 import {getSupabase} from "@/lib/firebase";
 import {getAuthUser, VALID_CATEGORIES} from "@/lib/auth";
+import {parseJsonBody} from "@/lib/validation/parse-body";
+import {z} from "zod";
+
+const assignCategoriesSchema = z.object({
+	categories: z.array(z.enum(VALID_CATEGORIES)).max(VALID_CATEGORIES.length),
+});
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -62,28 +68,11 @@ export async function PUT(
 		);
 	}
 
+	const parsed = await parseJsonBody(request, assignCategoriesSchema);
+	if (!parsed.success) return parsed.response;
+
 	try {
-		const body = await request.json();
-		const categories = body.categories;
-
-		if (!Array.isArray(categories)) {
-			return Response.json(
-				{error: "Categories must be an array"},
-				{status: 400},
-			);
-		}
-
-		const dedupedCategories = [...new Set(categories)];
-		const invalidCategories = dedupedCategories.filter(
-			(category) => !VALID_CATEGORIES.includes(category as never),
-		);
-
-		if (invalidCategories.length > 0) {
-			return Response.json(
-				{error: `Invalid categories: ${invalidCategories.join(", ")}`},
-				{status: 400},
-			);
-		}
+		const dedupedCategories = [...new Set(parsed.data.categories)];
 
 		const supabase = getSupabase();
 		const {error: deleteError} = await supabase

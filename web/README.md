@@ -7,11 +7,9 @@ Create a `.env` file in `web/` with:
 ```bash
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-JWT_SECRET=your-secret-key-change-this
-STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
-NEXT_PUBLIC_CONTRACT_NETWORK=testnet
-NEXT_PUBLIC_FEATURED_TIERS=7:15,30:50,90:120
-FEATURED_PAYMENT_ADDRESS=your_stellar_public_key
+# Required in production: use a unique random secret with at least 32 characters.
+JWT_SECRET=replace-with-a-random-secret-at-least-32-characters
+STELLAR_HORIZON_URL=https://horizon.stellar.org
 ```
 
 If `STELLAR_HORIZON_URL` is omitted, Horizon is selected from
@@ -79,6 +77,22 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Testing
+
+This project uses [Vitest](https://vitest.dev). Test files live next to the code they cover and use the `*.test.ts` / `*.test.tsx` suffix (for example [src/lib/utils.test.ts](src/lib/utils.test.ts)).
+
+```bash
+npm test
+```
+
+Run the suite in watch mode while developing:
+
+```bash
+npm run test:watch
+```
+
+Tests use the `@/` alias, which maps to `src/` via [vitest.config.ts](vitest.config.ts).
 
 ## Learn More
 

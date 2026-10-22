@@ -7,11 +7,17 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	users: "users",
 	projects: "projects",
 	ratings: "ratings",
+	rating_votes: "rating_votes",
 	financial_snapshots: "financial_snapshots",
+	treasury_snapshots: "treasury_snapshots",
 	auth_challenges: "auth_challenges",
 	counters: "counters",
 	submission_notes: "submission_notes",
+	maintainer_applications: "maintainer_applications",
+	notifications: "notifications",
+	project_updates: "project_updates",
 	promo_codes: "promo_codes",
+	reports: "reports",
 };
 
 function resolveTable(collection: string): string {
@@ -22,7 +28,9 @@ function keyField(collection: string): string {
 	if (
 		collection === "users" ||
 		collection === "projects" ||
-		collection === "ratings"
+		collection === "ratings" ||
+		collection === "rating_votes" ||
+		collection === "reports"
 	) {
 		return "numericId";
 	}
@@ -35,7 +43,9 @@ function normalizeDocId(collection: string, id: string): string | number {
 	if (
 		collection === "users" ||
 		collection === "projects" ||
-		collection === "ratings"
+		collection === "ratings" ||
+		collection === "rating_votes" ||
+		collection === "reports"
 	) {
 		const numeric = Number(id);
 		return Number.isNaN(numeric) ? id : numeric;
@@ -176,6 +186,10 @@ class QuerySnapshot {
 	get empty(): boolean {
 		return this.docs.length === 0;
 	}
+
+	get size(): number {
+		return this.docs.length;
+	}
 }
 
 class QueryRef {
@@ -220,7 +234,7 @@ class QueryRef {
 	} {
 		return {
 			batch: () => {
-				const operations: Array<() => Promise<void>> = [];
+				const operations: Array< () => Promise<void>> = [];
 				return {
 					delete: (ref: DocRef) => {
 						operations.push(() => ref.delete());

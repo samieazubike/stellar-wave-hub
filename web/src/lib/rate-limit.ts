@@ -1,3 +1,20 @@
+/**
+ * Extract the client IP from a Next.js Request.
+ * Tries x-forwarded-for first (reverse-proxy / CDN), then x-real-ip,
+ * and falls back to "unknown" when neither header is present.
+ */
+export function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    // x-forwarded-for may be a comma-separated list; the first entry is the client
+    const first = forwarded.split(",")[0].trim();
+    if (first) return first;
+  }
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  return "unknown";
+}
+
 type RateLimitBucket = {
   hits: number[];
 };

@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch, isApiFetchError } from "@/lib/api-fetch";
+import { useRetryCountdown } from "@/lib/use-retry-countdown";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -76,6 +78,11 @@ export default function SubmitPage() {
   const { user, token } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
+  const {
+    remainingSeconds,
+    start: startRetryCountdown,
+    clear: clearRetryCountdown,
+  } = useRetryCountdown();
   const [researchFiles, setResearchFiles] = useState<File[]>([]);
   const [researchPreviews, setResearchPreviews] = useState<string[]>([]);
   const [researchError, setResearchError] = useState("");
@@ -133,6 +140,7 @@ export default function SubmitPage() {
 
   const onSubmit = async (values: SubmitValues) => {
     setError("");
+    clearRetryCountdown();
     setResearchError("");
     setReposError("");
 
@@ -160,13 +168,12 @@ export default function SubmitPage() {
       const formData = new FormData();
       researchFiles.forEach((file) => formData.append("files", file));
 
-      const uploadRes = await fetch("/api/upload", {
+      const uploadData = await apiFetch<{ urls: string[] }>("/api/upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData.error || "Image upload failed");
+      if (!uploadData) throw new Error("Image upload failed");
 
       // 2. Submit project with image URLs + repos
       const payload = {
@@ -174,7 +181,7 @@ export default function SubmitPage() {
         github_repos: validRepos.map((r) => ({ label: r.label.trim(), url: r.url.trim() })),
         research_images: uploadData.urls,
       };
-      const res = await fetch("/api/projects", {
+      await apiFetch("/api/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,11 +189,13 @@ export default function SubmitPage() {
         },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
       router.push("/my-projects");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Submission failed");
+      if (isApiFetchError(err) && err.status === 429) {
+        startRetryCountdown(err.retryAfterSeconds ?? 1);
+      } else {
+        setError(err instanceof Error ? err.message : "Submission failed");
+      }
     }
   };
 
@@ -223,6 +232,14 @@ export default function SubmitPage() {
           {error && (
             <div className="bg-supernova/10 border border-supernova/20 text-supernova rounded-xl px-4 py-3 text-sm">
               {error}
+            </div>
+          )}
+          {remainingSeconds > 0 && (
+            <div
+              role="status"
+              className="rounded-xl border border-solar/20 bg-solar/10 px-4 py-3 text-sm text-solar-bright"
+            >
+              Too many attempts. Try again in {remainingSeconds}s.
             </div>
           )}
 
@@ -507,7 +524,7 @@ export default function SubmitPage() {
           <div className="flex items-center gap-4 pt-4 border-t border-dust/20">
             <button
               type="submit"
-              disabled={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting || remainingSeconds > 0}
               className="btn-nova !py-3 !px-8 disabled:opacity-50"
             >
               {form.formState.isSubmitting ? "Uploading & Submitting..." : "Submit Project"}
