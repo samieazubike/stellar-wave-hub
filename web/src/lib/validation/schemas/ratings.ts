@@ -26,7 +26,11 @@ export const createRatingSchema = z.object({
     )
     .nullable()
     .optional(),
-  tx_hash: z.string().nullable().optional(),
+  tx_hash: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "tx_hash must be a valid transaction hash")
+    .nullable()
+    .optional(),
 });
 
 export const voteRatingSchema = z.object({

@@ -20,28 +20,20 @@ export const createProjectSchema = z.object({
   research_images: z.array(z.string()).optional(),
 });
 
-export const editProjectSchema = z
-  .object({
-    name: z.string().optional(),
-    description: z.string().optional(),
-    category: z.string().optional(),
-    stellar_account_id: z.string().nullable().optional(),
-    stellar_contract_id: z.string().nullable().optional(),
-    stellar_network: z.string().optional(),
-    tags: z.string().nullable().optional(),
-    website_url: z.string().nullable().optional(),
-    github_url: z.string().nullable().optional(),
-    github_repos: z.array(githubRepoSchema).optional(),
-    logo_url: z.string().nullable().optional(),
-    research_images: z.array(z.string()).optional(),
-  })
-  .refine(
-    (body) =>
-      Object.keys(body).some(
-        (key) => body[key as keyof typeof body] !== undefined,
-      ),
-    { message: "No fields to update", path: ["body"] },
-  );
+export const editProjectSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  stellar_account_id: z.string().nullable().optional(),
+  stellar_contract_id: z.string().nullable().optional(),
+  stellar_network: z.string().optional(),
+  tags: z.string().nullable().optional(),
+  website_url: z.string().nullable().optional(),
+  github_url: z.string().nullable().optional(),
+  github_repos: z.array(githubRepoSchema).optional(),
+  logo_url: z.string().nullable().optional(),
+  research_images: z.array(z.string()).optional(),
+});
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type EditProjectInput = z.infer<typeof editProjectSchema>;
