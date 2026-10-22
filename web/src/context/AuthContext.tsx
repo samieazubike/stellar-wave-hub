@@ -70,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refreshUser();
+    const timer = window.setTimeout(() => void refreshUser(), 0);
+    return () => window.clearTimeout(timer);
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {

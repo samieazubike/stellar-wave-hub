@@ -8,6 +8,7 @@ import VerifiedOnChainBadge from "@/components/VerifiedOnChainBadge";
 import EmbedSnippet from "@/components/EmbedSnippet";
 import Avatar from "@/components/Avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import CopyButton from "@/components/CopyButton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -39,6 +40,7 @@ import {
 } from "@/lib/ratingContract";
 import {Textarea} from "@/components/ui/textarea";
 import {PROJECT_REPORT_REASONS} from "@/lib/validation/schemas/reports";
+import {truncateAddress} from "@/lib/utils";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://stellarwavehub.com";
 interface Project {
@@ -1197,37 +1199,45 @@ export default function ProjectDetailPage({
 									{project.stellar_account_id && (
 										<div>
 											<p className="text-xs text-ash uppercase tracking-wider mb-2">Stellar Account</p>
+											<div className="flex items-center gap-1">
 											<a
 												href={explorerAccountUrl(project.stellar_account_id, project.stellar_network)}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
+												title={project.stellar_account_id}
+												className="font-mono text-sm text-plasma-bright hover:text-plasma inline-flex items-start gap-2 group transition-colors"
 											>
-												{project.stellar_account_id}
+												{truncateAddress(project.stellar_account_id)}
 												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
 													<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 													<polyline points="15 3 21 3 21 9" />
 													<line x1="10" y1="14" x2="21" y2="3" />
 												</svg>
 											</a>
+											<CopyButton value={project.stellar_account_id} />
+										</div>
 										</div>
 									)}
 									{project.stellar_contract_id && (
 										<div>
 											<p className="text-xs text-ash uppercase tracking-wider mb-2">Soroban Contract</p>
+											<div className="flex items-center gap-1">
 											<a
 												href={explorerContractUrl(project.stellar_contract_id, project.stellar_network)}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="font-mono text-sm text-plasma-bright hover:text-plasma break-all inline-flex items-start gap-2 group transition-colors"
+												title={project.stellar_contract_id}
+												className="font-mono text-sm text-plasma-bright hover:text-plasma inline-flex items-start gap-2 group transition-colors"
 											>
-												{project.stellar_contract_id}
+												{truncateAddress(project.stellar_contract_id)}
 												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
 													<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 													<polyline points="15 3 21 3 21 9" />
 													<line x1="10" y1="14" x2="21" y2="3" />
 												</svg>
 											</a>
+											<CopyButton value={project.stellar_contract_id} />
+										</div>
 										</div>
 									)}
 								</div>
