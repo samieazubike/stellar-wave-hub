@@ -7,6 +7,7 @@ export async function GET() {
       .where("status", "==", "submitted")
       .get();
 
+    const now = new Date().toISOString();
     const userCache = new Map<number, string>();
     const projects = await Promise.all(
       snap.docs.map(async (d) => {
@@ -16,6 +17,7 @@ export async function GET() {
           const uDoc = await usersCol.ref.doc(String(uid)).get();
           userCache.set(uid, uDoc.exists ? (uDoc.data()!.username as string) : "unknown");
         }
+        const priorityUntil = (p.priority_until as string) || null;
         return {
           id: p.numericId,
           name: p.name,
@@ -27,13 +29,22 @@ export async function GET() {
           github_repos: p.github_repos || [],
           username: uid ? userCache.get(uid) : null,
           created_at: p.created_at,
+          priority_until: priorityUntil,
+          // Convenience flag: true when the priority window is still active
+          is_priority: priorityUntil != null && priorityUntil > now,
         };
       }),
     );
 
-    projects.sort(
-      (a, b) => ((b.created_at as string) > (a.created_at as string) ? 1 : -1),
-    );
+    // Sort: active priority items first (newest priority_until first among them),
+    // then the rest sorted by created_at descending.
+    projects.sort((a, b) => {
+      const aPriority = a.is_priority ? 1 : 0;
+      const bPriority = b.is_priority ? 1 : 0;
+      if (bPriority !== aPriority) return bPriority - aPriority;
+      // Within the same tier sort by created_at descending
+      return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
+    });
 
     return Response.json({ projects, total: projects.length });
   } catch (err) {

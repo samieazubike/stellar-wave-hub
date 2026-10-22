@@ -15,6 +15,8 @@ interface QueueProject {
   github_repos?: { label: string; url: string }[];
   username: string | null;
   created_at: string;
+  priority_until: string | null;
+  is_priority: boolean;
 }
 
 function timeAgo(dateStr: string) {
@@ -82,7 +84,9 @@ export default function QueuePage() {
           {projects.map((project, idx) => (
             <div
               key={project.id}
-              className="glass rounded-2xl p-6 transition-all hover:border-dust/40"
+              className={`glass rounded-2xl p-6 transition-all hover:border-dust/40 ${
+                project.is_priority ? "border-l-2 border-l-nova/60" : ""
+              }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 {/* Position indicator */}
@@ -93,6 +97,14 @@ export default function QueuePage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1.5 flex-wrap">
                     <h3 className="font-semibold text-lg text-starlight">{project.name}</h3>
+                    {project.is_priority && (
+                      <span className="tag text-xs inline-flex items-center gap-1 bg-nova/15 text-nova-bright border border-nova/30 font-semibold">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                        Priority
+                      </span>
+                    )}
                     <span className="tag tag-nova text-xs">{project.category}</span>
                     <span
                       className={`tag text-xs ${
