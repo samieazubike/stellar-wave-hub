@@ -140,10 +140,17 @@ export async function POST(request: Request) {
         .ilike("code", promo.code);
     }
 
-    // Activate featured spotlight for project
+    // Activate the featured spotlight for the project. When the current
+    // spotlight is still active, the purchased days stack onto the current
+    // expiry instead of restarting from now (issue #453).
     const now = new Date();
     const days = Number(duration_days) > 0 ? Number(duration_days) : 30;
-    const expiresAt = new Date(now.getTime() + days * 86400 * 1000).toISOString();
+    const currentExpiry = project.featured_expires_at
+      ? new Date(String(project.featured_expires_at))
+      : null;
+    const extended = Boolean(currentExpiry && currentExpiry.getTime() > now.getTime());
+    const base = extended && currentExpiry ? currentExpiry : now;
+    const expiresAt = new Date(base.getTime() + days * 86400 * 1000).toISOString();
     const txHash = tx_hash ? String(tx_hash).trim() : `spotlight_tx_${Date.now()}`;
 
     const { error: updateError } = await supabase
@@ -169,6 +176,7 @@ export async function POST(request: Request) {
       base_price: basePrice,
       final_price: finalPrice,
       expires_at: expiresAt,
+      extended,
       promo_code: appliedPromo ? appliedPromo.code : null,
     });
   } catch (err) {
