@@ -38,7 +38,7 @@ interface RevenueData {
 
 function useRevenueSummary(token: string | null) {
   return useQuery<RevenueData>({
-    queryKey: ["admin-revenue"],
+    queryKey: ["admin-revenue", token],
     queryFn: async () => {
       const res = await fetch("/api/admin/revenue", {
         headers: { Authorization: `Bearer ${token}` },

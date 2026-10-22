@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "fix/issue-498-pricing-page",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "fix/issue-498-pricing-page": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "fix/issue-498-pricing-page",
+    "origin"
+  ]
+}
