@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState, use, type ReactNode} from "react";
+import {useEffect, useMemo, useState, use, type ReactNode} from "react";
 import dynamic from "next/dynamic";
 import {useAuth} from "@/context/AuthContext";
 import StarRating from "@/components/StarRating";
@@ -379,6 +379,24 @@ export default function ProjectDetailPage({
 	// Review ordering and helpful votes (#213)
 	const [reviewSort, setReviewSort] = useState<ReviewSort>("helpful");
 	const [votingRatingId, setVotingRatingId] = useState<number | null>(null);
+	const sortedRatings = useMemo(() => {
+		const sorted = [...ratings];
+		sorted.sort((a, b) => {
+			const timeA = Date.parse(a.created_at) || 0;
+			const timeB = Date.parse(b.created_at) || 0;
+			const helpfulDifference = (b.helpful_count ?? 0) - (a.helpful_count ?? 0);
+
+			if (reviewSort === "recent") return timeB - timeA;
+			if (reviewSort === "highest") {
+				return b.score - a.score || helpfulDifference || timeB - timeA;
+			}
+			if (reviewSort === "lowest") {
+				return a.score - b.score || helpfulDifference || timeB - timeA;
+			}
+			return helpfulDifference || timeB - timeA;
+		});
+		return sorted;
+	}, [ratings, reviewSort]);
 
 	// Owner reply editor (#529)
 	const [editingReplyRatingId, setEditingReplyRatingId] = useState<number | null>(null);
@@ -419,7 +437,7 @@ export default function ProjectDetailPage({
 	useEffect(() => {
 		let cancelled = false;
 		// Signed-in requests get has_voted per review.
-		fetch(`/api/projects/${slug}?sort=${reviewSort}`, {
+		fetch(`/api/projects/${slug}`, {
 			headers: token ? {Authorization: `Bearer ${token}`} : undefined,
 		})
 			.then((r) => {
@@ -441,7 +459,7 @@ export default function ProjectDetailPage({
 		return () => {
 			cancelled = true;
 		};
-	}, [slug, token, reviewSort, reloadKey]);
+	}, [slug, token, reloadKey]);
 
 	const handleVoteHelpful = async (ratingId: number, currentlyVoted: boolean) => {
 		if (!token) {
@@ -1611,7 +1629,7 @@ export default function ProjectDetailPage({
 						)}
 						{ratings.length > 0 ? (
 							<div className="space-y-4">
-								{ratings.map((rating) => (
+								{sortedRatings.map((rating) => (
 									<div
 										key={rating.id}
 										id={`rating-${rating.id}`}

@@ -78,17 +78,17 @@ export default function MyProjectsPage() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (!token) {
-			setLoading(false);
-			return;
-		}
-		fetch("/api/projects/my", {
-			headers: {Authorization: `Bearer ${token}`},
-		})
-			.then((r) => r.json())
-			.then((data) => setProjects(data.projects || []))
-			.catch(() => {})
-			.finally(() => setLoading(false));
+		if (!token) return;
+		const timer = window.setTimeout(() => {
+			fetch("/api/projects/my", {
+				headers: {Authorization: `Bearer ${token}`},
+			})
+				.then((r) => r.json())
+				.then((data) => setProjects(data.projects || []))
+				.catch(() => {})
+				.finally(() => setLoading(false));
+		}, 0);
+		return () => window.clearTimeout(timer);
 	}, [token]);
 
 	if (!user) {

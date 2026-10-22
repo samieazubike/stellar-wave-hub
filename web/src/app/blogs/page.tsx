@@ -92,7 +92,7 @@ export default function BlogsPage() {
 					<h3 className="font-semibold text-lg text-moonlight mb-2">
 						No posts yet
 					</h3>
-					<p className="text-ash">Check back soon — we're writing.</p>
+					<p className="text-ash">Check back soon — we&apos;re writing.</p>
 				</div>
 			) : null}
 		</div>
