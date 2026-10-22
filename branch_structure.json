@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feat/issue-456-gift-a-spotlight-to-another-project",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "feat/issue-456-gift-a-spotlight-to-another-project": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "feat/issue-456-gift-a-spotlight-to-another-project",
+    "origin"
+  ]
+}

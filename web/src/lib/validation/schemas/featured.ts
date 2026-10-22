@@ -2,6 +2,11 @@ import { z } from "zod";
 
 export const featuredProjectSchema = z.object({
   featured: z.boolean().optional(),
+  gift: z.boolean().optional(),
+  txHash: z.string().min(1).optional(),
+  amount: z.string().optional(),
+  asset: z.string().optional(),
+  payer: z.string().optional(),
 });
 
 export const rejectProjectSchema = z.object({
