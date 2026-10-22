@@ -69,3 +69,6 @@ export async function parseJsonBody<T>(
 
   return { success: true, data: result.data };
 }
+
+// Alias for the name used in the issue description and route code.
+export const parseBody = parseJsonBody;

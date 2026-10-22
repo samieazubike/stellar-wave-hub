@@ -8,7 +8,6 @@ frontend/dist/
 frontend/.vite/
 
 # Environment files
-.env
 backend/.env
 frontend/.env.local
 
@@ -33,3 +32,4 @@ contracts/**/*.wasm
 /.next/*
 /.next/trace*
 /out/
+config.bat

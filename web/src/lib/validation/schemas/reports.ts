@@ -32,3 +32,5 @@ export const updateReportStatusSchema = z.object({
   id: z.coerce.number().int().positive("A valid report ID is required"),
   status: z.enum(["resolved", "dismissed"], { message: "Status must be resolved or dismissed" }),
 });
+
+export type UpdateReportStatusInput = z.infer<typeof updateReportStatusSchema>;
