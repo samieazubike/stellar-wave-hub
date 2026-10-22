@@ -81,6 +81,14 @@ interface Rating {
 	owner_reply_at?: string | null;
 }
 
+interface ProjectUpdate {
+	id: number;
+	title: string;
+	body: string;
+	created_at: string;
+	author_username?: string;
+}
+
 interface Averages {
 	avg_score: number;
 	avg_purpose: number;
@@ -304,6 +312,22 @@ function renderReviewMarkdown(markdown: string): ReactNode {
 	return <div className="space-y-2">{blocks}</div>;
 }
 
+function formatRelativeDate(dateString: string): string {
+	const timestamp = Date.parse(dateString);
+	if (Number.isNaN(timestamp)) return "Date unavailable";
+
+	const seconds = Math.round((timestamp - Date.now()) / 1000);
+	const absoluteSeconds = Math.abs(seconds);
+	if (absoluteSeconds < 60) return seconds > 0 ? "in a moment" : "just now";
+
+	const relativeTime = new Intl.RelativeTimeFormat(undefined, {numeric: "auto"});
+	if (absoluteSeconds < 3600) return relativeTime.format(Math.round(seconds / 60), "minute");
+	if (absoluteSeconds < 86400) return relativeTime.format(Math.round(seconds / 3600), "hour");
+	if (absoluteSeconds < 2_592_000) return relativeTime.format(Math.round(seconds / 86400), "day");
+	if (absoluteSeconds < 31_536_000) return relativeTime.format(Math.round(seconds / 2_592_000), "month");
+	return relativeTime.format(Math.round(seconds / 31_536_000), "year");
+}
+
 /** Count ratings per whole star (5..1); always returns all five keys. */
 function countStarDistribution(ratings: {score: number}[]): Record<number, number> {
 	const counts: Record<number, number> = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
@@ -338,8 +362,17 @@ export default function ProjectDetailPage({
 	const [loading, setLoading] = useState(true);
 	const [missing, setMissing] = useState(false);
 	const [activeTab, setActiveTab] = useState<
-		"overview" | "ratings" | "financials"
+		"overview" | "updates" | "ratings" | "financials"
 	>("overview");
+	const [projectUpdates, setProjectUpdates] = useState<ProjectUpdate[]>([]);
+	const [updatesLoading, setUpdatesLoading] = useState(false);
+	const [updatesError, setUpdatesError] = useState<string | null>(null);
+	const [updatesReloadKey, setUpdatesReloadKey] = useState(0);
+	const [updateTitle, setUpdateTitle] = useState("");
+	const [updateBody, setUpdateBody] = useState("");
+	const [updatePreview, setUpdatePreview] = useState(false);
+	const [updateSubmitting, setUpdateSubmitting] = useState(false);
+	const [updateSubmitError, setUpdateSubmitError] = useState<string | null>(null);
 
 	// On-chain state
 	const [contractRatingFee, setContractRatingFee] = useState<bigint | null>(null);
@@ -442,6 +475,66 @@ export default function ProjectDetailPage({
 			cancelled = true;
 		};
 	}, [slug, token, reviewSort, reloadKey]);
+
+	useEffect(() => {
+		if (activeTab !== "updates" || !project) return;
+
+		let cancelled = false;
+		setUpdatesLoading(true);
+		setUpdatesError(null);
+
+		apiFetch<{updates: ProjectUpdate[]}>(`/api/projects/${project.slug}/updates`)
+			.then((data) => {
+				if (!data || !Array.isArray(data.updates)) {
+					throw new Error("Unable to load project updates.");
+				}
+				if (!cancelled) setProjectUpdates(data.updates);
+			})
+			.catch((err: unknown) => {
+				if (!cancelled) {
+					setUpdatesError(err instanceof Error ? err.message : "Unable to load project updates.");
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setUpdatesLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [activeTab, project, updatesReloadKey]);
+
+	const submitProjectUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (!project || !token || updatesLoading || !updateTitle.trim() || !updateBody.trim()) return;
+
+		setUpdateSubmitting(true);
+		setUpdateSubmitError(null);
+		try {
+			const data = await apiFetch<{update: ProjectUpdate}>(`/api/projects/${project.slug}/updates`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({title: updateTitle, body: updateBody}),
+			});
+			if (!data?.update) throw new Error("The project update could not be published.");
+
+			setProjectUpdates((current) => [
+				{...data.update, author_username: user?.username ?? "Project owner"},
+				...current,
+			]);
+			setUpdateTitle("");
+			setUpdateBody("");
+			setUpdatePreview(false);
+			setUpdateSubmitError(null);
+		} catch (err) {
+			setUpdateSubmitError(err instanceof Error ? err.message : "The project update could not be published.");
+		} finally {
+			setUpdateSubmitting(false);
+		}
+	};
 
 	const handleVoteHelpful = async (ratingId: number, currentlyVoted: boolean) => {
 		if (!token) {
@@ -1122,7 +1215,7 @@ export default function ProjectDetailPage({
 
 			{/* Tabs */}
 			<div className="flex gap-1 mb-8 border-b border-dust/20 animate-in animate-in-delay-2">
-				{(["overview", "ratings", "financials"] as const).map((tab) => (
+				{(["overview", "updates", "ratings", "financials"] as const).map((tab) => (
 					<button
 						key={tab}
 						onClick={() => setActiveTab(tab)}
@@ -1135,7 +1228,9 @@ export default function ProjectDetailPage({
 						{tab}
 						{tab === "ratings" && averages
 							? ` (${averages.total})`
-							: ""}
+							: tab === "updates" && projectUpdates.length
+								? ` (${projectUpdates.length})`
+								: ""}
 					</button>
 				))}
 			</div>
@@ -1346,6 +1441,185 @@ export default function ProjectDetailPage({
 
 						{/* Embed snippet — shown at the bottom of the overview for project authors and visitors */}
 						<EmbedSnippet slug={project.slug} />
+					</div>
+				)}
+
+				{activeTab === "updates" && (
+					<div className="space-y-6">
+						{isOwner && (
+							<form onSubmit={submitProjectUpdate} className="glass rounded-2xl p-6 sm:p-8">
+								<div className="flex items-start justify-between gap-4 mb-5">
+									<div>
+										<p className="text-xs font-semibold uppercase tracking-[0.18em] text-nova-bright mb-1">
+											Project journal
+										</p>
+										<h2 className="font-semibold text-lg text-starlight">Share an update</h2>
+										<p className="text-sm text-ash mt-1">
+											Keep your community in the loop on what you&apos;re building.
+										</p>
+									</div>
+									<span className="hidden sm:inline-flex rounded-full border border-nova/20 bg-nova/10 px-3 py-1 text-xs text-nova-bright">
+										Owner
+									</span>
+								</div>
+
+								{(updatesError || updateSubmitError) && (
+									<div role="alert" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-supernova/20 bg-supernova/10 px-4 py-3 text-sm text-supernova">
+										<span>{updatesError || updateSubmitError}</span>
+										{updatesError ? (
+											<button
+												type="button"
+												onClick={() => setUpdatesReloadKey((key) => key + 1)}
+												className="shrink-0 font-medium underline underline-offset-2"
+											>
+												Reload
+											</button>
+										) : (
+											<button
+												type="button"
+												onClick={() => setUpdateSubmitError(null)}
+												className="shrink-0 font-medium underline underline-offset-2"
+											>
+												Dismiss
+											</button>
+										)}
+									</div>
+								)}
+
+								<div className="space-y-4">
+									<div>
+										<label htmlFor="project-update-title" className="mb-2 block text-sm font-medium text-moonlight">
+											Title
+										</label>
+										<input
+											id="project-update-title"
+											type="text"
+											value={updateTitle}
+											onChange={(event) => setUpdateTitle(event.target.value)}
+											maxLength={120}
+											required
+											placeholder="What’s new with your project?"
+											className="input-field"
+										/>
+										<p className="mt-1 text-right text-xs text-ash">{updateTitle.length}/120</p>
+									</div>
+
+									<div>
+										<div className="mb-2 flex items-center justify-between gap-3">
+											<label htmlFor="project-update-body" className="block text-sm font-medium text-moonlight">
+												Update
+											</label>
+											<button
+												type="button"
+												onClick={() => setUpdatePreview((preview) => !preview)}
+												aria-pressed={updatePreview}
+												className="text-xs font-medium text-nova-bright hover:text-starlight"
+											>
+												{updatePreview ? "Edit update" : "Preview"}
+											</button>
+										</div>
+										{updatePreview ? (
+											<div className="min-h-40 rounded-xl border border-dust/30 bg-stardust/30 p-4 text-sm leading-relaxed text-moonlight/90">
+												{updateBody.trim()
+													? renderReviewMarkdown(updateBody)
+													: <span className="text-ash">Your update preview will appear here.</span>}
+											</div>
+										) : (
+											<textarea
+												id="project-update-body"
+												value={updateBody}
+												onChange={(event) => setUpdateBody(event.target.value)}
+												maxLength={5000}
+												required
+												rows={6}
+												placeholder="Share a milestone, a release, or what you’re working on..."
+												className="input-field w-full resize-y"
+											/>
+										)}
+										<p className="mt-1 text-xs text-ash">
+											Markdown-lite supported: headings, lists, links, bold, and inline code.
+											<span className="float-right">{updateBody.length}/5000</span>
+										</p>
+									</div>
+
+									<div className="flex items-center justify-between gap-3">
+										{!token && (
+											<p className="text-xs text-ash">Sign in as the project owner to publish.</p>
+										)}
+										<button
+											type="submit"
+											disabled={updateSubmitting || updatesLoading || !token || !updateTitle.trim() || !updateBody.trim()}
+											className="btn-nova ml-auto disabled:opacity-50"
+										>
+											{updateSubmitting ? "Publishing..." : "Publish update"}
+										</button>
+									</div>
+								</div>
+							</form>
+						)}
+
+						{updatesError && !isOwner && (
+							<div role="alert" className="glass rounded-2xl border border-supernova/20 p-5 text-sm text-supernova">
+								<div className="flex items-center justify-between gap-3">
+									<span>{updatesError}</span>
+									<button
+										type="button"
+										onClick={() => setUpdatesReloadKey((key) => key + 1)}
+										className="font-medium underline underline-offset-2"
+									>
+										Reload
+									</button>
+								</div>
+							</div>
+						)}
+
+						{updatesLoading ? (
+							<div className="space-y-4" aria-label="Loading project updates">
+								<div className="skeleton h-32 rounded-2xl" />
+								<div className="skeleton h-32 rounded-2xl" />
+							</div>
+						) : projectUpdates.length > 0 ? (
+							<div className="space-y-4">
+								{projectUpdates.map((update) => (
+									<article key={update.id} className="glass rounded-2xl border-l-2 border-l-nova/50 p-6 sm:p-8">
+										<div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+											<span className="text-xs font-medium uppercase tracking-[0.16em] text-nova-bright">
+												Project update
+											</span>
+											<time
+												dateTime={update.created_at}
+												title={Number.isNaN(Date.parse(update.created_at)) ? undefined : new Date(update.created_at).toLocaleString()}
+												className="text-xs text-ash"
+											>
+												{formatRelativeDate(update.created_at)}
+											</time>
+										</div>
+										<h3 className="mb-3 font-display text-xl font-semibold text-starlight">
+											{update.title}
+										</h3>
+										<div className="text-sm leading-relaxed text-moonlight/90">
+											{renderReviewMarkdown(update.body)}
+										</div>
+										<p className="mt-5 border-t border-dust/20 pt-4 text-xs text-ash">
+											Posted by <span className="font-medium text-moonlight">{update.author_username || project.username || "Project owner"}</span>
+										</p>
+									</article>
+								))}
+							</div>
+						) : !updatesError && (
+							<div className="glass rounded-2xl p-12 text-center">
+								<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-nova/20 bg-nova/10 text-nova-bright">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+										<path d="M12 20h9" />
+										<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
+									</svg>
+								</div>
+								<h2 className="font-semibold text-lg text-starlight mb-2">No updates yet</h2>
+								<p className="text-sm text-ash">
+									{isOwner ? "Your next milestone can be the first story here." : "Project news and milestones will show up here."}
+								</p>
+							</div>
+						)}
 					</div>
 				)}
 
