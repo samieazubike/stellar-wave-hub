@@ -36,6 +36,15 @@ const ACHIEVEMENT_ICONS = {
   "early-supporter": Sparkles,
 } as const;
 
+/** Personal moderation counts from GET /api/admin/maintainer-stats?me=1. */
+type ModeratorStats = {
+  approvals: number;
+  rejections: number;
+  delists: number;
+  total_actions: number;
+  last_action_at: string | null;
+};
+
 const ACHIEVEMENT_ACCENTS = {
   "first-review": "text-plasma-bright bg-plasma/10 border-plasma/20",
   "ten-reviews": "text-solar-bright bg-solar/10 border-solar/20",
@@ -134,6 +143,25 @@ export default function ProfilePage() {
   const achievements = achievementsQuery.data ?? [];
   const achievementsLoading = achievementsQuery.isLoading;
   const achievementsError = achievementsQuery.error?.message ?? "";
+
+  const isModerator = user?.role === "maintainer" || user?.role === "admin";
+
+  const moderationStatsQuery = useQuery<ModeratorStats | null>({
+    queryKey: ["moderation-stats", user?.id],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/admin/maintainer-stats?me=1", {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load moderation stats");
+      return data.stats?.[0] ?? null;
+    },
+    enabled: isModerator && !!token,
+  });
+  const moderationStats = moderationStatsQuery.data;
+  const moderationStatsLoading = moderationStatsQuery.isLoading;
+  const moderationStatsError = moderationStatsQuery.error?.message ?? "";
 
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -412,6 +440,72 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
+
+      {/* My moderation stats — maintainer / admin only */}
+      {isModerator && (
+        <section
+          aria-labelledby="moderation-stats-heading"
+          className="glass rounded-2xl p-6 mb-6 animate-in animate-in-delay-1"
+        >
+          <div className="mb-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-plasma-bright">
+              Moderation
+            </p>
+            <h2 id="moderation-stats-heading" className="font-semibold text-lg text-starlight mt-1">
+              My moderation stats
+            </h2>
+          </div>
+
+          {moderationStatsError ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-supernova/20 bg-supernova/10 px-4 py-3 text-sm text-supernova"
+            >
+              {moderationStatsError}
+            </p>
+          ) : moderationStatsLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" aria-label="Loading moderation stats">
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item} className="h-20 rounded-xl border border-dust/20 bg-stardust/30 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-xl border border-dust/20 bg-stardust/30 p-4">
+                  <p className="text-2xl font-semibold text-starlight">
+                    {moderationStats?.approvals ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-wider text-ash">Approvals</p>
+                </div>
+                <div className="rounded-xl border border-dust/20 bg-stardust/30 p-4">
+                  <p className="text-2xl font-semibold text-starlight">
+                    {moderationStats?.rejections ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-wider text-ash">Rejections</p>
+                </div>
+                <div className="rounded-xl border border-dust/20 bg-stardust/30 p-4">
+                  <p className="text-2xl font-semibold text-starlight">
+                    {moderationStats?.delists ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-wider text-ash">Delists</p>
+                </div>
+                <div className="rounded-xl border border-dust/20 bg-stardust/30 p-4">
+                  <p className="text-2xl font-semibold text-starlight">
+                    {moderationStats?.total_actions ?? 0}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-wider text-ash">Total actions</p>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-ash">
+                {moderationStats?.last_action_at
+                  ? `Last action: ${new Date(moderationStats.last_action_at).toLocaleDateString()}`
+                  : "No moderation actions yet"}
+              </p>
+            </>
+          )}
+        </section>
+      )}
 
       {/* Wallet Section */}
       <div className="glass rounded-2xl p-6 mb-6 animate-in animate-in-delay-1">
