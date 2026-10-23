@@ -61,6 +61,16 @@ export const notificationsCol = {
 		return col("notifications");
 	},
 };
+export const categorySponsorsCol = {
+	get ref() {
+		return col("category_sponsors");
+	},
+};
+export const paymentsCol = {
+	get ref() {
+		return col("payments");
+	},
+};
 
 export type ModerationAction = "approve" | "reject" | "feature" | "delist" | "delete";
 
