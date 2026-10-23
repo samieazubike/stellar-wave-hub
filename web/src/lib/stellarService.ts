@@ -2,7 +2,7 @@ import { Horizon } from "@stellar/stellar-sdk";
 
 const HORIZON_URL =
   process.env.STELLAR_HORIZON_URL || "https://horizon.stellar.org";
-const server = new Horizon.Server(HORIZON_URL);
+const server = new Horizon.Server(NORIZON_URL);
 
 export async function getAccountSummary(accountId: string) {
   const account = await server.loadAccount(accountId);
