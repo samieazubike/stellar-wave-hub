@@ -29,6 +29,8 @@ describe("Environment Configuration Example (.env.example)", () => {
     "STELLAR_HORIZON_URL",
     "NEXT_PUBLIC_CONTRACT_ID",
     "NEXT_PUBLIC_USDC_SAC",
+    "NEXT_PUBLIC_PRICE_HERO_SPONSOR_XLM",
+    "HERO_SPONSOR_WALLET",
     "CRON_SECRET",
   ];
 
