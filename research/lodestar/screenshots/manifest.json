@@ -1,0 +1,27 @@
+[
+  {
+    "file": "product.png",
+    "url": "https://lodestar-ruddy.vercel.app/",
+    "capturedAt": "2026-10-24T00:21:49.274Z",
+    "type": "Public product page screenshot"
+  },
+  {
+    "file": "architecture.png",
+    "url": "https://github.com/Stellar-Ecosystem/lodestar/blob/4841868a7caa8f13cd396eb1a482afbbd5664387/docs/architecture.md",
+    "capturedAt": "2026-10-24T00:21:57.234Z",
+    "type": "Official architecture page at reviewed source commit"
+  },
+  {
+    "file": "hub-search.png",
+    "url": "https://usestellarwavehub.vercel.app/explore?search=Lodestar",
+    "capturedAt": "2026-10-24T00:22:06.838Z",
+    "type": "Public Hub name search; complete API catalog check stored separately"
+  },
+  {
+    "file": "onchain-verification.png",
+    "url": "https://soroban-testnet.stellar.org",
+    "capturedAt": "2026-10-24T00:33:48.280Z",
+    "type": "Rendered report of recorded RPC and Horizon responses; not an explorer screenshot",
+    "responseFile": "../onchain-verification.json"
+  }
+]
