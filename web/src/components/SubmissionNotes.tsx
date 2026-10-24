@@ -36,10 +36,8 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Only admins can access notes
-  if (!user || user.role !== "admin") return null;
-
   const queryKey = ["submission-notes", projectId];
+  const isAdmin = !!user && user.role === "admin";
 
   const { data, isLoading } = useQuery<{ notes: Note[] }>({
     queryKey,
@@ -50,7 +48,7 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
         if (!r.ok) throw new Error("Failed to fetch notes");
         return r.json();
       }),
-    enabled: open, // only fetch when panel is expanded
+    enabled: open && isAdmin, // only fetch when panel is expanded
     staleTime: 30_000,
   });
 
@@ -89,6 +87,9 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [draft]);
+
+  // Only admins can access notes
+  if (!isAdmin) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
