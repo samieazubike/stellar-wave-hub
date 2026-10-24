@@ -117,7 +117,6 @@ export async function DELETE(
       return Response.json({ error: "Project update not found" }, { status: 404 });
     }
 
-    const update = updateDoc.data()!;
     if (
       project.user_id !== auth.userId &&
       !hasMinRole(auth.role, "admin")

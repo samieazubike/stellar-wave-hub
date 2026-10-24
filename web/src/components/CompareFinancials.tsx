@@ -22,7 +22,8 @@ async function loadFinancials(projectId: number): Promise<Financials> {
   if (summary.status === 400) return { status: "no-account" };
   if (!summary.ok) return { status: "error" };
 
-  const balances = ((summary.body.summary as { balances?: { asset_type: string; balance: string }[] })?.balances) ?? [];
+  const summaryBody = summary.body.summary as { balances?: Array<{ asset_type: string; balance: string }> } | undefined;
+  const balances = summaryBody?.balances ?? [];
   const native = balances.find((b) => b.asset_type === "native");
   return {
     status: "ok",
@@ -48,7 +49,7 @@ function Cell({ financials, row }: { financials: Financials | undefined; row: (t
   return <span className="text-sm font-semibold tabular-nums text-starlight">{row.render(financials)}</span>;
 }
 
-/** On-chain financial rows for /compare (#437), loaded per project from the financials APIs. */
+//** On-chain financial rows for /compare (#437), loaded per project from the financials APIs. */
 export default function CompareFinancials({
   projectIds,
   layout,
