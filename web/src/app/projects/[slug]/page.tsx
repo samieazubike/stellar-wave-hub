@@ -39,6 +39,8 @@ import {
 } from "@/lib/ratingContract";
 import {Textarea} from "@/components/ui/textarea";
 import {PROJECT_REPORT_REASONS} from "@/lib/validation/schemas/reports";
+import {payWithFreighter} from "@/lib/payments-client";
+import {getProjectStoryPriceXlm} from "@/lib/pricing";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://stellarwavehub.com";
 interface Project {
@@ -399,6 +401,69 @@ export default function ProjectDetailPage({
 	const [projectReportMsg, setProjectReportMsg] = useState("");
 	const [projectReportSuccess, setProjectReportSuccess] = useState(false);
 	const [hasReportedProject, setHasReportedProject] = useState(false);
+
+	// Sponsored Story state (owner only)
+	const [storyModalOpen, setStoryModalOpen] = useState(false);
+	const [storyTitle, setStoryTitle] = useState("");
+	const [storyBody, setStoryBody] = useState("");
+	const [storySubmitting, setStorySubmitting] = useState(false);
+	const [storyError, setStoryError] = useState("");
+	const [storySuccess, setStorySuccess] = useState(false);
+	const [storyTxHash, setStoryTxHash] = useState("");
+
+	const storyPrice = getProjectStoryPriceXlm();
+
+	const handleStorySubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!storyTitle.trim() || !storyBody.trim()) {
+			setStoryError("Please enter a title and story body.");
+			return;
+		}
+		setStorySubmitting(true);
+		setStoryError("");
+		try {
+			const treasuryRecipient =
+				process.env.NEXT_PUBLIC_STELLAR_TREASURY_ACCOUNT ||
+				process.env.STELLAR_TREASURY_ACCOUNT ||
+				"GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
+			// 1. Pay with Freighter wallet
+			const { txHash } = await payWithFreighter({
+				amount: storyPrice,
+				recipient: treasuryRecipient,
+				memo: `story-${project?.slug || ""}`.slice(0, 28),
+			});
+
+			// 2. Submit story to API
+			const res = await fetch("/api/stories", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(token ? { Authorization: `Bearer ${token}` } : {}),
+				},
+				body: JSON.stringify({
+					project_id: project?.id,
+					title: storyTitle.trim(),
+					body_md: storyBody.trim(),
+					tx_hash: txHash,
+				}),
+			});
+
+			const data = await res.json();
+			if (!res.ok) {
+				throw new Error(data.error || "Failed to submit story.");
+			}
+
+			setStoryTxHash(txHash);
+			setStorySuccess(true);
+			setStoryTitle("");
+			setStoryBody("");
+		} catch (err: any) {
+			setStoryError(err.message || "Failed to complete story submission.");
+		} finally {
+			setStorySubmitting(false);
+		}
+	};
 
 	useEffect(() => {
 		if (!token || !project) return;
@@ -1064,6 +1129,28 @@ export default function ProjectDetailPage({
 									Report project
 								</button>
 							)}
+						</div>
+					)}
+
+					{/* Submit Sponsored Story Button (Owner only) */}
+					{isOwner && (
+						<div className="flex items-center">
+							<button
+								type="button"
+								onClick={() => {
+									setStoryError("");
+									setStorySuccess(false);
+									setStoryModalOpen(true);
+								}}
+								className="btn-nova text-xs !py-1.5 inline-flex items-center gap-1.5"
+								title="Submit a long-form story for your project"
+							>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+									<path d="M12 20h9" />
+									<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+								</svg>
+								Submit Story ({storyPrice} XLM)
+							</button>
 						</div>
 					)}
 				</div>
@@ -2025,6 +2112,123 @@ export default function ProjectDetailPage({
 									className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all bg-supernova text-void hover:bg-supernova/90 disabled:opacity-50"
 								>
 									{projectReportBusy ? "Submitting..." : "Submit report"}
+								</button>
+							</AlertDialogFooter>
+						</form>
+					)}
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Sponsored Story Dialog (Owner Only) */}
+			<AlertDialog open={storyModalOpen} onOpenChange={setStoryModalOpen}>
+				<AlertDialogContent className="max-w-xl">
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2">
+							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--solar)" strokeWidth="2">
+								<path d="M12 20h9" />
+								<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+							</svg>
+							Submit a Sponsored Story for {project.name}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							Publish a long-form article about your project to the Stellar Wave Hub blog. Once approved by an admin, your story goes live on /blogs with a Sponsored label.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+
+					{storySuccess ? (
+						<div className="py-6 text-center space-y-4">
+							<div className="w-12 h-12 mx-auto rounded-full bg-aurora/15 border border-aurora/30 flex items-center justify-center text-aurora">
+								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+									<polyline points="20 6 9 17 4 12" />
+								</svg>
+							</div>
+							<h3 className="text-lg font-bold text-starlight">Story Submitted for Review!</h3>
+							<p className="text-sm text-ash max-w-md mx-auto">
+								Your payment has been verified and your story is now in the admin review queue. You will see it on the /blogs page once approved.
+							</p>
+							{storyTxHash && (
+								<p className="text-xs font-mono text-moonlight/60 break-all">
+									Tx: {storyTxHash}
+								</p>
+							)}
+							<div className="pt-2">
+								<button
+									type="button"
+									onClick={() => {
+										setStoryModalOpen(false);
+										setStorySuccess(false);
+									}}
+									className="btn-nova"
+								>
+									Done
+								</button>
+							</div>
+						</div>
+					) : (
+						<form onSubmit={handleStorySubmit} className="space-y-4 pt-2">
+							<div className="glass rounded-xl p-3 border border-dust/20 bg-nebula/40 flex items-center justify-between text-xs">
+								<span className="text-moonlight">Sponsored Story Price</span>
+								<span className="font-bold text-solar-bright font-mono text-sm">{storyPrice} XLM</span>
+							</div>
+
+							{storyError && (
+								<div className="p-3 text-xs bg-supernova/10 border border-supernova/30 rounded-lg text-supernova">
+									{storyError}
+								</div>
+							)}
+
+							<div>
+								<label className="block text-xs font-medium text-ash mb-1">
+									Story Title
+								</label>
+								<input
+									type="text"
+									required
+									value={storyTitle}
+									onChange={(e) => setStoryTitle(e.target.value)}
+									placeholder="e.g. How we built our decentralized DEX on Soroban"
+									className="input-field w-full text-sm"
+								/>
+							</div>
+
+							<div>
+								<label className="block text-xs font-medium text-ash mb-1">
+									Story Content (Markdown)
+								</label>
+								<Textarea
+									required
+									rows={8}
+									value={storyBody}
+									onChange={(e) => setStoryBody(e.target.value)}
+									placeholder="Write your long-form story in Markdown format. Support for headings (##), lists (-), callouts (>), and paragraphs."
+									className="input-field font-mono text-xs w-full resize-y"
+								/>
+							</div>
+
+							<AlertDialogFooter className="pt-2">
+								<AlertDialogCancel
+									type="button"
+									disabled={storySubmitting}
+									onClick={() => setStoryModalOpen(false)}
+								>
+									Cancel
+								</AlertDialogCancel>
+								<button
+									type="submit"
+									disabled={storySubmitting}
+									className="btn-nova inline-flex items-center gap-2"
+								>
+									{storySubmitting ? (
+										<>
+											<svg className="animate-spin -ml-1 mr-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+												<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+												<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+											</svg>
+											Signing &amp; Submitting...
+										</>
+									) : (
+										`Pay ${storyPrice} XLM & Submit`
+									)}
 								</button>
 							</AlertDialogFooter>
 						</form>

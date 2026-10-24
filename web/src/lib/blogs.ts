@@ -1,3 +1,5 @@
+import { getSupabase } from "./firebase";
+
 export type BlogBlock =
 	| {type: "paragraph"; text: string}
 	| {type: "heading"; level: 2 | 3; text: string}
@@ -24,6 +26,10 @@ export interface BlogPost {
 	intro: BlogBlock[];
 	steps?: BlogStep[];
 	outro?: BlogBlock[];
+	isSponsored?: boolean;
+	projectId?: number;
+	projectName?: string;
+	projectSlug?: string;
 }
 
 export const blogs: BlogPost[] = [
@@ -195,14 +201,246 @@ export const blogs: BlogPost[] = [
 	},
 ];
 
-export function getAllBlogs(): BlogPost[] {
+export function parseMarkdownToBlocks(md: string): {
+	intro: BlogBlock[];
+	excerpt: string;
+	readingMinutes: number;
+} {
+	const lines = md.trim().split(/\r?\n/);
+	const blocks: BlogBlock[] = [];
+	let currentParagraph: string[] = [];
+	let currentList: { items: string[]; ordered: boolean } | null = null;
+
+	function flushParagraph() {
+		if (currentParagraph.length > 0) {
+			blocks.push({
+				type: "paragraph",
+				text: currentParagraph.join(" ").trim(),
+			});
+			currentParagraph = [];
+		}
+	}
+
+	function flushList() {
+		if (currentList && currentList.items.length > 0) {
+			blocks.push({
+				type: "list",
+				ordered: currentList.ordered,
+				items: [...currentList.items],
+			});
+			currentList = null;
+		}
+	}
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!trimmed) {
+			flushParagraph();
+			flushList();
+			continue;
+		}
+
+		if (trimmed.startsWith("### ")) {
+			flushParagraph();
+			flushList();
+			blocks.push({
+				type: "heading",
+				level: 3,
+				text: trimmed.slice(4).trim(),
+			});
+		} else if (trimmed.startsWith("## ")) {
+			flushParagraph();
+			flushList();
+			blocks.push({
+				type: "heading",
+				level: 2,
+				text: trimmed.slice(3).trim(),
+			});
+		} else if (trimmed.startsWith("# ")) {
+			flushParagraph();
+			flushList();
+			blocks.push({
+				type: "heading",
+				level: 2,
+				text: trimmed.slice(2).trim(),
+			});
+		} else if (trimmed.startsWith("> ")) {
+			flushParagraph();
+			flushList();
+			blocks.push({
+				type: "callout",
+				tone: "solar",
+				text: trimmed.slice(2).trim(),
+			});
+		} else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+			flushParagraph();
+			if (!currentList || currentList.ordered) {
+				flushList();
+				currentList = { items: [], ordered: false };
+			}
+			currentList.items.push(trimmed.slice(2).trim());
+		} else if (/^\d+\.\s/.test(trimmed)) {
+			flushParagraph();
+			if (!currentList || !currentList.ordered) {
+				flushList();
+				currentList = { items: [], ordered: true };
+			}
+			currentList.items.push(trimmed.replace(/^\d+\.\s+/, "").trim());
+		} else {
+			flushList();
+			currentParagraph.push(trimmed);
+		}
+	}
+
+	flushParagraph();
+	flushList();
+
+	const firstParagraph = blocks.find((b) => b.type === "paragraph") as
+		| { type: "paragraph"; text: string }
+		| undefined;
+	const excerpt =
+		firstParagraph?.text.slice(0, 200) || md.slice(0, 150).replace(/[#*`_]/g, "") + "...";
+
+	const wordCount = md.trim().split(/\s+/).length;
+	const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+
+	return { intro: blocks, excerpt, readingMinutes };
+}
+
+export function getStaticBlogs(): BlogPost[] {
 	return [...blogs].sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
 }
 
-export function getBlogBySlug(slug: string): BlogPost | undefined {
-	return blogs.find((b) => b.slug === slug);
+export async function getAllBlogs(): Promise<BlogPost[]> {
+	const staticList = [...blogs];
+	try {
+		const supabase = getSupabase();
+		const { data, error } = await supabase
+			.from("story_submissions")
+			.select(`
+				id,
+				project_id,
+				title,
+				body_md,
+				status,
+				slug,
+				published_at,
+				created_at,
+				projects (
+					"numericId",
+					name,
+					slug,
+					logo_url,
+					category
+				)
+			`)
+			.eq("status", "approved");
+
+		if (error || !data) {
+			return staticList.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
+		}
+
+		const storyPosts: BlogPost[] = data.map((item: any) => {
+			const parsed = parseMarkdownToBlocks(item.body_md || "");
+			const project = Array.isArray(item.projects) ? item.projects[0] : (item.projects as any);
+			const projectName = project?.name || "Community Project";
+			const projectSlug = project?.slug;
+			const projectCategory = project?.category ? [project.category] : [];
+
+			return {
+				slug: item.slug || `story-${item.id}`,
+				title: item.title,
+				excerpt: parsed.excerpt,
+				author: `${projectName}`,
+				publishedAt: item.published_at || item.created_at,
+				readingMinutes: parsed.readingMinutes,
+				tags: ["Sponsored", "Project Story", ...projectCategory],
+				coverImage: project?.logo_url,
+				intro: parsed.intro,
+				isSponsored: true,
+				projectId: item.project_id,
+				projectName,
+				projectSlug,
+			};
+		});
+
+		return [...storyPosts, ...staticList].sort((a, b) =>
+			a.publishedAt < b.publishedAt ? 1 : -1,
+		);
+	} catch {
+		return staticList.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
+	}
 }
 
-export function getBlogSlugs(): string[] {
-	return blogs.map((b) => b.slug);
+export async function getBlogBySlug(slug: string): Promise<BlogPost | undefined> {
+	const staticMatch = blogs.find((b) => b.slug === slug);
+	if (staticMatch) return staticMatch;
+
+	try {
+		const supabase = getSupabase();
+		const { data, error } = await supabase
+			.from("story_submissions")
+			.select(`
+				id,
+				project_id,
+				title,
+				body_md,
+				status,
+				slug,
+				published_at,
+				created_at,
+				projects (
+					"numericId",
+					name,
+					slug,
+					logo_url,
+					category
+				)
+			`)
+			.eq("slug", slug)
+			.eq("status", "approved")
+			.maybeSingle();
+
+		if (error || !data) return undefined;
+
+		const parsed = parseMarkdownToBlocks(data.body_md || "");
+		const project = Array.isArray(data.projects) ? data.projects[0] : (data.projects as any);
+		const projectName = project?.name || "Community Project";
+		const projectSlug = project?.slug;
+		const projectCategory = project?.category ? [project.category] : [];
+
+		return {
+			slug: data.slug || `story-${data.id}`,
+			title: data.title,
+			excerpt: parsed.excerpt,
+			author: `${projectName}`,
+			publishedAt: data.published_at || data.created_at,
+			readingMinutes: parsed.readingMinutes,
+			tags: ["Sponsored", "Project Story", ...projectCategory],
+			coverImage: project?.logo_url,
+			intro: parsed.intro,
+			isSponsored: true,
+			projectId: data.project_id,
+			projectName,
+			projectSlug,
+		};
+	} catch {
+		return undefined;
+	}
+}
+
+export async function getBlogSlugs(): Promise<string[]> {
+	const staticSlugs = blogs.map((b) => b.slug);
+	try {
+		const supabase = getSupabase();
+		const { data } = await supabase
+			.from("story_submissions")
+			.select("slug")
+			.eq("status", "approved");
+
+		const dynamicSlugs = (data || []).map((s: any) => s.slug).filter(Boolean);
+		return Array.from(new Set([...staticSlugs, ...dynamicSlugs]));
+	} catch {
+		return staticSlugs;
+	}
 }

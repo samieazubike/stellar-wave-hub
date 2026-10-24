@@ -7,8 +7,8 @@ export const size = { width: 1200, height: 630 };
 
 export const contentType = "image/png";
 
-export function generateStaticParams() {
-	return getBlogSlugs().map((slug) => ({ slug }));
+export async function generateStaticParams() {
+	return (await getBlogSlugs()).map((slug) => ({ slug }));
 }
 
 type Props = {
@@ -25,7 +25,7 @@ function formatDate(iso: string) {
 
 export default async function OgImage({ params }: Props) {
 	const { slug } = await params;
-	const post = getBlogBySlug(slug);
+	const post = await getBlogBySlug(slug);
 
 	const title = post?.title ?? "Stellar Wave Hub Blog";
 	const date = post?.publishedAt ? formatDate(post.publishedAt) : "";

@@ -18,6 +18,8 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	project_updates: "project_updates",
 	promo_codes: "promo_codes",
 	reports: "reports",
+	payments: "payments",
+	story_submissions: "story_submissions",
 };
 
 function resolveTable(collection: string): string {

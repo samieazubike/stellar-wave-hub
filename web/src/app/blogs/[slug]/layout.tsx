@@ -8,13 +8,13 @@ type Props = {
 	children: React.ReactNode;
 };
 
-export function generateStaticParams() {
-	return getBlogSlugs().map((slug) => ({slug}));
+export async function generateStaticParams() {
+	return (await getBlogSlugs()).map((slug) => ({slug}));
 }
 
 export async function generateMetadata({params}: Props): Promise<Metadata> {
 	const {slug} = await params;
-	const post = getBlogBySlug(slug);
+	const post = await getBlogBySlug(slug);
 	const canonical = new URL(`/blogs/${slug}`, siteUrl).toString();
 
 	if (!post) {

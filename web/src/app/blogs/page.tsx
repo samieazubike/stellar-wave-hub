@@ -9,8 +9,8 @@ function formatDate(iso: string) {
 	});
 }
 
-export default function BlogsPage() {
-	const posts = getAllBlogs();
+export default async function BlogsPage() {
+	const posts = await getAllBlogs();
 	const [featured, ...rest] = posts;
 
 	return (
@@ -33,7 +33,11 @@ export default function BlogsPage() {
 					className="block glass glass-hover rounded-3xl p-6 sm:p-10 mb-10 animate-in animate-in-delay-1 transition-all"
 				>
 					<div className="flex flex-wrap items-center gap-2 mb-4">
-						<span className="tag tag-solar">Featured</span>
+						{featured.isSponsored ? (
+							<span className="tag tag-solar">Sponsored story</span>
+						) : (
+							<span className="tag tag-solar">Featured</span>
+						)}
 						{featured.tags.slice(0, 2).map((t) => (
 							<span key={t} className="tag tag-plasma">
 								{t}
@@ -67,6 +71,9 @@ export default function BlogsPage() {
 							}`}
 						>
 							<div className="flex flex-wrap gap-2 mb-3">
+								{post.isSponsored && (
+									<span className="tag tag-solar">Sponsored story</span>
+								)}
 								{post.tags.slice(0, 2).map((t) => (
 									<span key={t} className="tag tag-nova">
 										{t}

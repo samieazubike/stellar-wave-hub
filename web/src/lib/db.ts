@@ -61,6 +61,16 @@ export const notificationsCol = {
 		return col("notifications");
 	},
 };
+export const paymentsCol = {
+	get ref() {
+		return col("payments");
+	},
+};
+export const storySubmissionsCol = {
+	get ref() {
+		return col("story_submissions");
+	},
+};
 
 export type ModerationAction = "approve" | "reject" | "feature" | "delist" | "delete";
 

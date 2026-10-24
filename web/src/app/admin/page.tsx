@@ -198,6 +198,238 @@ interface AdminReport {
 
 type ReportFilter = "open" | "resolved" | "dismissed" | "all";
 
+interface AdminStorySubmission {
+  id: number;
+  project_id: number;
+  author_id: number;
+  title: string;
+  body_md: string;
+  status: "pending" | "approved" | "rejected";
+  tx_hash: string;
+  slug: string;
+  published_at: string | null;
+  created_at: string;
+  projects?: {
+    numericId: number;
+    name: string;
+    slug: string;
+    logo_url?: string;
+  };
+}
+
+function StoriesTab({ token }: { token: string | null }) {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<string>("all");
+  const [previewStory, setPreviewStory] = useState<AdminStorySubmission | null>(null);
+
+  const { data: submissions = [], isLoading, isError, error } = useQuery<AdminStorySubmission[]>({
+    queryKey: ["admin-stories", status],
+    queryFn: async () => {
+      const res = await fetch(`/api/stories?status=${status}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch stories");
+      return data.submissions || [];
+    },
+    enabled: !!token,
+  });
+
+  const updateStory = useMutation({
+    mutationFn: async ({ id, nextStatus }: { id: number; nextStatus: "approved" | "rejected" }) => {
+      const res = await fetch(`/api/stories/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update story status");
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-stories"] });
+      setPreviewStory(null);
+    },
+  });
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-starlight">Sponsored Stories Review</h2>
+          <p className="text-sm text-ash">
+            Review paid long-form project stories. Approving a story publishes it to /blogs with a Sponsored label.
+          </p>
+        </div>
+        <select
+          aria-label="Filter stories by status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="input-field w-auto min-w-40"
+        >
+          <option value="all">All submissions</option>
+          <option value="pending">Pending review</option>
+          <option value="approved">Approved & Published</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div className="glass rounded-xl p-8 text-center text-ash animate-pulse">Loading story submissions...</div>
+      ) : isError ? (
+        <div className="glass rounded-xl p-6 text-sm text-supernova">
+          Error: {(error as Error).message}
+        </div>
+      ) : submissions.length === 0 ? (
+        <div className="glass rounded-xl p-12 text-center text-ash">
+          No story submissions found matching status &quot;{status}&quot;.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {submissions.map((sub) => (
+            <div key={sub.id} className="glass rounded-xl p-5 border border-dust/20 hover:border-dust/40 transition-colors">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span
+                      className={`tag text-xs ${
+                        sub.status === "approved"
+                          ? "tag-aurora"
+                          : sub.status === "rejected"
+                          ? "tag-supernova"
+                          : "tag-solar"
+                      }`}
+                    >
+                      {sub.status.toUpperCase()}
+                    </span>
+                    <span className="text-xs text-ash">
+                      Project:{" "}
+                      {sub.projects ? (
+                        <Link
+                          href={`/projects/${sub.projects.slug}`}
+                          className="text-nova-bright hover:underline font-medium"
+                          target="_blank"
+                        >
+                          {sub.projects.name}
+                        </Link>
+                      ) : (
+                        `#${sub.project_id}`
+                      )}
+                    </span>
+                    <span className="text-xs text-ash">• Submitted {new Date(sub.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-starlight mb-2">{sub.title}</h3>
+                  <div className="bg-nebula/60 rounded-lg p-3 text-xs text-ash font-mono break-all mb-3">
+                    <span className="text-moonlight font-sans font-medium">Payment Tx: </span>
+                    <a
+                      href={`https://stellar.expert/explorer/public/tx/${sub.tx_hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-nova-bright hover:underline"
+                    >
+                      {sub.tx_hash}
+                    </a>
+                  </div>
+                  <p className="text-sm text-ash line-clamp-3 whitespace-pre-line mb-3 font-mono text-xs bg-space/40 p-3 rounded-lg border border-dust/10">
+                    {sub.body_md}
+                  </p>
+                  {sub.status === "approved" && sub.slug && (
+                    <div className="text-xs text-aurora">
+                      Live on blog:{" "}
+                      <Link href={`/blogs/${sub.slug}`} className="underline font-medium text-aurora-bright" target="_blank">
+                        /blogs/{sub.slug} →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex sm:flex-col items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewStory(sub)}
+                    className="btn-ghost text-xs !py-1.5 w-full text-center"
+                  >
+                    Read full story
+                  </button>
+                  {sub.status !== "approved" && (
+                    <button
+                      type="button"
+                      disabled={updateStory.isPending}
+                      onClick={() => updateStory.mutate({ id: sub.id, nextStatus: "approved" })}
+                      className="btn-nova text-xs !py-1.5 w-full bg-aurora hover:bg-aurora-bright text-space font-semibold"
+                    >
+                      Approve &amp; Publish
+                    </button>
+                  )}
+                  {sub.status !== "rejected" && (
+                    <button
+                      type="button"
+                      disabled={updateStory.isPending}
+                      onClick={() => updateStory.mutate({ id: sub.id, nextStatus: "rejected" })}
+                      className="btn-ghost text-xs !py-1.5 w-full text-supernova hover:border-supernova"
+                    >
+                      Reject
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Story preview modal */}
+      {previewStory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-space/80 backdrop-blur-sm animate-in">
+          <div className="glass rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col p-6 shadow-2xl border border-dust/30">
+            <div className="flex items-center justify-between pb-4 border-b border-dust/20 mb-4">
+              <div>
+                <span className="tag tag-solar text-xs mb-1">Sponsored Story Preview</span>
+                <h3 className="text-xl font-bold text-starlight">{previewStory.title}</h3>
+                <p className="text-xs text-ash">
+                  For project {previewStory.projects?.name || previewStory.project_id} • Status: {previewStory.status}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewStory(null)}
+                className="text-ash hover:text-starlight text-lg p-2"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 text-moonlight text-sm space-y-3 pr-2 whitespace-pre-wrap">
+              {previewStory.body_md}
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-dust/20 mt-4">
+              <button
+                type="button"
+                onClick={() => setPreviewStory(null)}
+                className="btn-ghost text-xs"
+              >
+                Close
+              </button>
+              {previewStory.status !== "approved" && (
+                <button
+                  type="button"
+                  disabled={updateStory.isPending}
+                  onClick={() => updateStory.mutate({ id: previewStory.id, nextStatus: "approved" })}
+                  className="btn-nova text-xs bg-aurora text-space font-semibold hover:bg-aurora-bright"
+                >
+                  Approve &amp; Publish to /blogs
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReportsTab({ token }: { token: string | null }) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<ReportFilter>("open");
@@ -2288,6 +2520,7 @@ export default function AdminPage() {
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="moderators">Moderators</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="stories">Stories</TabsTrigger>
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -2519,6 +2752,10 @@ export default function AdminPage() {
 
           <TabsContent value="reports">
             <ReportsTab token={token} />
+          </TabsContent>
+
+          <TabsContent value="stories">
+            <StoriesTab token={token} />
           </TabsContent>
         </Tabs>
       </div>

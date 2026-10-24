@@ -9,8 +9,8 @@ type Props = {
 	params: Promise<{slug: string}>;
 };
 
-export function generateStaticParams() {
-	return getBlogSlugs().map((slug) => ({slug}));
+export async function generateStaticParams() {
+	return (await getBlogSlugs()).map((slug) => ({slug}));
 }
 
 function formatDate(iso: string) {
@@ -151,7 +151,7 @@ function Block({block}: {block: BlogBlock}) {
 
 export default async function BlogPostPage({params}: Props) {
 	const {slug} = await params;
-	const post = getBlogBySlug(slug);
+	const post = await getBlogBySlug(slug);
 	if (!post) notFound();
 
 	const jsonLd = {
@@ -192,7 +192,10 @@ export default async function BlogPostPage({params}: Props) {
 					Back to blog
 				</Link>
 
-				<div className="flex flex-wrap gap-2 mb-5">
+				<div className="flex flex-wrap items-center gap-2 mb-5">
+					{post.isSponsored && (
+						<span className="tag tag-solar font-semibold">Sponsored story</span>
+					)}
 					{post.tags.map((t) => (
 						<span key={t} className="tag tag-nova">
 							{t}
@@ -205,7 +208,16 @@ export default async function BlogPostPage({params}: Props) {
 				</h1>
 
 				<div className="flex flex-wrap items-center gap-3 text-sm text-ash">
-					<span className="font-medium text-moonlight">{post.author}</span>
+					{post.projectSlug ? (
+						<Link
+							href={`/projects/${post.projectSlug}`}
+							className="font-medium text-nova-bright hover:underline"
+						>
+							{post.author}
+						</Link>
+					) : (
+						<span className="font-medium text-moonlight">{post.author}</span>
+					)}
 					<span>•</span>
 					<span>{formatDate(post.publishedAt)}</span>
 					<span>•</span>
