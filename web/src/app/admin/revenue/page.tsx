@@ -141,6 +141,33 @@ export default function AdminRevenuePage() {
         </Link>
       </div>
 
+      {/* Sponsor Booking CTA */}
+      <div className="glass rounded-2xl p-6 mb-10 animate-in animate-in-delay-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="font-semibold text-lg text-starlight mb-1 flex items-center gap-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--nova-bright)" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            Book a Hero Sponsor Week
+          </h3>
+          <p className="text-ash text-sm">
+            Pick an available week to feature your project in the homepage hero sponsor strip and pay on-chain.
+          </p>
+        </div>
+        <Link
+          href="/sponsor"
+          className="btn-nova text-sm inline-flex items-center gap-2 shrink-0 self-start sm:self-auto"
+        >
+          Book Sponsor Week
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </Link>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 animate-in animate-in-delay-1">
         <div className="glass rounded-2xl p-6 border-l-4 border-l-nova">

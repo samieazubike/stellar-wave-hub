@@ -143,10 +143,12 @@ class DocRef {
 	}
 }
 
+type AnyRow = Record<string, unknown>;
+
 class QueryDocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any>,
+		private readonly row: AnyRow,
 	) {}
 
 	get id(): string {
@@ -154,7 +156,7 @@ class QueryDocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> {
+	data(): AnyRow {
 		return this.row;
 	}
 }
@@ -162,7 +164,7 @@ class QueryDocumentSnapshot {
 class DocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any> | null,
+		private readonly row: AnyRow | null,
 	) {}
 
 	get exists(): boolean {
@@ -175,7 +177,7 @@ class DocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> | undefined {
+	data(): AnyRow | undefined {
 		return this.row ?? undefined;
 	}
 }
@@ -234,7 +236,7 @@ class QueryRef {
 	} {
 		return {
 			batch: () => {
-				const operations: Array< () => Promise<void>> = [];
+				const operations: Array<() => Promise<void>> = [];
 				return {
 					delete: (ref: DocRef) => {
 						operations.push(() => ref.delete());

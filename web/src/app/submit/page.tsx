@@ -495,6 +495,7 @@ export default function SubmitPage() {
                   {researchPreviews.map((src, i) => (
                     <div key={i} className="relative group">
                       <img
+                        // eslint-disable-next-line @next/next/no-img-element -- data URL preview, next/image not applicable
                         src={src}
                         alt={`Research ${i + 1}`}
                         className="w-24 h-24 object-cover rounded-xl border border-dust/30"

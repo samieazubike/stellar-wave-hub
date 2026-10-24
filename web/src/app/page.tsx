@@ -21,12 +21,24 @@ interface Project {
 	created_at?: string;
 }
 
+interface HeroSponsor {
+	id: number;
+	project_id: number;
+	project_name: string;
+	project_slug: string;
+	project_description?: string;
+	week_start: string;
+	week_end: string;
+	amount?: string;
+}
+
 export default function Home() {
 	const [spotlights, setSpotlights] = useState<Project[]>([]);
 	const [trending, setTrending] = useState<Project[]>([]);
 	const [trendingFallback, setTrendingFallback] = useState(false);
 	const [newThisWeek, setNewThisWeek] = useState<Project[]>([]);
 	const [featured, setFeatured] = useState<Project[]>([]);
+	const [heroSponsor, setHeroSponsor] = useState<HeroSponsor | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -36,8 +48,10 @@ export default function Home() {
 			fetch("/api/projects/trending?limit=6").then((r) => r.json()),
 			fetch("/api/projects?limit=6&sort=new-this-week").then((r) => r.json()),
 			fetch("/api/projects?limit=6&sort=top-rated").then((r) => r.json()),
+			// Current week's hero sponsor (paid + confirmed).
+			fetch("/api/sponsors/hero").then((r) => r.json()),
 		])
-			.then(([spotlightRes, trendingRes, newRes, topRes]) => {
+			.then(([spotlightRes, trendingRes, newRes, topRes, heroRes]) => {
 				if (spotlightRes.status === "fulfilled") {
 					setSpotlights(spotlightRes.value.spotlights || []);
 				}
@@ -50,6 +64,9 @@ export default function Home() {
 				}
 				if (topRes.status === "fulfilled") {
 					setFeatured(topRes.value.projects || []);
+				}
+				if (heroRes.status === "fulfilled") {
+					setHeroSponsor(heroRes.value.sponsor || null);
 				}
 			})
 			.catch(() => {})
@@ -125,6 +142,45 @@ export default function Home() {
 					</div>
 				</div>
 			</section>
+
+			{/* Hero sponsor strip */}
+			{heroSponsor && (
+				<section className="px-4 sm:px-6 lg:px-8 pb-12">
+					<div className="max-w-5xl mx-auto">
+						<Link
+							href={`/projects/${heroSponsor.project_slug}`}
+							className="glass rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-nova/40 transition-colors"
+						>
+							<div className="flex items-center gap-2 shrink-0">
+								<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-nova/10 border border-nova/30 text-nova-bright text-[11px] font-semibold uppercase tracking-wider">
+									<svg
+										width="11"
+										height="11"
+										viewBox="0 0 24 24"
+										fill="currentColor"
+									>
+										<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+									</svg>
+									Sponsored
+								</span>
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="font-display font-bold text-lg text-starlight truncate">
+									{heroSponsor.project_name}
+								</p>
+								{heroSponsor.project_description && (
+									<p className="text-ash text-sm line-clamp-1">
+										{heroSponsor.project_description}
+									</p>
+								)}
+							</div>
+							<span className="text-xs text-ash shrink-0">
+								Week of {new Date(heroSponsor.week_start).toLocaleDateString()}
+							</span>
+						</Link>
+					</div>
+				</section>
+			)}
 
 			{/* Featured spotlights carousel */}
 			<FeaturedCarousel projects={spotlights} loading={loading} />
@@ -384,40 +440,33 @@ export default function Home() {
 									key={project.id}
 									project={project}
 									index={i}
+									badge={{label: "Top Rated", variant: "nova"}}
 								/>
 							))}
 						</div>
 					) : (
-						<div className="glass rounded-2xl p-16 text-center">
-							<div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-stardust/50 flex items-center justify-center">
-								<svg
-									width="28"
-									height="28"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="var(--ash)"
-									strokeWidth="1.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								>
-									<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-								</svg>
-							</div>
-							<h3 className="font-semibold text-lg text-moonlight mb-2">
-								No projects yet
-							</h3>
-							<p className="text-ash mb-6">
-								Be the first to submit a project to Stellar Wave
-								Hub
-							</p>
-							<Link
-								href="/submit"
-								className="btn-nova inline-flex"
-							>
-								Submit a Project
-							</Link>
+						<div className="glass rounded-2xl p-12 text-center text-ash">
+							No rated projects yet.
 						</div>
 					)}
+				</div>
+			</section>
+
+			{/* Sponsor CTA */}
+			<section className="px-4 sm:px-6 lg:px-8 pb-24">
+				<div className="max-w-4xl mx-auto glass rounded-2xl p-8 sm:p-10 text-center">
+					<h2 className="font-display font-bold text-2xl sm:text-3xl text-starlight mb-2">
+						Sponsor the hero
+					</h2>
+					<p className="text-ash mb-6">
+						Put your project in front of the whole Stellar Wave community for a week.
+					</p>
+					<Link
+						href="/sponsor"
+						className="btn-nova text-base px-8 py-3.5 inline-flex items-center gap-2"
+					>
+						Book a week
+					</Link>
 				</div>
 			</section>
 		</div>
