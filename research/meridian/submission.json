@@ -1,0 +1,19 @@
+{
+  "name": "Meridian",
+  "description": "Meridian is a non-custodial stablecoin yield aggregator natively built on Stellar and Soroban, specifically designed for savers in emerging markets (with an initial operational focus on West Africa). In regions experiencing severe local currency inflation and foreign exchange volatility, accessing secure, dollar-denominated savings yields provides critical purchasing power protection. Meridian simplifies DeFi access by surfacing real-time USDC yield opportunities across established lending protocols on Stellar (such as Blend Capital) and yield-strategy vaults (such as DeFindex), assembling unsigned Soroban transactions that users sign directly using their non-custodial wallets (Freighter, LOBSTR, xBull).\n\nThe protocol architecture is centered on a modular, protocol-agnostic contract framework. The core coordinator, `MeridianVault`, implements ERC-4626-inspired share accounting hardened specifically against first-depositor inflation attacks. When users deposit USDC, `MeridianVault` forwards the assets to an active adapter?currently the production-deployed `BlendAdapter`?which directly supplies capital into Blend's permissionless lending pools on Stellar mainnet. In exchange, depositors receive `mUSDC` (Meridian USD Coin), a customized SEP-41 compliant share token that hooks back into the vault during transfers to ensure cost basis, entry timestamps, and accumulated yield split accurately between parties. The vault incorporates administrative migration rails (`migrate_adapter`) that atomically transition liquidity across adapters under slippage bounds and timelocks without requiring manual withdrawal cycles.\n\nStellar mainnet execution is fully verified on-chain. The production `MeridianVault` contract (`CBRAD5MD7CCXNXRLRGTRKG4NNZKR3N643VUEBNJGWB2L6KLZDLFWMXHQ`), `BlendAdapter` (`CBNKERYAG7VZNBH2V3TF5JBXLD3MXLVQW5GG4AO445EUDCPKP4D2DDP2`), and `mUSDC` token (`CAEJJPN73VOEWUVCXCXMIXOHMFLUXAYVFMCTCJHQFI5R2NIB2S5YTOFL`) were deployed from verifiable Linux CI builds matching reproducible bytecode hashes. The deployer account (`GBO6FBVTHGNDT33T4MCW3FAVIRP3H2LAHURRK6B4B23274V6RMFHOWMW`) was independently confirmed via Horizon.\n\nFrom an audit and security standpoint, Meridian maintains commendable transparency: project documentation explicitly discloses that an independent external security audit has not yet been conducted and that the admin key currently resides on a single operational key pending multi-sig/hardware custody transition. DeFindex integration remains gated behind configuration pending vault pairing. An automated sweep across the public Stellar Wave Hub catalog confirmed 36 approved projects with zero existing entries for Meridian. Meridian exemplifies production-grade Soroban DeFi infrastructure combining financial inclusion, rigorous share math, and native Stellar ecosystem composability.",
+  "category": "DeFi",
+  "stellar_account_id": "GBO6FBVTHGNDT33T4MCW3FAVIRP3H2LAHURRK6B4B23274V6RMFHOWMW",
+  "stellar_contract_id": "CBRAD5MD7CCXNXRLRGTRKG4NNZKR3N643VUEBNJGWB2L6KLZDLFWMXHQ",
+  "stellar_network": "mainnet",
+  "tags": "soroban, defi, yield-aggregator, erc-4626, blend, defindex, savings, musdc, mainnet, stellar-wave",
+  "website_url": "https://usemeridian.app",
+  "github_url": "https://github.com/drydocs/meridian",
+  "github_repos": [
+    {
+      "label": "Official Meridian repository",
+      "url": "https://github.com/drydocs/meridian"
+    }
+  ],
+  "logo_url": "https://raw.githubusercontent.com/drydocs/meridian/main/apps/web/public/brand/logo-mark.svg",
+  "research_images": []
+}

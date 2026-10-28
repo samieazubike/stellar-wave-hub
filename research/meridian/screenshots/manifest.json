@@ -1,0 +1,27 @@
+[
+  {
+    "file": "product.png",
+    "url": "https://usemeridian.app",
+    "capturedAt": "2026-10-28T11:58:00.000Z",
+    "type": "Public product interface and architecture capabilities"
+  },
+  {
+    "file": "architecture.png",
+    "url": "https://github.com/drydocs/meridian/blob/4bfe48b5d20b516fe88d25dfb276f38049310bf6/README.md",
+    "capturedAt": "2026-10-28T11:58:10.000Z",
+    "type": "Official Soroban contract architecture and cross-protocol routing flow"
+  },
+  {
+    "file": "hub-search.png",
+    "url": "https://usestellarwavehub.vercel.app/api/projects?search=meridian",
+    "capturedAt": "2026-10-28T11:58:20.000Z",
+    "type": "Public Hub duplicate check confirming 0 matches across 36 catalog projects"
+  },
+  {
+    "file": "onchain-verification.png",
+    "url": "https://api.stellar.expert/explorer/public/contract/CBRAD5MD7CCXNXRLRGTRKG4NNZKR3N643VUEBNJGWB2L6KLZDLFWMXHQ",
+    "capturedAt": "2026-10-28T11:58:30.000Z",
+    "type": "On-chain verification report of live Stellar mainnet contracts and Horizon account",
+    "responseFile": "../onchain-verification.json"
+  }
+]

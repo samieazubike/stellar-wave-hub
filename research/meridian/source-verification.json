@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-28T11:59:28.843723+00:00",
+  "repository": "https://github.com/drydocs/meridian",
+  "sourceCommit": "4bfe48b5d20b516fe88d25dfb276f38049310bf6",
+  "files": [
+    {
+      "path": "README.md",
+      "url": "https://github.com/drydocs/meridian/blob/4bfe48b5d20b516fe88d25dfb276f38049310bf6/README.md",
+      "sha256": "f35fdd4f767c1568875d4328b45cff6d4ef0ad26f93de1e220e341787a2ac867",
+      "bytes": 12444
+    },
+    {
+      "path": "apps/docs/operations/mainnet-deployment.md",
+      "url": "https://github.com/drydocs/meridian/blob/4bfe48b5d20b516fe88d25dfb276f38049310bf6/apps/docs/operations/mainnet-deployment.md",
+      "sha256": "ba76a6badab5b2797e62ea96326cef8f37efce5f8aa1d58693326d918101f67f",
+      "bytes": 26467
+    },
+    {
+      "path": "packages/contracts/vault/src/lib.rs",
+      "url": "https://github.com/drydocs/meridian/blob/4bfe48b5d20b516fe88d25dfb276f38049310bf6/packages/contracts/vault/src/lib.rs",
+      "sha256": "26ca90499852a20a5b542365bed576fc9c7550951a743a1dc2065a1986b39846",
+      "bytes": 167753
+    },
+    {
+      "path": "packages/contracts/blend-adapter/src/lib.rs",
+      "url": "https://github.com/drydocs/meridian/blob/4bfe48b5d20b516fe88d25dfb276f38049310bf6/packages/contracts/blend-adapter/src/lib.rs",
+      "sha256": "c769bc22580d8bfe37d2bddd28b0bd0afd47a50f229433f2e88fc6e8db0fc824",
+      "bytes": 44851
+    },
+    {
+      "path": "packages/contracts/musdc-token/src/lib.rs",
+      "url": "https://github.com/drydocs/meridian/blob/4bfe48b5d20b516fe88d25dfb276f38049310bf6/packages/contracts/musdc-token/src/lib.rs",
+      "sha256": "1319b6f061bbe422de10b0510639f0f6f713a0058fde24b80f924556ea1699dd",
+      "bytes": 30568
+    }
+  ],
+  "waveParticipation": {
+    "applicationUrl": "https://github.com/drydocs/meridian/issues/932#issuecomment-5869252061",
+    "applicationCreatedAt": "2026-09-28T11:49:54Z",
+    "program": "Stellar Wave Program",
+    "wave": 10,
+    "acceptanceUrl": "https://github.com/drydocs/meridian/issues/932#issuecomment-5869427301",
+    "acceptanceCreatedAt": "2026-09-28T12:01:43Z",
+    "acceptanceAuthor": "drips-wave",
+    "completionUrl": "https://github.com/drydocs/meridian/issues/932#issuecomment-5990496670",
+    "completionCreatedAt": "2026-10-05T08:02:51Z",
+    "completionPoints": 200
+  }
+}
