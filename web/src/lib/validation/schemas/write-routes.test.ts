@@ -6,7 +6,7 @@ import { updateReportStatusSchema } from "./reports";
 
 describe("createPromoCodeSchema", () => {
   it("normalizes a valid code", () => {
-    const res = createPromoCodeSchema.safeParse({ code: " launch-10 ", percent_off: "10", max_uses: "", expires_at: "" });
+    const res = createPromoCodeSchema.safeParse({ code: " LAUNCH-10 ", percent_off: "10", max_uses: "", expires_at: "" });
     expect(res.success && res.data).toEqual({ code: "LAUNCH-10", percent_off: 10, max_uses: null, expires_at: null });
   });
 
