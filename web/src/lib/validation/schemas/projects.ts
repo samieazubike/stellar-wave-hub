@@ -7,7 +7,13 @@ const githubRepoSchema = z.object({
 
 export const createProjectSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .refine(
+      (value) => value.trim().split(/\s+/).filter(Boolean).length >= 200,
+      { message: "Description must be at least 200 words" },
+    ),
   category: z.string().min(1, "Category is required"),
   stellar_account_id: z.string().nullable().optional(),
   stellar_contract_id: z.string().nullable().optional(),
