@@ -7,4 +7,6 @@ export const publicProjectCacheHeaders = {
 export function revalidatePublicProjectCache() {
 	revalidatePath("/api/projects");
 	revalidatePath("/api/projects/[id]", "page");
+	revalidatePath("/projects/[slug]", "page");
+	revalidatePath("/projects/[slug]/opengraph-image", "page");
 }
