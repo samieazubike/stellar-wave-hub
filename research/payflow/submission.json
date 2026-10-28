@@ -1,0 +1,32 @@
+{
+  "name": "Payflow",
+  "description": "Payflow is a decentralized, non-custodial recurring payment and subscription protocol built natively on Stellar using Soroban smart contracts. In conventional Web3 ecosystems, payments are fundamentally push-based: the account holding the funds must cryptographically sign every single transaction. While this push paradigm provides robust security for one-off transfers, it creates severe friction for SaaS platforms, content subscriptions, utility billings, and automated payroll systems. Traditionally, subscription services operating around blockchain networks were forced to rely on centralized custodial wallets or require users to surrender private keys to merchants\u2014completely defeating the decentralized value proposition.\n\nPayflow resolves this fundamental dilemma by introducing pull-based payment mandates directly onto Soroban. Through Payflow, a subscriber executes a single initial signature to authorize a bounded, revocable standing mandate with explicitly defined parameters: the exact billing cadence (e.g. monthly), maximum collection caps (max_charges), and price guarantees. Once authorized, any permissionless keeper bot or the merchant can trigger settlement (charge()) when payment falls due, debiting pre-committed balances held within an isolated, self-custodial vault.\n\nSubscribers retain complete sovereign control over their capital at all times. Mandate prices are immutably copied at subscription time, preventing merchants from arbitrarily raising rates on active agreements. Furthermore, users can unilaterally pause, resume, or cancel active mandates instantly without merchant consent, and withdrawing funds from their personal custody vault immediately starves pending debits without penalization. By decoupling merchant plan registries, custody vaults, and subscription logic into three distinct Soroban contracts, Payflow provides the essential primitives required to scale subscription commerce on the Stellar network.",
+  "category": "Payments",
+  "stellar_account_id": "GAKOHW5FUKSF3SXQQWLD647RQJPOR5RZOS4ITSMWC5NPC67DEXXYU43H",
+  "stellar_contract_id": "CD5YZUJU6WLFIHGAV4J2BV42GCVZE5ZGDUGSW5CBRIA47TQHSZZW3XMM",
+  "stellar_network": "testnet",
+  "tags": "payments, subscriptions, recurring-billing, pull-payments, soroban, defi, infrastructure",
+  "website_url": "https://mmm-pay.github.io/payflow-frontend/",
+  "github_url": "https://github.com/MMM-pay/payflow-contract",
+  "github_repos": [
+    {
+      "label": "Core Soroban Contracts",
+      "url": "https://github.com/MMM-pay/payflow-contract"
+    },
+    {
+      "label": "Payflow Web Interface",
+      "url": "https://github.com/MMM-pay/payflow-frontend"
+    },
+    {
+      "label": "Payflow Documentation",
+      "url": "https://github.com/MMM-pay/payflow-docs"
+    }
+  ],
+  "logo_url": "https://raw.githubusercontent.com/MMM-pay/payflow-frontend/main/public/logo.png",
+  "research_images": [
+    "https://raw.githubusercontent.com/camesenin/stellar-wave-hub/research/payflow-wave-profile/research/payflow/screenshots/architecture.png",
+    "https://raw.githubusercontent.com/camesenin/stellar-wave-hub/research/payflow-wave-profile/research/payflow/screenshots/product.png",
+    "https://raw.githubusercontent.com/camesenin/stellar-wave-hub/research/payflow-wave-profile/research/payflow/screenshots/onchain-verification.png",
+    "https://raw.githubusercontent.com/camesenin/stellar-wave-hub/research/payflow-wave-profile/research/payflow/screenshots/hub-search.png"
+  ]
+}

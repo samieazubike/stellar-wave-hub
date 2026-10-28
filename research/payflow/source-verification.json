@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-10-28T14:29:27.155484+00:00",
+  "repository": "https://github.com/MMM-pay/payflow-contract",
+  "organization": "https://github.com/MMM-pay",
+  "trackedCommit": "c458789dfa83c7482834b967a514d4365dfad543",
+  "packages": [
+    {
+      "crate": "plan-registry",
+      "path": "contracts/plan-registry",
+      "description": "Merchant plan creation and subscription metadata registry"
+    },
+    {
+      "crate": "vault",
+      "path": "contracts/vault",
+      "description": "Non-custodial subscriber asset escrow and debit engine"
+    },
+    {
+      "crate": "subscription",
+      "path": "contracts/subscription",
+      "description": "Subscription authorization, billing cycle scheduler, and keeper rewards"
+    }
+  ],
+  "waveParticipation": {
+    "program": "Stellar Wave Program",
+    "wave": 10,
+    "category": "Payments",
+    "pool": "Stellar Community Fund / Wave Grantee",
+    "status": "Accepted & Verified"
+  }
+}

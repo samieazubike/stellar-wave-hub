@@ -1,0 +1,27 @@
+[
+  {
+    "file": "product.png",
+    "url": "https://mmm-pay.github.io/payflow-frontend/",
+    "capturedAt": "2026-10-28T14:29:27.155484+00:00",
+    "type": "Public product interface and recurring mandate dashboard"
+  },
+  {
+    "file": "architecture.png",
+    "url": "https://github.com/MMM-pay/payflow-contract",
+    "capturedAt": "2026-10-28T14:29:27.155484+00:00",
+    "type": "Decoupled 3-contract Soroban architecture (Plan Registry, Vault, Subscription)"
+  },
+  {
+    "file": "hub-search.png",
+    "url": "https://usestellarwavehub.vercel.app/explore?search=Payflow",
+    "capturedAt": "2026-10-28T14:29:27.155484+00:00",
+    "type": "Public Hub name search confirming 0 existing listings for Payflow"
+  },
+  {
+    "file": "onchain-verification.png",
+    "url": "https://soroban-testnet.stellar.org",
+    "capturedAt": "2026-10-28T14:29:27.155484+00:00",
+    "type": "Rendered on-chain verification report across Horizon and Soroban Testnet RPC",
+    "responseFile": "../onchain-verification.json"
+  }
+]
