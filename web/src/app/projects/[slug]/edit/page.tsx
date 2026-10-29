@@ -595,6 +595,7 @@ export default function EditProjectPage() {
                   <div className="flex flex-wrap gap-3">
                     {existingImages.map((src, i) => (
                       <div key={`existing-${i}`} className="relative group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={src}
                           alt={`Research ${i + 1}`}
@@ -644,6 +645,7 @@ export default function EditProjectPage() {
                   <div className="flex flex-wrap gap-3">
                     {newPreviews.map((src, i) => (
                       <div key={`new-${i}`} className="relative group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={src}
                           alt={`New ${i + 1}`}

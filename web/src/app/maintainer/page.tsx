@@ -78,6 +78,7 @@ export default function MaintainerDashboardPage() {
     if (!user) {
       const countdownTimer = setTimeout(() => setRedirectCountdown(3), 0);
       const timer = setTimeout(() => {
+        setRedirectCountdown(3);
         router.replace("/login?redirect=/maintainer");
       }, 3000);
       return () => {
@@ -89,6 +90,7 @@ export default function MaintainerDashboardPage() {
     if (!hasMinRole(user.role, "maintainer")) {
       const countdownTimer = setTimeout(() => setRedirectCountdown(3), 0);
       const timer = setTimeout(() => {
+        setRedirectCountdown(3);
         router.replace("/explore");
       }, 3000);
       return () => {
@@ -740,7 +742,6 @@ export default function MaintainerDashboardPage() {
               <div className="space-y-3">
                 {recentlyModerated.map((item) => {
                   const isApproved = item.status === "approved" || item.status === "featured";
-                  const isRejected = item.status === "rejected" || item.status === "delisted";
 
                   return (
                     <div

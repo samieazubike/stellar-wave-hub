@@ -70,8 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void refreshUser(), 0);
-    return () => window.clearTimeout(timer);
+    let cancelled = false;
+    // Defer the initial session check so setState runs outside the effect body.
+    queueMicrotask(() => {
+      if (!cancelled) void refreshUser();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {

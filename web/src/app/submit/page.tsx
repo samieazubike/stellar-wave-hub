@@ -9,6 +9,7 @@ import { apiFetch, isApiFetchError } from "@/lib/api-fetch";
 import { useRetryCountdown } from "@/lib/use-retry-countdown";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Form,
   FormField,
@@ -494,9 +495,12 @@ export default function SubmitPage() {
                 <div className="flex flex-wrap gap-3 mt-3">
                   {researchPreviews.map((src, i) => (
                     <div key={i} className="relative group">
-                      <img
+                      <Image
                         src={src}
                         alt={`Research ${i + 1}`}
+                        width={96}
+                        height={96}
+                        unoptimized
                         className="w-24 h-24 object-cover rounded-xl border border-dust/30"
                       />
                       <button
