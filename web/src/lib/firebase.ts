@@ -237,7 +237,7 @@ class QueryRef {
 	} {
 		return {
 			batch: () => {
-				const operations: Array< () => Promise<void>> = [];
+				const operations: Array<() => Promise<void>> = [];
 				return {
 					delete: (ref: DocRef) => {
 						operations.push(() => ref.delete());
