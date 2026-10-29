@@ -80,7 +80,7 @@ interface Project {
 
 // ─── Fetch helpers ──────────────────────────────────────────────────
 
-function useAdminProjects(status: string | null, token: string | null) {
+function useAdminProjects(status: string | null, token: string | null, enabled: boolean = true) {
   return useQuery<Project[]>({
     queryKey: ["admin-projects", status],
     queryFn: async () => {
@@ -92,7 +92,7 @@ function useAdminProjects(status: string | null, token: string | null) {
       const data = await res.json();
       return data.projects || [];
     },
-    enabled: !!token,
+    enabled: !!token && enabled,
   });
 }
 
@@ -124,7 +124,7 @@ interface MaintainerApplication {
   };
 }
 
-function useMaintainerApplications(token: string | null) {
+function useMaintainerApplications(token: string | null, enabled: boolean = true) {
   return useQuery<MaintainerApplication[]>({
     queryKey: ["admin-maintainer-applications"],
     queryFn: async () => {
@@ -135,7 +135,7 @@ function useMaintainerApplications(token: string | null) {
       const data = await res.json();
       return data.applications || [];
     },
-    enabled: !!token,
+    enabled: !!token && enabled,
   });
 }
 
@@ -1270,9 +1270,11 @@ function StatusBadge({ status, featured }: { status: string; featured?: number }
 function PendingCard({
   project,
   action,
+  isAdmin,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  isAdmin?: boolean;
 }) {
   const isLoading = action.isPending;
 
@@ -1355,19 +1357,21 @@ function PendingCard({
           >
             Approve
           </button>
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: true },
-              })
-            }
-            className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
-          >
-            Feature
-          </button>
+          {isAdmin && (
+            <button
+              disabled={isLoading}
+              onClick={() =>
+                action.mutate({
+                  projectId: project.id,
+                  action: "approve",
+                  body: { featured: true },
+                })
+              }
+              className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+            >
+              Feature
+            </button>
+          )}
           <RejectDialog
             project={project}
             isPending={isLoading}
@@ -1390,9 +1394,11 @@ function PendingCard({
 function ProjectRow({
   project,
   action,
+  isAdmin,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  isAdmin?: boolean;
 }) {
   const isLoading = action.isPending;
 
@@ -1428,7 +1434,7 @@ function ProjectRow({
       </div>
 
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
-        {(project.status === "approved" || project.status === "featured") && (
+        {isAdmin && (project.status === "approved" || project.status === "featured") && (
           <DelistDialog
             project={project}
             isPending={isLoading}
@@ -1456,7 +1462,8 @@ function ProjectRow({
             Re-approve
           </button>
         )}
-        {project.status !== "featured" &&
+        {isAdmin &&
+          project.status !== "featured" &&
           (project.status === "approved" || project.status === "featured") && (
           <button
             disabled={isLoading}
@@ -1472,7 +1479,7 @@ function ProjectRow({
             Feature
           </button>
         )}
-        {project.featured === 1 && (
+        {isAdmin && project.featured === 1 && (
           <button
             disabled={isLoading}
             onClick={() =>
@@ -1487,13 +1494,15 @@ function ProjectRow({
             Unfeature
           </button>
         )}
-        <DeleteDialog
-          project={project}
-          isPending={isLoading}
-          onConfirm={() =>
-            action.mutate({ projectId: project.id, action: "delete" })
-          }
-        />
+        {isAdmin && (
+          <DeleteDialog
+            project={project}
+            isPending={isLoading}
+            onConfirm={() =>
+              action.mutate({ projectId: project.id, action: "delete" })
+            }
+          />
+        )}
       </div>
     </div>
   );
@@ -1829,7 +1838,9 @@ function ContractPanel({ adminAddress, token }: { adminAddress: string; token: s
   }, []);
 
   useEffect(() => {
-    if (ON_CHAIN_ENABLED) fetchInfo();
+    if (!ON_CHAIN_ENABLED) return;
+    const timer = window.setTimeout(() => void fetchInfo(), 0);
+    return () => window.clearTimeout(timer);
   }, [fetchInfo]);
 
   async function run(label: string, fn: () => Promise<string>) {
@@ -2113,18 +2124,20 @@ export default function AdminPage() {
   const action = useProjectAction(token);
   const [search, setSearch] = useState("");
 
+  const isAdmin = !!user && hasMinRole(user.role, "admin");
+
   const { data: pending = [], isLoading: pendingLoading } = usePendingProjects(token);
-  const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
-  const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
-  const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
-  const { data: maintainerApplications = [], isLoading: maintainerAppsLoading, refetch: refetchMaintainerApps } = useMaintainerApplications(token);
+  const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token, isAdmin);
+  const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token, isAdmin);
+  const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token, isAdmin);
+  const { data: maintainerApplications = [], isLoading: maintainerAppsLoading, refetch: refetchMaintainerApps } = useMaintainerApplications(token, isAdmin);
 
   const filteredPending = filterProjects(pending, search);
   const filteredApproved = filterProjects(approved, search);
   const filteredFeatured = filterProjects(featured, search);
   const filteredAll = filterProjects(all, search);
 
-  if (!user || !hasMinRole(user.role, "admin")) {
+  if (!user || !hasMinRole(user.role, "maintainer")) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-12 text-center max-w-md">
@@ -2133,8 +2146,8 @@ export default function AdminPage() {
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </div>
-          <h2 className="font-semibold text-xl text-starlight mb-2">Admin access required</h2>
-          <p className="text-ash mb-6">You need admin privileges to view this page</p>
+          <h2 className="font-semibold text-xl text-starlight mb-2">Maintainer access required</h2>
+          <p className="text-ash mb-6">You need maintainer or admin privileges to view this page</p>
           <Link href="/explore" className="btn-ghost inline-flex">Back to Explore</Link>
         </div>
       </div>
@@ -2156,19 +2169,23 @@ export default function AdminPage() {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
+            <h1 className="font-display font-bold text-3xl text-starlight">
+              {isAdmin ? "Admin Dashboard" : "Moderation Dashboard"}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href="/admin/revenue"
-              className="btn-nova text-sm !py-2 !px-3 inline-flex items-center gap-1.5"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="1" x2="12" y2="23" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-              Revenue Dashboard
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin/revenue"
+                className="btn-nova text-sm !py-2 !px-3 inline-flex items-center gap-1.5"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                Revenue Dashboard
+              </Link>
+            )}
             <a
               href="https://github.com/samieazubike/stellar-wave-hub/blob/main/docs/MAINTAINERS.md"
               target="_blank"
@@ -2179,7 +2196,9 @@ export default function AdminPage() {
             </a>
           </div>
         </div>
-        <p className="text-ash ml-[52px]">Manage project submissions, approvals, and listings</p>
+        <p className="text-ash ml-[52px]">
+          {isAdmin ? "Manage project submissions, approvals, and listings" : "Review and moderate pending project submissions"}
+        </p>
       </div>
 
       {/* Search */}
@@ -2219,23 +2238,27 @@ export default function AdminPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 animate-in animate-in-delay-2">
+      <div className={`grid ${isAdmin ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"} gap-3 mb-8 animate-in animate-in-delay-2`}>
         <div className="glass rounded-2xl p-5">
           <p className="text-2xl font-bold text-solar-bright">{pending.length}</p>
           <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Pending</p>
         </div>
-        <div className="glass rounded-2xl p-5">
-          <p className="text-2xl font-bold text-aurora-bright">{approved.length}</p>
-          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Approved</p>
-        </div>
-        <div className="glass rounded-2xl p-5">
-          <p className="text-2xl font-bold text-nova-bright">{featured.length}</p>
-          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Featured</p>
-        </div>
-        <div className="glass rounded-2xl p-5">
-          <p className="text-2xl font-bold text-plasma-bright">{all.length}</p>
-          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Total</p>
-        </div>
+        {isAdmin && (
+          <>
+            <div className="glass rounded-2xl p-5">
+              <p className="text-2xl font-bold text-aurora-bright">{approved.length}</p>
+              <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Approved</p>
+            </div>
+            <div className="glass rounded-2xl p-5">
+              <p className="text-2xl font-bold text-nova-bright">{featured.length}</p>
+              <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Featured</p>
+            </div>
+            <div className="glass rounded-2xl p-5">
+              <p className="text-2xl font-bold text-plasma-bright">{all.length}</p>
+              <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Total</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Mutation feedback */}
@@ -2257,37 +2280,43 @@ export default function AdminPage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="approved">Approved</TabsTrigger>
-            <TabsTrigger value="featured">Featured</TabsTrigger>
-            <TabsTrigger value="rejected">
-              Rejected / Delisted
-              {rejectedCount > 0 && (
-                <span className="ml-2 bg-supernova/15 text-supernova/80 text-xs px-2 py-0.5 rounded-md">
-                  {rejectedCount}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="all">All Projects</TabsTrigger>
-            <TabsTrigger value="contract">
-              Contract
-              {ON_CHAIN_ENABLED && (
-                <span className="ml-2 bg-plasma/15 text-plasma-bright text-xs px-2 py-0.5 rounded-md">
-                  on-chain
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="maintainers">
-              Maintainer Apps
-              {maintainerApplications.length > 0 && (
-                <span className="ml-2 bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-md">
-                  {maintainerApplications.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="promos">Promo Codes</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="moderators">Moderators</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
+            {isAdmin && <TabsTrigger value="approved">Approved</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="featured">Featured</TabsTrigger>}
+            {isAdmin && (
+              <TabsTrigger value="rejected">
+                Rejected / Delisted
+                {rejectedCount > 0 && (
+                  <span className="ml-2 bg-supernova/15 text-supernova/80 text-xs px-2 py-0.5 rounded-md">
+                    {rejectedCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {isAdmin && <TabsTrigger value="all">All Projects</TabsTrigger>}
+            {isAdmin && (
+              <TabsTrigger value="contract">
+                Contract
+                {ON_CHAIN_ENABLED && (
+                  <span className="ml-2 bg-plasma/15 text-plasma-bright text-xs px-2 py-0.5 rounded-md">
+                    on-chain
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="maintainers">
+                Maintainer Apps
+                {maintainerApplications.length > 0 && (
+                  <span className="ml-2 bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-md">
+                    {maintainerApplications.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {isAdmin && <TabsTrigger value="promos">Promo Codes</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="moderators">Moderators</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="reports">Reports</TabsTrigger>}
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -2297,7 +2326,7 @@ export default function AdminPage() {
             ) : filteredPending.length > 0 ? (
               <div className="space-y-4">
                 {filteredPending.map((p) => (
-                  <PendingCard key={p.id} project={p} action={action} />
+                  <PendingCard key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -2313,14 +2342,16 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
-          {/* ── Approved tab ── */}
-          <TabsContent value="approved">
+          {isAdmin && (
+            <>
+              {/* ── Approved tab ── */}
+              <TabsContent value="approved">
             {approvedLoading ? (
               <Skeletons />
             ) : filteredApproved.length > 0 ? (
               <div className="space-y-2">
                 {filteredApproved.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -2345,7 +2376,7 @@ export default function AdminPage() {
             ) : filteredFeatured.length > 0 ? (
               <div className="space-y-2">
                 {filteredFeatured.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -2370,7 +2401,7 @@ export default function AdminPage() {
                 {filteredAll
                   .filter((p) => p.status === "rejected" || p.status === "delisted")
                   .map((p) => (
-                    <ProjectRow key={p.id} project={p} action={action} />
+                    <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                   ))}
               </div>
             ) : (
@@ -2467,7 +2498,7 @@ export default function AdminPage() {
             ) : filteredAll.length > 0 ? (
               <div className="space-y-2">
                 {filteredAll.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -2520,6 +2551,8 @@ export default function AdminPage() {
           <TabsContent value="reports">
             <ReportsTab token={token} />
           </TabsContent>
+            </>
+          )}
         </Tabs>
       </div>
     </div>

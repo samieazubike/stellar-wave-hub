@@ -97,6 +97,9 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
     addNote(trimmed);
   };
 
+  // Only admins can access notes
+  if (!user || user.role !== "admin") return null;
+
   return (
     <div className="mt-4 border-t border-dust/20 pt-3">
       {/* Toggle button */}

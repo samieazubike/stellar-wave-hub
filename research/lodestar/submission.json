@@ -1,0 +1,19 @@
+{
+  "name": "Lodestar",
+  "description": "Lodestar is an open-source experiment in discovering and evaluating automated services on Stellar. Payment support alone does not tell a software agent where to find a useful service or whether a provider has a credible track record. Lodestar addresses that gap with a Soroban service registry: providers advertise endpoints, prices and categories, while consumers query the registry instead of embedding every destination in application configuration.\n\nThe project separates discovery from agent identity. Its registry contract stores service records and reputation, and its agents contract manages credit scores and spending policies. Source review at commit 4841868a7caa confirms provider authorization during registration, caller authorization for reputation updates, pagination for discovery, and provider authorization for recording agent payments. These checks show how the current source approaches trust; they do not establish an independent audit or prove that deployed contracts use this exact revision.\n\nAn Express backend connects the contracts to transaction preparation and the demonstration services. A Next.js interface lets providers register services and lets users inspect the registry and agent leaderboard. Providers sign prepared transactions through their own wallet. A standalone consumer demonstrates discovering an endpoint and accessing a service through the x402 payment flow. This research examined documentation and implementation rather than making a payment or treating a marketing claim as settlement evidence.\n\nStellar supplies the ledger and Soroban execution environment. On 2026-10-24, direct testnet RPC queries returned contract-instance entries for both published contracts at ledger 5355490. Horizon also returned the documented demonstration account. The recorded response XDR binds each observed instance to its contract address. These are specific existence checks on testnet; they do not establish mainnet deployment, contract feature parity, revenue or production adoption.\n\nThe project repository documents participation in the tenth Stellar Wave Program through an application and a subsequent Drips Wave acceptance notification. Before refreshing this research, the complete public Hub catalog contained 36 approved projects and no matching project name, website or repository. Pending submissions are not visible through that catalog.\n\nLodestar fits the Infrastructure category because it provides discovery and reputation components for other applications. Public GitHub history and open contribution issues provide community evidence, but the sources reviewed do not establish a legal entity or a complete team roster. The README describes the deployment as an early-stage prototype and notes that demo scripts can inflate agent scores with synthetic activity. Consequently, visible leaderboard scores should not be interpreted as independently measured customer reliability. The project is best understood as a testnet research and developer infrastructure prototype with a useful separation of registry, identity and off-chain service access.",
+  "category": "Infrastructure",
+  "stellar_account_id": "GAY42LBQWN7LSFV3F6AFNEET2NVLY2JJ7KAEN4E5SNNT4RIEJLAQKGU3",
+  "stellar_contract_id": "CAKZALA72JTR6BV6N44E7L52C7QU5BAYYKVKYR2DFSV2YD2A2OI6WJMP",
+  "stellar_network": "testnet",
+  "tags": "soroban, service-discovery, agents, reputation, developer-tools, stellar-wave",
+  "website_url": "https://lodestar-ruddy.vercel.app",
+  "github_url": "https://github.com/Stellar-Ecosystem/lodestar",
+  "github_repos": [
+    {
+      "label": "Official Lodestar repository",
+      "url": "https://github.com/Stellar-Ecosystem/lodestar"
+    }
+  ],
+  "logo_url": "",
+  "research_images": []
+}

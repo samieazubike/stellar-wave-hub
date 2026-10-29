@@ -43,6 +43,7 @@ create table if not exists public.projects (
   user_id bigint not null,
   featured integer not null default 0,
   featured_tx_hash text,
+  featured_until timestamptz,
   featured_amount numeric default 100,
   featured_expires_at timestamptz,
   promo_code text,
@@ -62,6 +63,9 @@ create index if not exists projects_status_idx on public.projects (status);
 create index if not exists projects_category_idx on public.projects (category);
 create index if not exists projects_created_at_idx on public.projects (created_at desc);
 create index if not exists projects_user_id_idx on public.projects (user_id);
+create unique index if not exists projects_featured_tx_hash_unique_idx
+  on public.projects (featured_tx_hash)
+  where featured_tx_hash is not null;
 
 -- Maintainer category assignments
 -- Associates maintainers with the categories they can moderate
