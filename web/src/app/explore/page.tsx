@@ -193,7 +193,8 @@ function ExplorePageContent() {
 	}, [category, search, sort, substantialOnly, page]);
 
 	useEffect(() => {
-		fetchProjects();
+		const timer = window.setTimeout(() => void fetchProjects(), 0);
+		return () => window.clearTimeout(timer);
 	}, [fetchProjects]);
 
 	const toggleSubstantial = () =>

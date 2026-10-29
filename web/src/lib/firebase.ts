@@ -1,6 +1,8 @@
 import {createClient, type SupabaseClient} from "@supabase/supabase-js";
 
-type Row = Record<string, unknown>;
+// This compatibility layer mirrors Firestore's open-ended document data API.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Row = Record<string, any>;
 type FilterOp = "==" | "in";
 
 const TABLE_BY_COLLECTION: Record<string, string> = {
@@ -18,6 +20,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	project_updates: "project_updates",
 	promo_codes: "promo_codes",
 	reports: "reports",
+	hero_sponsors: "hero_sponsors",
 };
 
 function resolveTable(collection: string): string {
@@ -146,7 +149,7 @@ class DocRef {
 class QueryDocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, unknown>,
+		private readonly row: Row,
 	) {}
 
 	get id(): string {
@@ -154,7 +157,7 @@ class QueryDocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, unknown> {
+	data(): Row {
 		return this.row;
 	}
 }
@@ -162,7 +165,7 @@ class QueryDocumentSnapshot {
 class DocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, unknown> | null,
+		private readonly row: Row | null,
 	) {}
 
 	get exists(): boolean {
@@ -175,7 +178,7 @@ class DocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, unknown> | undefined {
+	data(): Row | undefined {
 		return this.row ?? undefined;
 	}
 }
