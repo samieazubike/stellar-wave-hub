@@ -22,3 +22,5 @@ export const adminUserListItemSchema = z
 
 export type AdminUserQuery = z.infer<typeof adminUserQuerySchema>;
 export type AdminUserListItem = z.infer<typeof adminUserListItemSchema>;
+export type UserRole = z.infer<typeof userRoleSchema>;
+export type ChangeUserRoleInput = z.infer<typeof changeUserRoleSchema>;

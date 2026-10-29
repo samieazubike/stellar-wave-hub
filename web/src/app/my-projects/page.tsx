@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
+import {FeatureButton} from "@/components/FeatureButton";
 import Link from "next/link";
 
 interface Project {
@@ -78,17 +79,17 @@ export default function MyProjectsPage() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (!token) {
-			setLoading(false);
-			return;
-		}
-		fetch("/api/projects/my", {
-			headers: {Authorization: `Bearer ${token}`},
-		})
-			.then((r) => r.json())
-			.then((data) => setProjects(data.projects || []))
-			.catch(() => {})
-			.finally(() => setLoading(false));
+		if (!token) return;
+		const timer = window.setTimeout(() => {
+			fetch("/api/projects/my", {
+				headers: {Authorization: `Bearer ${token}`},
+			})
+				.then((r) => r.json())
+				.then((data) => setProjects(data.projects || []))
+				.catch(() => {})
+				.finally(() => setLoading(false));
+		}, 0);
+		return () => window.clearTimeout(timer);
 	}, [token]);
 
 	if (!user) {
@@ -217,6 +218,23 @@ export default function MyProjectsPage() {
 								>
 									View
 								</Link>
+								<FeatureButton
+									projectId={project.id}
+									onActivated={(expiresAt) =>
+										setProjects((current) =>
+											current.map((item) =>
+												item.id === project.id
+													? {
+															...item,
+															featured: 1,
+															status: "featured",
+															featured_expires_at: expiresAt,
+														}
+													: item,
+											),
+										)
+									}
+								/>
 							</div>
 							<SpotlightRenewalBanner
 								expiresAt={project.featured_expires_at}
