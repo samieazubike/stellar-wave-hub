@@ -87,6 +87,9 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
     }
   }, [draft]);
 
+  // Only admins can access notes
+  if (!user || user.role !== "admin") return null;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = draft.trim();
