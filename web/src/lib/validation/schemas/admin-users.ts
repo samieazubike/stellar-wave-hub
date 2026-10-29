@@ -7,3 +7,6 @@ export const adminUserQuerySchema = z.object({
   role: userRoleSchema.optional(),
   page: z.coerce.number().int().min(1).max(100000).default(1),
 });
+
+export type UserRole = z.infer<typeof userRoleSchema>;
+export type ChangeUserRoleInput = z.infer<typeof changeUserRoleSchema>;

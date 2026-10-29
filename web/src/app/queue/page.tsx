@@ -6,6 +6,25 @@ import Link from "next/link";
 import SubmissionNotes from "@/components/SubmissionNotes";
 import { useAuth } from "@/context/AuthContext";
 import { hasMinRole } from "@/lib/roles";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 const CATEGORIES = [
   "DeFi",
@@ -48,6 +67,125 @@ interface ProjectMetadata {
   tags: string;
 }
 
+const REJECT_REASON_TEMPLATES = [
+  {
+    label: "Not part of the Stellar Wave Program",
+    text: "This project does not appear to be part of the Stellar Wave Program.",
+  },
+  {
+    label: "Unverifiable on-chain account/contract ID",
+    text: "The Stellar account ID / Soroban contract ID provided could not be verified on-chain.",
+  },
+  {
+    label: "Description too short or not original",
+    text: "The description doesn't meet the minimum length, or appears to be copied rather than original.",
+  },
+  {
+    label: "Category/tags don't match the project",
+    text: "The category and/or tags don't accurately reflect what this project does.",
+  },
+  {
+    label: "Duplicate submission",
+    text: "This project has already been submitted.",
+  },
+  {
+    label: "Other / write a custom reason",
+    text: "",
+  },
+] as const;
+
+function RejectDialog({
+  project,
+  onConfirm,
+  isPending,
+}: {
+  project: QueueProject;
+  onConfirm: (reason: string) => void;
+  isPending: boolean;
+}) {
+  const [reason, setReason] = useState("");
+  const [template, setTemplate] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const reset = () => {
+    setReason("");
+    setTemplate("");
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <button
+          type="button"
+          disabled={isPending}
+          className="bg-supernova/15 hover:bg-supernova/25 text-supernova border border-supernova/20 font-medium text-xs px-3 py-1.5 rounded-xl transition-all disabled:opacity-50"
+        >
+          Reject
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Reject &ldquo;{project.name}&rdquo;?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This project will be moved to rejected status and won&apos;t appear in the public directory.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-moonlight">
+              Template <span className="text-ash">(optional)</span>
+            </label>
+            <Select
+              value={template}
+              onValueChange={(value) => {
+                setTemplate(value);
+                const picked = REJECT_REASON_TEMPLATES.find((t) => t.label === value);
+                setReason(picked?.text ?? "");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a reason template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {REJECT_REASON_TEMPLATES.map((t) => (
+                  <SelectItem key={t.label} value={t.label}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-moonlight">
+              Reason <span className="text-ash">(optional)</span>
+            </label>
+            <Textarea
+              placeholder="e.g. Not a Stellar Wave project, insufficient description..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={reset}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm(reason);
+              reset();
+              setOpen(false);
+            }}
+          >
+            Reject Project
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function timeAgo(dateStr: string) {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
@@ -88,6 +226,42 @@ export default function QueuePage() {
     // Refetch either way so the button reflects the server's view of the claim.
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["project-queue"] });
+    },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: async ({
+      id,
+      action,
+      body,
+    }: {
+      id: number;
+      action: "approve" | "reject";
+      body?: Record<string, unknown>;
+    }) => {
+      if (!token) throw new Error("Please sign in to review projects");
+      const res = await fetch(`/api/projects/${id}/${action}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body || {}),
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        throw new Error(resData.error || `Failed to ${action} project`);
+      }
+      return resData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-queue"] });
+    },
+    onError: (error) => {
+      setErrorToast((current) => ({
+        message: error instanceof Error ? error.message : "Failed to review project",
+        id: (current?.id ?? 0) + 1,
+      }));
     },
   });
 
@@ -399,37 +573,101 @@ export default function QueuePage() {
                     const claimedByMe = project.claimed_by === user!.id;
                     const claimedByOther = project.claimed_by !== null && !claimedByMe;
                     const busy = pendingId === project.id;
+                    const reviewBusy =
+                      reviewMutation.isPending && reviewMutation.variables?.id === project.id;
                     return (
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        {project.claimed_by === null ? (
+                      <div className="mt-4 pt-3 border-t border-dust/20 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {project.claimed_by === null ? (
+                            <button
+                              type="button"
+                              onClick={() => claimMutation.mutate({ id: project.id, action: "claim" })}
+                              disabled={busy || reviewBusy}
+                              className="btn-nova text-xs disabled:opacity-50"
+                            >
+                              {busy ? "Claiming..." : "Claim"}
+                            </button>
+                          ) : (claimedByMe || isAdmin) ? (
+                            <button
+                              type="button"
+                              onClick={() => claimMutation.mutate({ id: project.id, action: "release" })}
+                              disabled={busy || reviewBusy}
+                              className="btn-ghost text-xs disabled:opacity-50"
+                            >
+                              {busy ? "Releasing..." : claimedByMe ? "Release" : "Force release"}
+                            </button>
+                          ) : null}
+                          {claimedByOther && (
+                            <span className="text-xs text-solar-bright">
+                              Claimed by another reviewer — approve/reject with care
+                            </span>
+                          )}
+                          {errorId === project.id && (
+                            <span role="alert" className="text-xs text-supernova">
+                              {claimMutation.error?.message}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Review controls for maintainer+ */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            href={`/projects/${project.slug}`}
+                            className="btn-ghost text-xs !py-1.5 !px-3"
+                            target="_blank"
+                          >
+                            Preview
+                          </Link>
                           <button
                             type="button"
-                            onClick={() => claimMutation.mutate({ id: project.id, action: "claim" })}
-                            disabled={busy}
-                            className="btn-nova text-xs disabled:opacity-50"
+                            disabled={reviewBusy || busy}
+                            onClick={() =>
+                              reviewMutation.mutate({
+                                id: project.id,
+                                action: "approve",
+                                body: { featured: false },
+                              })
+                            }
+                            className="bg-aurora/15 hover:bg-aurora/25 text-aurora-bright border border-aurora/20 font-medium text-xs px-3 py-1.5 rounded-xl transition-all disabled:opacity-50"
                           >
-                            {busy ? "Claiming..." : "Claim"}
+                            {reviewBusy &&
+                            reviewMutation.variables?.action === "approve" &&
+                            !reviewMutation.variables?.body?.featured
+                              ? "Approving..."
+                              : "Approve"}
                           </button>
-                        ) : (claimedByMe || isAdmin) ? (
-                          <button
-                            type="button"
-                            onClick={() => claimMutation.mutate({ id: project.id, action: "release" })}
-                            disabled={busy}
-                            className="btn-ghost text-xs disabled:opacity-50"
-                          >
-                            {busy ? "Releasing..." : claimedByMe ? "Release" : "Force release"}
-                          </button>
-                        ) : null}
-                        {claimedByOther && (
-                          <span className="text-xs text-solar-bright">
-                            Claimed by another reviewer — approve/reject with care
-                          </span>
-                        )}
-                        {errorId === project.id && (
-                          <span role="alert" className="text-xs text-supernova">
-                            {claimMutation.error?.message}
-                          </span>
-                        )}
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              disabled={reviewBusy || busy}
+                              onClick={() =>
+                                reviewMutation.mutate({
+                                  id: project.id,
+                                  action: "approve",
+                                  body: { featured: true },
+                                })
+                              }
+                              className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-xs px-3 py-1.5 rounded-xl transition-all disabled:opacity-50"
+                            >
+                              {reviewBusy &&
+                              reviewMutation.variables?.action === "approve" &&
+                              reviewMutation.variables?.body?.featured
+                                ? "Featuring..."
+                                : "Feature"}
+                            </button>
+                          )}
+                          <RejectDialog
+                            project={project}
+                            isPending={reviewBusy || busy}
+                            onConfirm={(reason) =>
+                              reviewMutation.mutate({
+                                id: project.id,
+                                action: "reject",
+                                body: { reason: reason || undefined },
+                              })
+                            }
+                          />
+                        </div>
                       </div>
                     );
                   })()}

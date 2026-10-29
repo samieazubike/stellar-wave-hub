@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
+import {FeatureButton} from "@/components/FeatureButton";
 import Link from "next/link";
 
 interface Project {
@@ -230,6 +231,23 @@ export default function MyProjectsPage() {
 								>
 									View
 								</Link>
+								<FeatureButton
+									projectId={project.id}
+									onActivated={(expiresAt) =>
+										setProjects((current) =>
+											current.map((item) =>
+												item.id === project.id
+													? {
+															...item,
+															featured: 1,
+															status: "featured",
+															featured_expires_at: expiresAt,
+														}
+													: item,
+											),
+										)
+									}
+								/>
 							</div>
 							<SpotlightRenewalBanner
 								expiresAt={project.featured_expires_at}

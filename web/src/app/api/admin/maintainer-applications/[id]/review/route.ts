@@ -36,6 +36,9 @@ export async function POST(
     });
 
     const userId = appData.user_id;
+    if (typeof userId !== "string" && typeof userId !== "number") {
+      return Response.json({ error: "Invalid applicant user ID" }, { status: 400 });
+    }
 
     // If approved, promote — but never demote someone who already outranks maintainer.
     if (status === "approved") {

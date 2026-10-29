@@ -1,6 +1,8 @@
 import {createClient, type SupabaseClient} from "@supabase/supabase-js";
 
-type Row = Record<string, unknown>;
+// This compatibility layer mirrors Firestore's open-ended document data API.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Row = Record<string, any>;
 type FilterOp = "==" | "in";
 
 const TABLE_BY_COLLECTION: Record<string, string> = {
@@ -18,6 +20,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	project_updates: "project_updates",
 	promo_codes: "promo_codes",
 	reports: "reports",
+	hero_sponsors: "hero_sponsors",
 };
 
 function resolveTable(collection: string): string {

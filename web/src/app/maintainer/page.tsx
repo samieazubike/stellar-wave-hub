@@ -76,19 +76,27 @@ export default function MaintainerDashboardPage() {
     if (authLoading) return;
 
     if (!user) {
+      const countdownTimer = setTimeout(() => setRedirectCountdown(3), 0);
       const timer = setTimeout(() => {
         setRedirectCountdown(3);
         router.replace("/login?redirect=/maintainer");
-      }, 0);
-      return () => clearTimeout(timer);
+      }, 3000);
+      return () => {
+        clearTimeout(countdownTimer);
+        clearTimeout(timer);
+      };
     }
 
     if (!hasMinRole(user.role, "maintainer")) {
+      const countdownTimer = setTimeout(() => setRedirectCountdown(3), 0);
       const timer = setTimeout(() => {
         setRedirectCountdown(3);
         router.replace("/explore");
-      }, 0);
-      return () => clearTimeout(timer);
+      }, 3000);
+      return () => {
+        clearTimeout(countdownTimer);
+        clearTimeout(timer);
+      };
     }
   }, [user, authLoading, router]);
 

@@ -13,8 +13,13 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     try { payload = await request.json(); } catch { return Response.json({ error: "Invalid JSON" }, { status: 400 }); }
     const parsed = changeUserRoleSchema.safeParse(payload);
     if (!parsed.success) return Response.json({ error: "Invalid role" }, { status: 400 });
+    const targetId = Number(id);
+    // Self-demotion is refused up front; the DB function also repeats the last-admin guard under lock.
+    if (targetId === actor.userId && parsed.data.role !== "admin") {
+      return Response.json({ error: "Cannot demote yourself or the last admin" }, { status: 409 });
+    }
     // The DB function serializes changes and repeats current-admin/last-admin guards.
-    const { data, error } = await getSupabase().rpc("admin_change_user_role", { actor_id: actor.userId, target_id: Number(id), new_role: parsed.data.role });
+    const { data, error } = await getSupabase().rpc("admin_change_user_role", { actor_id: actor.userId, target_id: targetId, new_role: parsed.data.role });
     if (error) {
       const responses: Record<string, [number, string]> = {
         "42501": [403, "Forbidden"], "P0002": [404, "User not found"],
