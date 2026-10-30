@@ -13,6 +13,7 @@ interface Project {
 	category: string;
 	status: string;
 	featured: number;
+	featured_expires_at?: string;
 	featured_expires_at?: string | null;
 	avg_rating?: number;
 	rating_count?: number;
@@ -27,6 +28,19 @@ const statusStyles: Record<string, string> = {
 	rejected: "tag-supernova",
 };
 
+/** Days purchased per spotlight activation (server default: 30). */
+const SPOTLIGHT_DAYS = 30;
+
+/**
+ * A spotlight is active while the project is featured and its expiry is
+ * still in the future — this decides between the "Extend" and "Feature"
+ * labels (issue #453).
+ */
+function isSpotlightActive(project: Project): boolean {
+	return (
+		project.featured === 1 &&
+		!!project.featured_expires_at &&
+		new Date(project.featured_expires_at).getTime() > Date.now()
 // Spotlight renewal nudge: prompt a repeat purchase once the spotlight is close to ending.
 const RENEWAL_WINDOW_DAYS = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -77,6 +91,9 @@ export default function MyProjectsPage() {
 	const {user, token} = useAuth();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [activatingId, setActivatingId] = useState<number | null>(null);
+	const [spotlightReceipt, setSpotlightReceipt] = useState<Record<number, string>>({});
+	const [spotlightErrors, setSpotlightErrors] = useState<Record<number, string>>({});
 
 	useEffect(() => {
 		if (!token) return;
@@ -91,6 +108,55 @@ export default function MyProjectsPage() {
 		}, 0);
 		return () => window.clearTimeout(timer);
 	}, [token]);
+
+	/**
+	 * Activate (or extend) the project's featured spotlight. The server adds
+	 * the purchased days to the current expiry while the spotlight is active,
+	 * and responds with the new expiry, which we show as a receipt (issue #453).
+	 */
+	const handleSpotlight = async (project: Project) => {
+		setActivatingId(project.id);
+		setSpotlightErrors((prev) => ({...prev, [project.id]: ""}));
+		try {
+			const res = await fetch("/api/featured/activate", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({
+					project_id: project.id,
+					duration_days: SPOTLIGHT_DAYS,
+				}),
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				throw new Error(data.error || "Spotlight activation failed");
+			}
+			const expiresAt = String(data.expires_at);
+			setSpotlightReceipt((prev) => ({...prev, [project.id]: expiresAt}));
+			setProjects((prev) =>
+				prev.map((p) =>
+					p.id === project.id
+						? {
+								...p,
+								featured: 1,
+								status: "featured",
+								featured_expires_at: expiresAt,
+						  }
+						: p,
+				),
+			);
+		} catch (err) {
+			setSpotlightErrors((prev) => ({
+				...prev,
+				[project.id]:
+					err instanceof Error ? err.message : "Spotlight activation failed",
+			}));
+		} finally {
+			setActivatingId(null);
+		}
+	};
 
 	if (!user) {
 		return (
@@ -168,6 +234,10 @@ export default function MyProjectsPage() {
 									{project.featured === 1 && (
 										<span className="tag tag-solar">
 											Featured
+											{project.featured_expires_at &&
+												` until ${new Date(
+													project.featured_expires_at,
+												).toLocaleDateString()}`}
 										</span>
 									)}
 								</div>
@@ -206,6 +276,21 @@ export default function MyProjectsPage() {
 										</span>
 									</div>
 								)}
+								{(project.status === "approved" ||
+									isSpotlightActive(project)) && (
+									<button
+										type="button"
+										onClick={() => handleSpotlight(project)}
+										disabled={activatingId === project.id}
+										className="btn-nova text-sm !py-1.5 !px-3"
+									>
+										{activatingId === project.id
+											? "Processing..."
+											: isSpotlightActive(project)
+												? "Extend"
+												: "Feature"}
+									</button>
+								)}
 								<Link
 									href={`/projects/${project.slug}/edit`}
 									className="btn-ghost text-sm !py-1.5 !px-3"
@@ -236,6 +321,19 @@ export default function MyProjectsPage() {
 									}
 								/>
 							</div>
+							{spotlightErrors[project.id] && (
+								<p className="text-sm text-supernova sm:basis-full">
+									{spotlightErrors[project.id]}
+								</p>
+							)}
+							{spotlightReceipt[project.id] && (
+								<p className="text-xs text-solar-bright sm:basis-full">
+									Spotlight confirmed — new expiry:{" "}
+									{new Date(
+										spotlightReceipt[project.id],
+									).toLocaleString()}
+								</p>
+							)}
 							<SpotlightRenewalBanner
 								expiresAt={project.featured_expires_at}
 								slug={project.slug}
