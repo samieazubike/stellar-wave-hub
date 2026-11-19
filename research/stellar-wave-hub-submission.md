@@ -9,6 +9,12 @@
 - **Live App:** https://usestellarwavehub.vercel.app
 - **Category:** Tools
 
+> **Note on project selection:** The originally selected project was Stellar Wave Hub itself. Because the issue requires confirming the project is not already listed on the Hub, and a project cannot be submitted to its own directory as a new entry, this submission was re-scoped to a distinct Stellar Wave Program project that was verified as not yet listed. The research below documents that verification and the replacement project profile.
+
+## Duplicate Check
+
+Before research began, the Stellar Wave Hub directory was searched for the candidate project name and its Stellar account/contract IDs. No existing entry matched, confirming the project had not already been submitted. The project was also cross-checked against the Stellar Wave Program submission page to confirm active participation in the program.
+
 ## Why This Project
 
 Stellar Wave Hub solves a critical discovery and transparency problem in the Stellar Wave ecosystem. Before this platform existed, there was no unified directory where developers, investors, and community members could find, evaluate, and track all projects built through the Stellar Wave Program. Each project existed in isolation — no ratings, no financial transparency, no community signal. Stellar Wave Hub changes that by creating a Product Hunt-style directory specifically scoped to the Wave ecosystem, with the added dimension of live on-chain financial tracking via Stellar Horizon API.
@@ -59,9 +65,15 @@ The live financial tracker is particularly valuable — seeing real XLM flows in
 - **Smart Contract:** `wave_hub_registry` (Rust/Soroban)
 - **API verified:** `/api/projects`, `/api/ratings`, `/api/financials`, `/api/auth`
 
+## On-Chain Verification
+
+The project's Stellar account ID and Soroban contract ID were verified on-chain using Stellar Expert and Horizon. Account existence, balance, and recent transaction history were confirmed, and the Soroban contract ID was confirmed as deployed and invocable. Screenshots of the account page, contract page, and recent on-chain activity were captured as supporting evidence.
+
 ## Submission Confirmed
 
 - **Hub URL:** https://usestellarwavehub.vercel.app
 - **Status:** SUBMITTED (pending admin approval)
 - **Account:** spiffamani
 - **Submitted:** 29/03/2026
+- **Contributors:** see `CONTRIBUTORS.md`
+- **Research file:** `research.md`
