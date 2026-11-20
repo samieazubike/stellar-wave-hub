@@ -411,39 +411,4 @@
           "id": 13,
           "name": "OFFER-HUB",
           "website_url": "https://www.offer-hub.org",
-          "github_url": "https://github.com/OFFER-HUB/offer-hub-monorepo",
-          "github_repos": []
-        },
-        {
-          "id": 5,
-          "name": "Neko Protocol",
-          "website_url": "https://nekoprotocol.xyz",
-          "github_url": "https://github.com/Neko-Protocol/neko-contracts",
-          "github_repos": []
-        },
-        {
-          "id": 2,
-          "name": "Trustless Work Smart Escrow",
-          "website_url": "https://www.trustlesswork.com",
-          "github_url": "https://github.com/Trustless-Work/Trustless-Work-Smart-Escrow",
-          "github_repos": []
-        }
-      ],
-      "pagination": {
-        "page": 1,
-        "limit": 50,
-        "total": 36,
-        "pages": 1
-      },
-      "canonicalResponseSha256": "3c24895eccb89e18d3f5c0e69531c5582fb5b5febac5c4ad824241c76c61ffa9"
-    }
-  ],
-  "matches": [],
-  "matchFields": [
-    "name",
-    "website_url",
-    "github_url",
-    "github_repos.url"
-  ],
-  "pendingSubmissions": "Not exposed by the public catalog"
-}
+          "github_url": "https://gi
