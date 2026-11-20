@@ -1,5 +1,9 @@
 {
   "checkedAt": "2026-10-24T00:15:21.007218+00:00",
+  "hubDuplicateCheck": {
+    "status": "pending-manual-verification",
+    "note": "Search Stellar Wave Hub for 'lodestar' and the repository URL before submission; confirm no existing listing before proceeding."
+  },
   "repository": "https://github.com/Stellar-Ecosystem/lodestar",
   "sourceCommit": "4841868a7caa8f13cd396eb1a482afbbd5664387",
   "files": [
