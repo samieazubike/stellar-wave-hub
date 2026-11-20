@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   MAX_MEMO_BYTES,
+  PRODUCTS,
   PRODUCT_IDS,
   buildMemo,
   getPrice,
@@ -85,6 +86,16 @@ describe("lib/pricing", () => {
     expect(getPrice("pro")).toBe(201);
     expect(getPrice("job_post")).toBe(31);
     expect(getPrice("api_pro")).toBe(25.5);
+  });
+
+  it("PRODUCTS lists every product and its defaults match getPrice() with env unset", () => {
+    clearPriceEnv();
+    expect(Object.keys(PRODUCTS).sort()).toEqual([...PRODUCT_IDS].sort());
+    for (const id of PRODUCT_IDS) {
+      expect(getPrice(id)).toBe(PRODUCTS[id].defaultPriceXlm);
+      expect(getProduct(id).memoPrefix).toBe(PRODUCTS[id].memoPrefix);
+      expect(getProduct(id).durationDays).toBe(PRODUCTS[id].durationDays);
+    }
   });
 
   it("treats a blank env value as unset", () => {

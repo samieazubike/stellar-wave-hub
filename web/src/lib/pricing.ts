@@ -37,7 +37,8 @@ export interface Product {
   tiers?: FeaturedTier[];
 }
 
-interface ProductDefinition {
+/** Static definition of a product. The live price comes from `getPrice()`. */
+export interface ProductDefinition {
   label: string;
   durationDays: number | null;
   memoPrefix: string;
@@ -51,9 +52,21 @@ export const MAX_MEMO_BYTES = 28;
 
 const SPOTLIGHT_DEFAULT_DAYS = 30;
 
-// `spotlight` is tiered and is priced from NEXT_PUBLIC_FEATURED_TIERS
-// (see featured-pricing.ts), so it has no entry here.
-const FLAT_PRICED: Record<Exclude<ProductId, "spotlight">, ProductDefinition> = {
+/**
+ * Every paid product. Prices here are defaults; read the live price with
+ * `getPrice()`, which applies the env override.
+ */
+export const PRODUCTS: Readonly<Record<ProductId, ProductDefinition>> = {
+  // Tiered: priced per duration from NEXT_PUBLIC_FEATURED_TIERS (see
+  // featured-pricing.ts). Its price here is the default 30-day tier.
+  spotlight: {
+    label: "Featured spotlight",
+    durationDays: SPOTLIGHT_DEFAULT_DAYS,
+    memoPrefix: "spotlight",
+    defaultPriceXlm: 50,
+    envVar: "NEXT_PUBLIC_FEATURED_TIERS",
+    readEnv: () => process.env.NEXT_PUBLIC_FEATURED_TIERS,
+  },
   category_sponsor: {
     label: "Category sponsor (1 week)",
     durationDays: 7,
@@ -150,15 +163,15 @@ export function getProduct(product: ProductKey): Product {
     const defaultTier = tiers.find((tier) => tier.days === SPOTLIGHT_DEFAULT_DAYS) ?? tiers[0];
     return {
       id: product,
-      label: "Featured spotlight",
+      label: PRODUCTS.spotlight.label,
       priceXlm: defaultTier.priceXlm,
       durationDays: defaultTier.days,
-      memoPrefix: "spotlight",
+      memoPrefix: PRODUCTS.spotlight.memoPrefix,
       tiers,
     };
   }
 
-  const def = FLAT_PRICED[product];
+  const def = PRODUCTS[product];
   return {
     id: product,
     label: def.label,
@@ -196,7 +209,7 @@ export function buildMemo(product: ProductId, ...parts: Array<string | number>):
 
 function getMemoPrefix(product: string): string {
   assertProductId(product);
-  return product === "spotlight" ? "spotlight" : FLAT_PRICED[product].memoPrefix;
+  return PRODUCTS[product].memoPrefix;
 }
 
 /** Spotlight duration tiers (7 / 30 / 90 days), from NEXT_PUBLIC_FEATURED_TIERS. */
