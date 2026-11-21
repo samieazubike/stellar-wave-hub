@@ -1,4 +1,4 @@
-import { createNotification, usersCol, maintainerCategoriesCol } from "./db";
+import { createNotification, usersCol } from "./db";
 import { getSupabase } from "./firebase";
 
 /**

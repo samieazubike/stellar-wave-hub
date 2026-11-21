@@ -1,7 +1,5 @@
 import { ratingsCol, ratingVotesCol, nextId } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/validation/parse-body";
-import { voteRatingSchema } from "@/lib/validation/schemas/ratings";
 
 export const dynamic = "force-dynamic";
 

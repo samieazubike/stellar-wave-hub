@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useMemo, useState, useCallback, Suspense} from "react";
+import {useEffect, useMemo, useState, useCallback} from "react";
 import {useRouter, useSearchParams, usePathname} from "next/navigation";
 import ProjectCard from "@/components/ProjectCard";
 
@@ -106,7 +106,6 @@ function ExplorePageContent() {
 		pages: 0,
 	});
 	const [loading, setLoading] = useState(true);
-	const [httpPage, setHttpPage] = useState(1);
 
 	// The URL is the single source of truth for the view, so reloads, shared
 	// links and back/forward all restore the same filters.
@@ -150,7 +149,6 @@ function ExplorePageContent() {
 			const data = await res.json();
 			setProjects(data.projects || []);
 			setPagination((prev) => ({...prev, ...data.pagination}));
-			setHttpPage(data.pagination?.page ?? page);
 		} catch {
 			setProjects([]);
 		}
@@ -158,8 +156,9 @@ function ExplorePageContent() {
 	}, [category, search, sort, substantialOnly, page]);
 
 	useEffect(() => {
-		const timer = window.setTimeout(() => void fetchProjects(), 0);
-		return () => window.clearTimeout(timer);
+		void (async () => {
+			await fetchProjects();
+		})();
 	}, [fetchProjects]);
 
 	const toggleSubstantial = () =>
@@ -236,11 +235,11 @@ function ExplorePageContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						>
+					>
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
 					</svg>
-						<input
+					<input
 						type="text"
 						placeholder="Search projects..."
 						className="input-field !pl-11"
@@ -287,7 +286,7 @@ function ExplorePageContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						>
+					>
 						<polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
 					</svg>
 					Substantial only
@@ -303,11 +302,11 @@ function ExplorePageContent() {
 						className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
 							category === cat
 								? "bg-nova text-white glow-nova"
-							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+								: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
 						}`.trim()}
-						>
+					>
 						{cat}
-						</button>
+					</button>
 				))}
 			</div>
 
@@ -358,7 +357,7 @@ function ExplorePageContent() {
 							<button
 								disabled={pagination.page <= 1}
 								onClick={() => handlePageChange(pagination.page - 1)}
-							className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+								className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
 							>
 								<svg
 									width="16"
@@ -377,7 +376,7 @@ function ExplorePageContent() {
 							<button
 								disabled={pagination.page >= pagination.pages}
 								onClick={() => handlePageChange(pagination.page + 1)}
-							className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+								className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
 							>
 								<svg
 									width="16"
@@ -385,7 +384,6 @@ function ExplorePageContent() {
 									viewBox="0 0 24 24"
 									fill="none"
 									stroke="currentColor"
-									strokeWidth="2"
 								>
 									<path d="m9 18 6-6-6-6" />
 								</svg>
@@ -393,37 +391,9 @@ function ExplorePageContent() {
 						</div>
 					)}
 				</>
-			) : (
-				<div className="glass rounded-2xl p-16 text-center">
-					<div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-stardust/50 flex items-center justify-center">
-						<svg
-							width="28"
-							height="28"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="var(--ash)"
-							strokeWidth="1.5"
-						>
-							<circle cx="11" cy="11" r="8" />
-							<path d="m21 21-4.3-4.3" />
-						</svg>
-					</div>
-					<h3 className="font-semibold text-lg text-moonlight mb-2">
-						No projects found
-					</h3>
-					<p className="text-ash">
-						Some projects may not be available yet. Try adjusting your search or filters.
-					</p>
-				</div>
-			)}
+			) : null}
 		</div>
 	);
 }
 
-export default function ExplorePage() {
-	return (
-		<Suspense fallback={null}>
-			<ExplorePageContent />
-		</Suspense>
-	);
-}
+export default ExplorePageContent;
