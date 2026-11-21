@@ -597,6 +597,7 @@ export default function EditProjectPage() {
                       <div key={`existing-${i}`} className="relative group">
                         <img
                           src={src}
+                          // eslint-disable-next-line @next/next/no-img-element
                           alt={`Research ${i + 1}`}
                           className="w-24 h-24 object-cover rounded-xl border border-dust/30"
                         />
@@ -646,6 +647,7 @@ export default function EditProjectPage() {
                       <div key={`new-${i}`} className="relative group">
                         <img
                           src={src}
+                          // eslint-disable-next-line @next/next/no-img-element
                           alt={`New ${i + 1}`}
                           className="w-24 h-24 object-cover rounded-xl border border-nova/30"
                         />

@@ -369,6 +369,7 @@ export default function ProfilePage() {
                 <p className="text-xs text-supernova mt-1">{avatarError}</p>
               )}
             </div>
+            </div>
           </div>
         </div>
       </div>
