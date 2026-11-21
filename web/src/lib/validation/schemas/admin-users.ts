@@ -8,5 +8,19 @@ export const adminUserQuerySchema = z.object({
   page: z.coerce.number().int().min(1).max(100000).default(1),
 });
 
+export const ADMIN_USERS_PAGE_SIZE = 25;
+
+export const adminUserListItemSchema = z
+  .object({
+    id: z.string(),
+    username: z.string(),
+    email: z.string(),
+    role: userRoleSchema,
+    created_at: z.string(),
+  })
+  .strict();
+
+export type AdminUserQuery = z.infer<typeof adminUserQuerySchema>;
+export type AdminUserListItem = z.infer<typeof adminUserListItemSchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type ChangeUserRoleInput = z.infer<typeof changeUserRoleSchema>;
