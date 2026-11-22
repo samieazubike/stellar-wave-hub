@@ -158,7 +158,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="X"
 		/></a>
 		<br />
-		<sub>Researcher — Finclusive Stellar Anchor, OFFER-HUB Identity</sub>
+		<sub>Researcher — Finclusive Stellar Anchor, OFFER-HUB Identity, Soroban Security Scanner</sub>
 	</div>
 
 	<div
