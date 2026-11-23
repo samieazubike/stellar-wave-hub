@@ -21,6 +21,9 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	promo_codes: "promo_codes",
 	reports: "reports",
 	hero_sponsors: "hero_sponsors",
+	referrals: "referrals",
+	notifications_read: "notifications_read",
+	notifications_read_status: "notifications_read",
 };
 
 function resolveTable(collection: string): string {
@@ -237,7 +240,7 @@ class QueryRef {
 	} {
 		return {
 			batch: () => {
-				const operations: Array< () => Promise<void>> = [];
+				const operations: Array<() => Promise<void>> = [];
 				return {
 					delete: (ref: DocRef) => {
 						operations.push(() => ref.delete());
