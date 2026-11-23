@@ -1,8 +1,11 @@
 "use client";
 
-import {useEffect, useMemo, useState, useCallback, Suspense} from "react";
+import {useEffect, useMemo, useState, useCallback, useRef, Suspense} from "react";
 import {useRouter, useSearchParams, usePathname} from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import ProjectCard from "@/components/ProjectCard";
+import {useRecentlyViewed} from "@/lib/useRecentlyViewed";
 
 const CATEGORIES = [
 	"All",
@@ -53,6 +56,24 @@ function normalizePage(value: string | null): number {
 /** Position (0-based) at which the sponsored card is inserted. */
 const SPONSORED_SLOT = 3;
 
+const LAST_RANDOM_SLUG_KEY = "swh_last_random_slug";
+
+function readLastRandomSlug(): string | null {
+        try {
+                return window.sessionStorage.getItem(LAST_RANDOM_SLUG_KEY);
+        } catch {
+                return null;
+        }
+}
+
+function writeLastRandomSlug(slug: string) {
+        try {
+                window.sessionStorage.setItem(LAST_RANDOM_SLUG_KEY, slug);
+        } catch {
+                // Session storage is optional; the exclude param still works within this view.
+        }
+}
+
 interface Project {
 	id: number;
 	name: string;
@@ -97,6 +118,7 @@ function ExplorePageContent() {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const queryString = searchParams.toString();
+	const {recent: recentlyViewed, clear: clearRecentlyViewed} = useRecentlyViewed();
 
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [pagination, setPagination] = useState<Pagination>({
@@ -107,6 +129,9 @@ function ExplorePageContent() {
 	});
 	const [loading, setLoading] = useState(true);
 	const [httpPage, setHttpPage] = useState(1);
+	const [randomLoading, setRandomLoading] = useState(false);
+	const [randomError, setRandomError] = useState<string | null>(null);
+	const lastRandomSlug = useRef<string | null>(null);
 
 	// The URL is the single source of truth for the view, so reloads, shared
 	// links and back/forward all restore the same filters.
@@ -129,6 +154,35 @@ function ExplorePageContent() {
 		},
 		[queryString, pathname, router],
 	);
+
+	// "Surprise me" (#513): open a random approved project, excluding the one
+	// the previous click landed on so repeated clicks do not repeat.
+	const handleSurprise = useCallback(async () => {
+		if (randomLoading) return;
+		setRandomLoading(true);
+		setRandomError(null);
+		try {
+			const previous = lastRandomSlug.current ?? readLastRandomSlug();
+			const params = new URLSearchParams();
+			if (previous) params.set("exclude", previous);
+
+			const res = await fetch(`/api/projects/random?${params}`, {cache: "no-store"});
+			const data = await res.json();
+			if (!res.ok || typeof data.slug !== "string" || !data.slug) {
+				throw new Error(
+					typeof data.error === "string" ? data.error : "No project found",
+				);
+			}
+
+			lastRandomSlug.current = data.slug;
+			writeLastRandomSlug(data.slug);
+			router.push(`/projects/${data.slug}`);
+		} catch {
+			setRandomError("Couldn't find a random project. Try again.");
+		} finally {
+			setRandomLoading(false);
+		}
+	}, [randomLoading, router]);
 
 	// ------------------------------------------------------------------ //
 	// Fetch organic results                                                //
@@ -214,13 +268,44 @@ function ExplorePageContent() {
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 			{/* Header */}
-			<div className="mb-10 animate-in">
-				<h1 className="font-display font-bold text-3xl sm:text-4xl text-starlight mb-2">
-					Explore Projects
-				</h1>
-				<p className="text-ash text-lg">
-					Discover projects built through the Stellar Wave Program
-				</p>
+			<div className="mb-10 animate-in flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+				<div>
+					<h1 className="font-display font-bold text-3xl sm:text-4xl text-starlight mb-2">
+						Explore Projects
+					</h1>
+					<p className="text-ash text-lg">
+						Discover projects built through the Stellar Wave Program
+					</p>
+				</div>
+				<div className="flex flex-col items-start sm:items-end gap-1.5">
+					<button
+						type="button"
+						onClick={handleSurprise}
+						disabled={randomLoading}
+						aria-busy={randomLoading}
+						className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-nova text-white glow-nova hover:bg-nova/90 disabled:opacity-60 disabled:cursor-wait transition-all"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1" />
+						</svg>
+						{randomLoading ? "Finding a project..." : "Surprise me"}
+					</button>
+					{randomError && (
+						<p role="alert" className="text-xs text-supernova">
+							{randomError}
+						</p>
+					)}
+				</div>
 			</div>
 
 			<div className="flex flex-col lg:flex-row gap-4 mb-8 animate-in animate-in-delay-1">
@@ -310,6 +395,57 @@ function ExplorePageContent() {
 						</button>
 				))}
 			</div>
+
+			{/* Recently viewed (#509) */}
+			{recentlyViewed.length > 0 && (
+				<section aria-label="Recently viewed projects" className="mb-8 animate-in">
+					<div className="flex items-center justify-between gap-4 mb-3">
+						<h2 className="text-xs font-semibold uppercase tracking-wider text-ash">
+							Recently viewed
+						</h2>
+						<button
+							type="button"
+							onClick={clearRecentlyViewed}
+							className="text-xs font-medium text-ash hover:text-starlight transition-colors"
+						>
+							Clear
+						</button>
+					</div>
+					<div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+						{recentlyViewed.map((project) => (
+							<Link
+								key={project.slug}
+								href={`/projects/${project.slug}`}
+								className="shrink-0 flex items-center gap-2.5 max-w-[220px] rounded-xl bg-stardust/50 hover:bg-stardust px-3 py-2 transition-colors"
+							>
+								<span className="w-8 h-8 rounded-lg bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-sm font-bold text-nova-bright overflow-hidden">
+									{project.logo_url ? (
+										<Image
+											src={project.logo_url}
+											alt={`${project.name} logo`}
+											width={32}
+											height={32}
+											className="w-full h-full object-cover"
+										/>
+									) : (
+										project.name[0]
+									)}
+								</span>
+								<span className="min-w-0">
+									<span className="block text-sm font-medium text-moonlight truncate">
+										{project.name}
+									</span>
+									{project.category && (
+										<span className="block text-[11px] text-ash truncate">
+											{project.category}
+										</span>
+									)}
+								</span>
+							</Link>
+						))}
+					</div>
+				</section>
+			)}
 
 			{/* Results */}
 			{loading ? (
