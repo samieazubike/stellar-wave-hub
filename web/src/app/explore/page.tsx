@@ -27,6 +27,12 @@ const SORT_OPTIONS = [
 	{value: "oldest", label: "Oldest"},
 ];
 
+const NETWORK_OPTIONS = [
+	{value: "all", label: "All networks"},
+	{value: "testnet", label: "Testnet"},
+	{value: "mainnet", label: "Mainnet"},
+];
+
 const DEFAULT_SORT = "newest";
 const DEFAULT_LIMIT = 12;
 
@@ -43,6 +49,11 @@ function normalizeSort(value: string | null): string {
 	return SORT_OPTIONS.some((o) => o.value === value)
 		? value
 		: DEFAULT_SORT;
+}
+
+function normalizeNetwork(value: string | null): string {
+	if (!value) return "all";
+	return NETWORK_OPTIONS.some((o) => o.value === value) ? value : "all";
 }
 
 function normalizePage(value: string | null): number {
@@ -113,6 +124,9 @@ function ExplorePageContent() {
 	const category = normalizeCategory(searchParams.get("category"));
 	const search = searchParams.get("search") ?? "";
 	const sort = normalizeSort(searchParams.get("sort"));
+	const network = normalizeNetwork(searchParams.get("network"));
+	const hasContract = searchParams.get("hasContract") === "true";
+	const openSource = searchParams.get("openSource") === "true";
 	const substantialOnly = searchParams.get("substantial") === "true";
 	const page = normalizePage(searchParams.get("page"));
 
@@ -139,6 +153,9 @@ function ExplorePageContent() {
 		if (category !== "All") params.set("category", category.toLowerCase());
 		if (search) params.set("search", search);
 		if (substantialOnly) params.set("substantial", "true");
+		if (network !== "all") params.set("network", network);
+		if (hasContract) params.set("hasContract", "true");
+		if (openSource) params.set("openSource", "true");
 		params.set("sort", sort);
 		params.set("page", String(page));
 		params.set("limit", String(DEFAULT_LIMIT));
@@ -155,7 +172,7 @@ function ExplorePageContent() {
 			setProjects([]);
 		}
 		setLoading(false);
-	}, [category, search, sort, substantialOnly, page]);
+	}, [category, search, sort, substantialOnly, network, hasContract, openSource, page]);
 
 	useEffect(() => {
 		const timer = window.setTimeout(() => void fetchProjects(), 0);
@@ -164,6 +181,12 @@ function ExplorePageContent() {
 
 	const toggleSubstantial = () =>
 		updateParams({substantial: substantialOnly ? null : "true"});
+	const toggleHasContract = () =>
+		updateParams({hasContract: hasContract ? null : "true"});
+	const toggleOpenSource = () =>
+		updateParams({openSource: openSource ? null : "true"});
+	const handleNetworkChange = (value: string) =>
+		updateParams({network: value === "all" ? null : value});
 	const handleCategoryChange = (cat: string) =>
 		updateParams({category: cat === "All" ? null : cat.toLowerCase()});
 	const handleSearchChange = (value: string) => updateParams({search: value});
@@ -236,11 +259,11 @@ function ExplorePageContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						>
+					>
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
 					</svg>
-						<input
+					<input
 						type="text"
 						placeholder="Search projects..."
 						className="input-field !pl-11"
@@ -267,6 +290,20 @@ function ExplorePageContent() {
 					))}
 				</select>
 
+				{/* Network */}
+				<select
+					aria-label="Stellar network"
+					value={network}
+					onChange={(e) => handleNetworkChange(e.target.value)}
+					className="input-field !w-auto !pr-10 appearance-none cursor-pointer"
+				>
+					{NETWORK_OPTIONS.map((opt) => (
+						<option key={opt.value} value={opt.value}>
+							{opt.label}
+						</option>
+					))}
+				</select>
+
 				{/* Substantial only toggle */}
 				<button
 					type="button"
@@ -287,10 +324,38 @@ function ExplorePageContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						>
+					>
 						<polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
 					</svg>
 					Substantial only
+				</button>
+
+				{/* Has Soroban contract toggle */}
+				<button
+					type="button"
+					aria-pressed={hasContract}
+					onClick={toggleHasContract}
+					className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+						hasContract
+							? "bg-nova text-white glow-nova"
+							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+					}`.trim()}
+				>
+					Has Soroban contract
+				</button>
+
+				{/* Open source toggle */}
+				<button
+					type="button"
+					aria-pressed={openSource}
+					onClick={toggleOpenSource}
+					className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+						openSource
+							? "bg-nova text-white glow-nova"
+							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+					}`.trim()}
+				>
+					Open source
 				</button>
 			</div>
 
@@ -303,119 +368,13 @@ function ExplorePageContent() {
 						className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
 							category === cat
 								? "bg-nova text-white glow-nova"
-							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
-						}`.trim()}
-						>
+								: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+						}`}
+					>
 						{cat}
-						</button>
+					</button>
 				))}
 			</div>
-
-			{/* Results */}
-			{loading ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{[...Array(6)].map((_, i) => (
-						<div key={i} className="skeleton h-56 rounded-2xl" />
-					))}
-				</div>
-			) : displayProjects.length > 0 ? (
-				<>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-						{displayProjects.map((project, i) =>
-							project._isSponsored ? (
-								<div key={`sponsored-${project.id}`} className="relative">
-									{/* Subtle outer glow to visually distinguish the sponsored card */}
-									<div
-										className="absolute inset-0 rounded-2xl pointer-events-none"
-										style={{
-											boxShadow:
-												"0 0 0 1px rgba(var(--solar-rgb,251,191,36),0.25)",
-										}}
-										aria-hidden="true"
-									/>
-									<ProjectCard
-										project={project}
-										index={i}
-										badge={{
-											label: "Sponsored",
-											variant: "solar",
-										}}
-									/>
-								</div>
-							) : (
-								<ProjectCard
-									key={project.id}
-									project={project}
-									index={i}
-								/>
-							),
-						)}
-					</div>
-
-					{/* Pagination */}
-					{pagination.pages > 1 && (
-						<div className="flex items-center justify-center gap-2 mt-12">
-							<button
-								disabled={pagination.page <= 1}
-								onClick={() => handlePageChange(pagination.page - 1)}
-							className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-								>
-									<path d="m15 18-6-6 6-6" />
-								</svg>
-							</button>
-							<span className="text-sm text-ash px-4">
-								Page {pagination.page} of {pagination.pages}
-							</span>
-							<button
-								disabled={pagination.page >= pagination.pages}
-								onClick={() => handlePageChange(pagination.page + 1)}
-							className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
-							>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-								>
-									<path d="m9 18 6-6-6-6" />
-								</svg>
-							</button>
-						</div>
-					)}
-				</>
-			) : (
-				<div className="glass rounded-2xl p-16 text-center">
-					<div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-stardust/50 flex items-center justify-center">
-						<svg
-							width="28"
-							height="28"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="var(--ash)"
-							strokeWidth="1.5"
-						>
-							<circle cx="11" cy="11" r="8" />
-							<path d="m21 21-4.3-4.3" />
-						</svg>
-					</div>
-					<h3 className="font-semibold text-lg text-moonlight mb-2">
-						No projects found
-					</h3>
-					<p className="text-ash">
-						Some projects may not be available yet. Try adjusting your search or filters.
-					</p>
-				</div>
-			)}
 		</div>
 	);
 }
