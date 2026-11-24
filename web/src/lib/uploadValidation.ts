@@ -1,7 +1,9 @@
+import { PRO_RESEARCH_IMAGE_LIMIT } from "@/lib/pro";
+
 export type ImageKind = "png" | "jpeg" | "webp" | "svg";
 
 export const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-export const MAX_FILES = 10;
+export const MAX_FILES = PRO_RESEARCH_IMAGE_LIMIT;
 export const MAX_DIMENSION = 4096; // px, per side
 
 export const KIND_INFO: Record<ImageKind, { mime: string; ext: string }> = {

@@ -4,6 +4,11 @@ import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { editProjectSchema } from "@/lib/validation/schemas/projects";
 import { revalidatePublicProjectCache } from "@/lib/public-project-cache";
+import {
+  FREE_RESEARCH_IMAGE_LIMIT,
+  PRO_RESEARCH_IMAGE_LIMIT,
+  isPro,
+} from "@/lib/pro";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -38,6 +43,25 @@ export async function PUT(
 
   try {
     const body = parsed.data;
+    const projectIsPro = isPro(project);
+    const maxResearchImages = projectIsPro
+      ? PRO_RESEARCH_IMAGE_LIMIT
+      : FREE_RESEARCH_IMAGE_LIMIT;
+
+    if (
+      Array.isArray(body.research_images) &&
+      body.research_images.length > maxResearchImages
+    ) {
+      return Response.json(
+        {
+          error: projectIsPro
+            ? `Maximum ${PRO_RESEARCH_IMAGE_LIMIT} research images allowed`
+            : `Maximum ${FREE_RESEARCH_IMAGE_LIMIT} research images allowed for free projects. Upgrade to Pro for up to ${PRO_RESEARCH_IMAGE_LIMIT} images.`,
+        },
+        { status: 400 },
+      );
+    }
+
     const allowed = ["name", "description", "category", "stellar_account_id", "stellar_contract_id", "stellar_network", "tags", "website_url", "github_url", "github_repos", "logo_url", "research_images"] as const;
     const updates: Record<string, unknown> = {
       updated_at: new Date(Math.max(Date.now(), Date.parse(project.updated_at) + 1)).toISOString(),
