@@ -8,6 +8,7 @@ import VerifiedOnChainBadge from "@/components/VerifiedOnChainBadge";
 import EmbedSnippet from "@/components/EmbedSnippet";
 import Avatar from "@/components/Avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import ProBadge from "@/components/ProBadge";
 import CopyButton from "@/components/CopyButton";
 import {
 	AlertDialog,
@@ -62,6 +63,9 @@ interface Project {
 	username?: string;
 	logo_url?: string;
 	owner_verified_at?: string | null;
+	is_pro?: boolean | number | null;
+	pro_until?: string | null;
+	plan?: string | null;
 	created_at: string;
 }
 
@@ -989,6 +993,7 @@ export default function ProjectDetailPage({
 									Featured
 								</span>
 							)}
+							<ProBadge project={project} />
 							{isOnChainProject && process.env.NEXT_PUBLIC_CONTRACT_ID && (
 								<a
 									href={explorerContractUrl(process.env.NEXT_PUBLIC_CONTRACT_ID, process.env.NEXT_PUBLIC_CONTRACT_NETWORK)}

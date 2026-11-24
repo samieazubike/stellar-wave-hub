@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import VerifiedBadge from "./VerifiedBadge";
+import ProBadge from "./ProBadge";
 import { useCompare } from "@/context/CompareContext";
 
 interface ProjectCardProps {
@@ -24,6 +25,9 @@ interface ProjectCardProps {
     created_at?: string;
     owner_verified_at?: string | null;
     stellar_account_id?: string | null;
+    is_pro?: boolean | number | null;
+    pro_until?: string | null;
+    plan?: string | null;
   };
   index?: number;
   badge?: {
@@ -134,6 +138,7 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-starlight group-hover:text-nova-bright transition-colors truncate flex items-center gap-1.5">
             <span className="truncate">{project.name}</span>
+            <ProBadge project={project} size="sm" />
             <VerifiedBadge
               verifiedAt={project.owner_verified_at}
               account={project.stellar_account_id}
