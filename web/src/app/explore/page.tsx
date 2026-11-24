@@ -29,6 +29,8 @@ const SORT_OPTIONS = [
 
 const DEFAULT_SORT = "newest";
 const DEFAULT_LIMIT = 12;
+const VIEW_STORAGE_KEY = "explore-view";
+type ProjectView = "grid" | "list";
 
 function normalizeCategory(value: string | null): string {
 	if (!value) return "All";
@@ -107,6 +109,28 @@ function ExplorePageContent() {
 	});
 	const [loading, setLoading] = useState(true);
 	const [httpPage, setHttpPage] = useState(1);
+	const [view, setView] = useState<ProjectView>("grid");
+	const [viewPreferenceLoaded, setViewPreferenceLoaded] = useState(false);
+
+	useEffect(() => {
+		try {
+			const savedView = window.localStorage.getItem(VIEW_STORAGE_KEY);
+			if (savedView === "grid" || savedView === "list") setView(savedView);
+		} catch (error) {
+			console.warn("Unable to load Explore view preference.", error);
+		} finally {
+			setViewPreferenceLoaded(true);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!viewPreferenceLoaded) return;
+		try {
+			window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+		} catch (error) {
+			console.warn("Unable to save Explore view preference.", error);
+		}
+	}, [view, viewPreferenceLoaded]);
 
 	// The URL is the single source of truth for the view, so reloads, shared
 	// links and back/forward all restore the same filters.
@@ -311,16 +335,98 @@ function ExplorePageContent() {
 				))}
 			</div>
 
+			<div className="flex justify-end mb-4">
+				<div
+					className="inline-flex items-center gap-1 rounded-xl border border-dust/30 bg-stardust/40 p-1"
+					role="group"
+					aria-label="Project view"
+				>
+					<button
+						type="button"
+						aria-label="Grid view"
+						aria-pressed={view === "grid"}
+						onClick={() => setView("grid")}
+						className={`rounded-lg p-2 transition-colors ${
+							view === "grid"
+								? "bg-nova/20 text-nova-bright"
+								: "text-ash hover:text-starlight"
+						}`}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<rect x="3" y="3" width="7" height="7" rx="1" />
+							<rect x="14" y="3" width="7" height="7" rx="1" />
+							<rect x="3" y="14" width="7" height="7" rx="1" />
+							<rect x="14" y="14" width="7" height="7" rx="1" />
+						</svg>
+					</button>
+					<button
+						type="button"
+						aria-label="List view"
+						aria-pressed={view === "list"}
+						onClick={() => setView("list")}
+						className={`rounded-lg p-2 transition-colors ${
+							view === "list"
+								? "bg-nova/20 text-nova-bright"
+								: "text-ash hover:text-starlight"
+						}`}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<line x1="8" y1="6" x2="21" y2="6" />
+							<line x1="8" y1="12" x2="21" y2="12" />
+							<line x1="8" y1="18" x2="21" y2="18" />
+							<line x1="3" y1="6" x2="3.01" y2="6" />
+							<line x1="3" y1="12" x2="3.01" y2="12" />
+							<line x1="3" y1="18" x2="3.01" y2="18" />
+						</svg>
+					</button>
+				</div>
+			</div>
+
 			{/* Results */}
 			{loading ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<div
+					className={
+						view === "grid"
+							? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+							: "flex flex-col gap-3"
+					}
+				>
 					{[...Array(6)].map((_, i) => (
-						<div key={i} className="skeleton h-56 rounded-2xl" />
+						<div
+							key={i}
+							className={`skeleton rounded-2xl ${view === "grid" ? "h-56" : "h-20"}`}
+						/>
 					))}
 				</div>
 			) : displayProjects.length > 0 ? (
 				<>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div
+						className={
+							view === "grid"
+								? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+								: "flex flex-col gap-3"
+						}
+					>
 						{displayProjects.map((project, i) =>
 							project._isSponsored ? (
 								<div key={`sponsored-${project.id}`} className="relative">
@@ -336,6 +442,7 @@ function ExplorePageContent() {
 									<ProjectCard
 										project={project}
 										index={i}
+										variant={view}
 										badge={{
 											label: "Sponsored",
 											variant: "solar",
@@ -347,6 +454,7 @@ function ExplorePageContent() {
 									key={project.id}
 									project={project}
 									index={i}
+									variant={view}
 								/>
 							),
 						)}
