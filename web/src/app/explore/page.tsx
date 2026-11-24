@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useMemo, useState, useCallback, Suspense} from "react";
+import {useEffect, useMemo, useState, useCallback, Suspense, useRef} from "react";
 import {useRouter, useSearchParams, usePathname} from "next/navigation";
 import ProjectCard from "@/components/ProjectCard";
 
@@ -81,6 +81,13 @@ interface Pagination {
 	pages: number;
 }
 
+interface Suggestion {
+	id: number;
+	name: string;
+	slug: string;
+	logo_url: string | null;
+}
+
 /**
  * Returns true when the user's search string is an exact (case-insensitive)
  * match of an organic project name already on the page.  In that case we
@@ -106,7 +113,6 @@ function ExplorePageContent() {
 		pages: 0,
 	});
 	const [loading, setLoading] = useState(true);
-	const [httpPage, setHttpPage] = useState(1);
 
 	// The URL is the single source of truth for the view, so reloads, shared
 	// links and back/forward all restore the same filters.
@@ -150,7 +156,6 @@ function ExplorePageContent() {
 			const data = await res.json();
 			setProjects(data.projects || []);
 			setPagination((prev) => ({...prev, ...data.pagination}));
-			setHttpPage(data.pagination?.page ?? page);
 		} catch {
 			setProjects([]);
 		}
@@ -166,7 +171,6 @@ function ExplorePageContent() {
 		updateParams({substantial: substantialOnly ? null : "true"});
 	const handleCategoryChange = (cat: string) =>
 		updateParams({category: cat === "All" ? null : cat.toLowerCase()});
-	const handleSearchChange = (value: string) => updateParams({search: value});
 	const handleSortChange = (value: string) =>
 		updateParams({sort: value === DEFAULT_SORT ? null : value});
 	const handlePageChange = (nextPage: number) =>
@@ -210,6 +214,77 @@ function ExplorePageContent() {
 		return [...projects.slice(0, insertAt), sponsored, ...projects.slice(insertAt)];
 	}, [projects, sponsored, search]);
 
+	const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+	const [suggestionQuery, setSuggestionQuery] = useState(search);
+	const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+	const [activeSuggestion, setActiveSuggestion] = useState(-1);
+	const searchContainerRef = useRef<HTMLDivElement>(null);
+
+	const handleSearchChange = (value: string) => {
+		setSuggestionQuery(value);
+		setActiveSuggestion(-1);
+		setSuggestionsOpen(Boolean(value.trim()));
+		updateParams({search: value});
+	};
+
+	useEffect(() => {
+		if (!suggestionQuery.trim()) {
+			const timer = window.setTimeout(() => {
+				setSuggestions([]);
+				setSuggestionsOpen(false);
+				setActiveSuggestion(-1);
+			}, 0);
+			return () => window.clearTimeout(timer);
+		}
+
+		const controller = new AbortController();
+		const timer = window.setTimeout(async () => {
+			try {
+				const res = await fetch(
+					`/api/projects/suggest?q=${encodeURIComponent(suggestionQuery.trim())}`,
+					{signal: controller.signal, cache: "no-store"},
+				);
+				const data = await res.json();
+				if (!controller.signal.aborted) {
+					setSuggestions(data.suggestions ?? []);
+					setSuggestionsOpen(true);
+					setActiveSuggestion(-1);
+				}
+			} catch (error) {
+				if (!(error instanceof DOMException && error.name === "AbortError")) {
+					setSuggestions([]);
+				}
+			}
+		}, 250);
+
+		return () => {
+			window.clearTimeout(timer);
+			controller.abort();
+		};
+	}, [suggestionQuery]);
+
+	useEffect(() => {
+		const timer = window.setTimeout(() => {
+			setSuggestionQuery(search);
+			setActiveSuggestion(-1);
+		}, 0);
+		return () => window.clearTimeout(timer);
+	}, [search]);
+
+	useEffect(() => {
+		const handleOutsideClick = (event: MouseEvent) => {
+			if (!searchContainerRef.current?.contains(event.target as Node)) {
+				setSuggestionsOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleOutsideClick);
+		return () => document.removeEventListener("mousedown", handleOutsideClick);
+	}, []);
+
+	const navigateToSuggestion = (suggestion: Suggestion) => {
+		setSuggestionsOpen(false);
+		router.push(`/projects/${suggestion.slug}`);
+	};
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -225,9 +300,9 @@ function ExplorePageContent() {
 
 			<div className="flex flex-col lg:flex-row gap-4 mb-8 animate-in animate-in-delay-1">
 				{/* Search */}
-				<div className="relative flex-1">
+				<div ref={searchContainerRef} className="relative flex-1">
 					<svg
-						className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ash"
+						className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ash z-10"
 						width="18"
 						height="18"
 						viewBox="0 0 24 24"
@@ -236,17 +311,112 @@ function ExplorePageContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						>
+					>
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
 					</svg>
-						<input
+					<input
 						type="text"
+						role="combobox"
+						aria-label="Search projects"
+						aria-autocomplete="list"
+						aria-expanded={suggestionsOpen && suggestions.length > 0}
+						aria-controls="project-suggestions"
+						aria-activedescendant={
+							activeSuggestion >= 0
+								? `project-suggestion-${activeSuggestion}`
+								: undefined
+						}
 						placeholder="Search projects..."
 						className="input-field !pl-11"
 						value={search}
 						onChange={(e) => handleSearchChange(e.target.value)}
+						onFocus={() => {
+							if (suggestionQuery.trim() && suggestions.length > 0) {
+								setSuggestionsOpen(true);
+							}
+						}}
+						onKeyDown={(event) => {
+							if (event.key === "ArrowDown") {
+								event.preventDefault();
+								if (suggestions.length === 0) return;
+								setSuggestionsOpen(true);
+								setActiveSuggestion((current) =>
+									current >= suggestions.length - 1 ? 0 : current + 1,
+								);
+							} else if (event.key === "ArrowUp") {
+								event.preventDefault();
+								if (suggestions.length === 0) return;
+								setSuggestionsOpen(true);
+								setActiveSuggestion((current) =>
+									current <= 0 ? suggestions.length - 1 : current - 1,
+								);
+							} else if (event.key === "Enter") {
+								if (suggestionsOpen && suggestions.length > 0) {
+									event.preventDefault();
+									const selected = suggestions[activeSuggestion >= 0 ? activeSuggestion : 0];
+									navigateToSuggestion(selected);
+								}
+							} else if (event.key === "Escape") {
+								event.preventDefault();
+								setSuggestionsOpen(false);
+								setActiveSuggestion(-1);
+							}
+						}}
 					/>
+
+					{suggestionsOpen && suggestions.length > 0 && (
+						<div
+							id="project-suggestions"
+							role="listbox"
+							aria-label="Project suggestions"
+							className="absolute z-20 left-0 right-0 mt-2 rounded-2xl border border-stardust/70 bg-[#111827] shadow-2xl overflow-hidden"
+						>
+							{suggestions.map((suggestion, i) => (
+								<button
+									key={suggestion.id}
+									id={`project-suggestion-${i}`}
+									role="option"
+									aria-selected={activeSuggestion === i}
+									type="button"
+									onMouseEnter={() => setActiveSuggestion(i)}
+									onClick={() => navigateToSuggestion(suggestion)}
+									className={`flex items-center gap-3 px-4 py-3 w-full text-left transition-colors ${
+										activeSuggestion === i
+											? "bg-nova/20 text-starlight"
+											: "text-moonlight hover:bg-stardust/40"
+									}`}
+								>
+									{suggestion.logo_url ? (
+										<div className="w-9 h-9 shrink-0 rounded-lg overflow-hidden bg-stardust">
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img
+												src={suggestion.logo_url}
+												alt=""
+												className="w-full h-full object-cover"
+											/>
+										</div>
+									) : (
+										<div className="w-9 h-9 shrink-0 rounded-lg bg-stardust flex items-center justify-center text-sm font-bold text-nova-bright" aria-hidden="true">
+											{suggestion.name.trim().slice(0, 1).toUpperCase()}
+										</div>
+									)}
+									<span className="font-medium truncate">{suggestion.name}</span>
+									<svg
+										className="ml-auto shrink-0 text-ash"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2"
+									>
+										<path d="m9 18 6-6-6-6" />
+									</svg>
+								</button>
+							))}
+						</div>
+					)}
 				</div>
 
 				{/* Sort */}
