@@ -8,6 +8,7 @@ import VerifiedOnChainBadge from "@/components/VerifiedOnChainBadge";
 import EmbedSnippet from "@/components/EmbedSnippet";
 import Avatar from "@/components/Avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import BookmarkButton from "@/components/BookmarkButton";
 import CopyButton from "@/components/CopyButton";
 import {
 	AlertDialog,
@@ -1147,6 +1148,12 @@ export default function ProjectDetailPage({
 							<StellarAddressLink address={project.stellar_contract_id} type="contract" network={project.stellar_network} />
 						)}
 					</div>
+
+					<BookmarkButton
+						projectId={project.id}
+						projectName={project.name}
+						size="detail"
+					/>
 
 					{/* Project Report Button */}
 					{(!user || user.id !== project.user_id) && (

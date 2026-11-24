@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import VerifiedBadge from "./VerifiedBadge";
+import BookmarkButton from "./BookmarkButton";
 import { useCompare } from "@/context/CompareContext";
 
 interface ProjectCardProps {
@@ -214,34 +215,37 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
         </div>
       </div>
       </Link>
-      <button
-        type="button"
-        onClick={() =>
-          toggleProject({
-            id: project.id,
-            name: project.name,
-            slug: project.slug,
-          })
-        }
-        disabled={compareLimitReached}
-        aria-pressed={selected}
-        aria-label={
-          selected
-            ? `Remove ${project.name} from comparison`
-            : compareLimitReached
-              ? `Comparison limit reached; ${project.name} cannot be added`
-              : `Add ${project.name} to comparison`
-        }
-        title={compareLimitReached ? "Choose up to 3 projects" : undefined}
-        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
-          selected
-            ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
-            : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
-        } disabled:cursor-not-allowed disabled:opacity-45`}
-      >
-        <span aria-hidden="true">{selected ? "✓" : "+"}</span>
-        {selected ? "Added to compare" : "Add to compare"}
-      </button>
+      <div className="mt-4 flex gap-2">
+        <BookmarkButton projectId={project.id} projectName={project.name} />
+        <button
+          type="button"
+          onClick={() =>
+            toggleProject({
+              id: project.id,
+              name: project.name,
+              slug: project.slug,
+            })
+          }
+          disabled={compareLimitReached}
+          aria-pressed={selected}
+          aria-label={
+            selected
+              ? `Remove ${project.name} from comparison`
+              : compareLimitReached
+                ? `Comparison limit reached; ${project.name} cannot be added`
+                : `Add ${project.name} to comparison`
+          }
+          title={compareLimitReached ? "Choose up to 3 projects" : undefined}
+          className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+            selected
+              ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
+              : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
+          } disabled:cursor-not-allowed disabled:opacity-45`}
+        >
+          <span aria-hidden="true">{selected ? "✓" : "+"}</span>
+          {selected ? "Added to compare" : "Add to compare"}
+        </button>
+      </div>
     </article>
   );
 }
