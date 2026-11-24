@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { FEATURED_DURATIONS, type FeaturedTier } from "@/lib/featured-pricing";
 import { payWithFreighter } from "@/lib/payments-client";
+import { XlmPrice } from "@/components/XlmPrice";
 
 interface FeaturedConfig {
   tiers: FeaturedTier[];
@@ -150,7 +151,10 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
                     </span>
                   </span>
                 </span>
-                <span className="font-semibold text-nova-bright">{tier.priceXlm} XLM</span>
+                <span className="font-semibold text-nova-bright inline-flex items-center">
+                  {tier.priceXlm} XLM
+                  <XlmPrice amount={tier.priceXlm} />
+                </span>
               </label>
             ))}
           </fieldset>
