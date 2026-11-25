@@ -19,6 +19,8 @@ interface Project {
 	username?: string;
 	rating_velocity?: number;
 	created_at?: string;
+	has_active_jobs?: boolean;
+	active_job_url?: string | null;
 }
 
 export default function Home() {

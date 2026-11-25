@@ -71,7 +71,11 @@ function project(id, daysAgo, overrides = {}) {
   };
 }
 
-async function listProjects(rows, search = "sort=new-this-week&limit=6") {
+async function listProjects(
+  rows,
+  search = "sort=new-this-week&limit=6",
+  jobsByProject = new Map(),
+) {
   const filters = [];
   let ordering;
   const query = {
@@ -99,6 +103,9 @@ async function listProjects(rows, search = "sort=new-this-week&limit=6") {
   };
   const { GET } = loadModule(routeCode, {
     "@/lib/db": { ratingsCol: { ref: { get: async () => ({ docs: [] }) } } },
+    "@/lib/active-jobs": {
+      getActiveJobsByProject: async () => jobsByProject,
+    },
     "@/lib/auth": {},
     "@/lib/validation/parse-body": {},
     "@/lib/validation/schemas/projects": {},
@@ -201,6 +208,39 @@ describe("new-this-week project query", () => {
     const result = await listProjects([project(1, 1), project(2, 30)], "sort=oldest");
     assert.deepEqual(result.projects.map((item) => item.id), [2, 1]);
     assert.equal(result.pagination.total, 2);
+  });
+
+  test("includes active job metadata in each project response", async () => {
+    const jobsByProject = new Map([
+      [
+        1,
+        {
+          has_active_jobs: true,
+          active_job_url: "https://jobs.example/apply",
+        },
+      ],
+    ]);
+    const result = await listProjects(
+      [project(1, 1), project(2, 2)],
+      "limit=2",
+      jobsByProject,
+    );
+
+    assert.deepEqual(
+      result.projects.map(({ id, has_active_jobs, active_job_url }) => ({
+        id,
+        has_active_jobs,
+        active_job_url,
+      })),
+      [
+        {
+          id: 1,
+          has_active_jobs: true,
+          active_job_url: "https://jobs.example/apply",
+        },
+        { id: 2, has_active_jobs: false, active_job_url: null },
+      ],
+    );
   });
 });
 

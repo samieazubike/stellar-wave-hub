@@ -7,6 +7,7 @@ import {notifyMaintainersOfSubmission} from "@/lib/notifications";
 import slugify from "slugify";
 import {getSupabase} from "@/lib/firebase";
 import {checkRateLimit, getClientIp, rateLimitExceededResponse} from "@/lib/rate-limit";
+import {getActiveJobsByProject} from "@/lib/active-jobs";
 export const dynamic = "force-dynamic";
 
 // Rate limit: 5 project submissions per hour per user (falls back to IP when anonymous)
@@ -169,10 +170,20 @@ export async function GET(request: Request) {
 		const total = count ?? enriched.length;
 		const offset = (page - 1) * limit;
 		const paged = enriched.slice(offset, offset + limit);
+		const jobsByProject = await getActiveJobsByProject(
+			paged.map((project) => Number(project.id)),
+		);
+		const projectsWithJobs = paged.map((project) => ({
+			...project,
+			...(jobsByProject.get(Number(project.id)) ?? {
+				has_active_jobs: false,
+				active_job_url: null,
+			}),
+		}));
 
 		return Response.json(
 			{
-				projects: paged,
+				projects: projectsWithJobs,
 				pagination: {page, limit, total, pages: Math.ceil(total / limit)},
 			},
 			{headers: publicProjectCacheHeaders},
