@@ -1,7 +1,7 @@
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { getSupabase } from "@/lib/firebase";
 import { getFeaturedTiers } from "@/lib/featured-pricing";
-import { verifyStellarPayment } from "@/lib/payments";
+import { recordPayment, verifyStellarPayment } from "@/lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 
     const { data: project, error: projError } = await supabase
       .from("projects")
-      .select('"numericId",user_id')
+      .select('"numericId",user_id,name')
       .eq("numericId", Number(project_id))
       .maybeSingle();
 
@@ -123,22 +123,28 @@ export async function POST(request: Request) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + days * 86400 * 1000).toISOString();
 
-    const { error: paymentError } = await supabase.from("payments").insert({
-      tx_hash: payment.txHash,
-      product: "spotlight",
-      user_id: auth.userId,
-      project_id: Number(project_id),
-      amount: payment.amountXlm,
-      duration_days: days,
-      source_address: payment.sourceAddress,
-      destination_address: payment.destinationAddress,
-      network: payment.network,
-      created_at: now.toISOString(),
-    });
-    if (paymentError?.code === "23505") {
-      return Response.json({ error: "This transaction has already been redeemed" }, { status: 409 });
+    try {
+      await recordPayment(
+        {
+          tx_hash: payment.txHash,
+          product: "spotlight",
+          user_id: auth.userId,
+          project_id: Number(project_id),
+          amount: payment.amountXlm,
+          duration_days: days,
+          source_address: payment.sourceAddress,
+          destination_address: payment.destinationAddress,
+          network: payment.network,
+          created_at: now.toISOString(),
+        },
+        { projectName: typeof project.name === "string" ? project.name : undefined },
+      );
+    } catch (paymentError) {
+      if ((paymentError as { code?: string })?.code === "23505") {
+        return Response.json({ error: "This transaction has already been redeemed" }, { status: 409 });
+      }
+      throw paymentError;
     }
-    if (paymentError) throw paymentError;
 
     const { error: updateError } = await supabase
       .from("projects")
