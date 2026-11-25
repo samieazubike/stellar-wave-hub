@@ -3,6 +3,8 @@
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import {FeatureButton} from "@/components/FeatureButton";
+import {ProButton} from "@/components/ProButton";
+import {isPro} from "@/lib/pro";
 import Link from "next/link";
 
 interface Project {
@@ -14,6 +16,7 @@ interface Project {
 	status: string;
 	featured: number;
 	featured_expires_at?: string | null;
+	pro_until?: string | null;
 	avg_rating?: number;
 	rating_count?: number;
 	created_at: string;
@@ -170,6 +173,9 @@ export default function MyProjectsPage() {
 											Featured
 										</span>
 									)}
+									{isPro(project) && (
+										<span className="tag tag-plasma">Pro</span>
+									)}
 								</div>
 								<p className="text-sm text-ash line-clamp-1">
 									{project.description}
@@ -230,6 +236,19 @@ export default function MyProjectsPage() {
 															status: "featured",
 															featured_expires_at: expiresAt,
 														}
+													: item,
+											),
+										)
+									}
+								/>
+								<ProButton
+									projectId={project.id}
+									proUntil={project.pro_until}
+									onActivated={(proUntil) =>
+										setProjects((current) =>
+											current.map((item) =>
+												item.id === project.id
+													? { ...item, pro_until: proUntil }
 													: item,
 											),
 										)
