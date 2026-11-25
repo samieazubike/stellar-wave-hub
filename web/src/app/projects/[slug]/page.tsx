@@ -10,6 +10,7 @@ import Avatar from "@/components/Avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import CopyButton from "@/components/CopyButton";
 import ShareButtons from "@/components/ShareButtons";
+import ProjectCard from "@/components/ProjectCard";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -145,6 +146,25 @@ interface GithubStats {
 	openIssues: number;
 	lastCommit: string | null;
 	license: string | null;
+}
+
+interface SimilarProject {
+	id: number;
+	name: string;
+	slug: string;
+	description: string;
+	category: string;
+	status: string;
+	featured: number;
+	tags?: string;
+	avg_rating?: number;
+	rating_count?: number;
+	username?: string;
+	logo_url?: string;
+	stellar_contract_id?: string;
+	created_at?: string;
+	owner_verified_at?: string | null;
+	stellar_account_id?: string | null;
 }
 
 
@@ -362,6 +382,7 @@ export default function ProjectDetailPage({
 	const [averages, setAverages] = useState<Averages | null>(null);
 	const [financials, setFinancials] = useState<FinancialSummary | null>(null);
 	const [githubStats, setGithubStats] = useState<GithubStats | null>(null);
+	const [similarProjects, setSimilarProjects] = useState<SimilarProject[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [missing, setMissing] = useState(false);
 	const [activeTab, setActiveTab] = useState<
@@ -646,6 +667,25 @@ export default function ProjectDetailPage({
 			})
 			.catch(() => {});
 	}, [project]);
+
+	// Fetch similar projects (hidden when none)
+	useEffect(() => {
+		if (!project?.id) return;
+		let cancelled = false;
+		fetch(`/api/projects/${project.id}/similar`)
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (!cancelled) {
+					setSimilarProjects(Array.isArray(data?.projects) ? data.projects : []);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) setSimilarProjects([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [project?.id]);
 
 	// Fetch registration status, rating fee, and on-chain aggregate
 	useEffect(() => {
@@ -2206,6 +2246,39 @@ export default function ProjectDetailPage({
 					</div>
 				)}
 			</div>
+
+			{/* Similar Projects */}
+			{similarProjects.length > 0 && (
+				<section
+					aria-labelledby="similar-projects-heading"
+					className="mt-12 pt-8 border-t border-dust/20"
+				>
+					<div className="flex items-center justify-between gap-4 mb-6">
+						<div>
+							<h2
+								id="similar-projects-heading"
+								className="text-xl font-bold text-starlight"
+							>
+								Similar Projects
+							</h2>
+							<p className="text-sm text-ash mt-1">
+								Related projects in {project.category} or with overlapping tags
+							</p>
+						</div>
+						<Link
+							href={`/explore?category=${encodeURIComponent(project.category)}`}
+							className="text-xs font-medium text-nova-bright hover:underline shrink-0"
+						>
+							Explore {project.category} &rarr;
+						</Link>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+						{similarProjects.map((similar, index) => (
+							<ProjectCard key={similar.id} project={similar} index={index} />
+						))}
+					</div>
+				</section>
+			)}
 
 			{/* Project Report Dialog */}
 			<AlertDialog open={projectReportOpen} onOpenChange={setProjectReportOpen}>
