@@ -23,6 +23,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import TipDialog from "@/components/TipDialog";
 import Link from "next/link";
 import {apiFetch, isApiFetchError} from "@/lib/api-fetch";
 import {useRetryCountdown} from "@/lib/use-retry-countdown";
@@ -404,6 +405,9 @@ export default function ProjectDetailPage({
 	const [updatePreview, setUpdatePreview] = useState(false);
 	const [updateSubmitting, setUpdateSubmitting] = useState(false);
 	const [updateSubmitError, setUpdateSubmitError] = useState<string | null>(null);
+
+	// Tip dialog
+	const [tipOpen, setTipOpen] = useState(false);
 
 	// On-chain state
 	const [contractRatingFee, setContractRatingFee] = useState<bigint | null>(null);
@@ -1249,6 +1253,26 @@ export default function ProjectDetailPage({
 								</button>
 							)}
 						</div>
+					)}
+					{/* Tip button — only shown when the project has a Stellar account
+					    and the viewer is a logged-in user who does not own the project */}
+					{project.stellar_account_id && user && user.id !== project.user_id && (
+						<button
+							onClick={() => setTipOpen(true)}
+							className="btn-nova text-sm !py-1.5 inline-flex items-center gap-1.5"
+							aria-label={`Tip ${project.name} with XLM`}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+								stroke="none"
+							>
+								<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+							</svg>
+							Tip
+						</button>
 					)}
 				</div>
 
@@ -2442,6 +2466,21 @@ export default function ProjectDetailPage({
 					)}
 				</AlertDialogContent>
 			</AlertDialog>
+			{/* Tip Dialog — mounted outside the tab content so it doesn't remount */}
+			{project.stellar_account_id && token && (
+				<TipDialog
+					open={tipOpen}
+					onOpenChange={setTipOpen}
+					project={{
+						id: project.id,
+						name: project.name,
+						slug: project.slug,
+						stellar_account_id: project.stellar_account_id,
+					}}
+					token={token}
+					senderAddress={user?.stellar_address ?? ""}
+				/>
+			)}
 		</div>
 	);
 }
