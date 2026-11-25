@@ -78,6 +78,9 @@ function isSpotlightActive(project: Project): boolean {
 		project.featured === 1 &&
 		!!project.featured_expires_at &&
 		new Date(project.featured_expires_at).getTime() > Date.now()
+	);
+}
+
 // Spotlight renewal nudge: prompt a repeat purchase once the spotlight is close to ending.
 const RENEWAL_WINDOW_DAYS = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
