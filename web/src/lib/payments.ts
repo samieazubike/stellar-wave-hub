@@ -11,13 +11,15 @@ export interface VerifiedStellarPayment {
 
 export async function verifyStellarPayment(
   txHash: string,
-  expectedAmountXlm: number,
+  expectedAmountXlm?: number,
+  expectedDestination?: string,
 ): Promise<VerifiedStellarPayment> {
   if (!/^[a-f0-9]{64}$/i.test(txHash)) {
     throw new Error("Invalid Stellar transaction hash");
   }
+  const normalizedHash = txHash.toLowerCase();
 
-  const destinationAddress = process.env.STELLAR_PAYMENT_ADDRESS;
+  const destinationAddress = expectedDestination || process.env.STELLAR_PAYMENT_ADDRESS;
   if (!destinationAddress) {
     throw new Error("STELLAR_PAYMENT_ADDRESS is not configured");
   }
@@ -31,24 +33,27 @@ export async function verifyStellarPayment(
         : "https://horizon-testnet.stellar.org"),
   );
 
-  const transaction = await server.transactions().transaction(txHash).call();
+  const transaction = await server.transactions().transaction(normalizedHash).call();
   if (!transaction.successful) {
     throw new Error("Stellar transaction was not successful");
   }
 
   const operations = await server
     .operations()
-    .forTransaction(txHash)
+    .forTransaction(normalizedHash)
     .limit(200)
     .call();
-  const expectedStroops = xlmToStroops(expectedAmountXlm);
+  const expectedStroops = expectedAmountXlm === undefined
+    ? null
+    : xlmToStroops(expectedAmountXlm);
   const payment = operations.records.find(
     (operation) =>
       operation.type === "payment" &&
       operation.transaction_successful &&
       operation.asset_type === "native" &&
       operation.to === destinationAddress &&
-      xlmToStroops(operation.amount) === expectedStroops,
+      xlmToStroops(operation.amount) > BigInt(0) &&
+      (expectedStroops === null || xlmToStroops(operation.amount) === expectedStroops),
   );
 
   if (!payment || payment.type !== "payment") {
@@ -56,7 +61,7 @@ export async function verifyStellarPayment(
   }
 
   return {
-    txHash,
+    txHash: normalizedHash,
     amountXlm: payment.amount,
     sourceAddress: payment.from,
     destinationAddress,

@@ -21,6 +21,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	promo_codes: "promo_codes",
 	reports: "reports",
 	hero_sponsors: "hero_sponsors",
+	api_keys: "api_keys",
 };
 
 function resolveTable(collection: string): string {

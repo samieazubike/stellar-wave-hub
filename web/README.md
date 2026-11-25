@@ -10,6 +10,8 @@ SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 # Required in production: use a unique random secret with at least 32 characters.
 JWT_SECRET=replace-with-a-random-secret-at-least-32-characters
 STELLAR_HORIZON_URL=https://horizon.stellar.org
+# Required for /support donations; use the treasury account on the configured network.
+NEXT_PUBLIC_DONATION_DESTINATION=G...
 ```
 
 ## Supabase Setup
@@ -39,6 +41,18 @@ The write policies expect JWT custom claims:
 
 - `app_user_id` (mapped to `users.numericId`)
 - `app_role` (for admin overrides)
+
+## Donations and Public API
+
+After the base schema and existing payments migration, apply
+`data/supabase/202611251200_add_donations.sql` and
+`data/supabase/202611251201_create_api_keys.sql` in order. These migrations
+allow guest donations in `payments` and create backend-only API key storage.
+Set `NEXT_PUBLIC_DONATION_DESTINATION` to the treasury's Stellar account on
+the same network as `NEXT_PUBLIC_CONTRACT_NETWORK` and `STELLAR_HORIZON_URL`.
+
+See [docs/public-api-v1.md](docs/public-api-v1.md) for key issuance, v1 project
+endpoints, filters, and response fields.
 
 ## Substantial Projects Filter
 
