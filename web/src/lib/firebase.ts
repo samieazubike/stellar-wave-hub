@@ -21,7 +21,12 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	promo_codes: "promo_codes",
 	reports: "reports",
 	hero_sponsors: "hero_sponsors",
+	bookmarks: "bookmarks",
+	maintainer_stats: "maintainer_stats",
 };
+
+export const BOOKMARKS_TABLE: string = TABLE_BY_COLLECTION.bookmarks ?? "bookmarks";
+
 
 function resolveTable(collection: string): string {
 	return TABLE_BY_COLLECTION[collection] ?? collection;
@@ -39,6 +44,7 @@ function keyField(collection: string): string {
 	}
 	if (collection === "counters") return "name";
 	if (collection === "auth_challenges") return "publicKey";
+	if (collection === "maintainer_stats") return "id";
 	return "id";
 }
 
@@ -237,7 +243,7 @@ class QueryRef {
 	} {
 		return {
 			batch: () => {
-				const operations: Array< () => Promise<void>> = [];
+				const operations: Array<() => Promise<void>> = [];
 				return {
 					delete: (ref: DocRef) => {
 						operations.push(() => ref.delete());
