@@ -163,19 +163,26 @@ export async function GET(request: Request) {
 					return (a.created_at as string) < (b.created_at as string)
 						? -1
 						: 1;
-				if (sort === "top-rated")
+				if (sort === "top-rated") {
+					const featuredDifference =
+						Number(isCurrentlyFeatured(b)) -
+						Number(isCurrentlyFeatured(a));
+					if (featuredDifference !== 0) return featuredDifference;
 					return (
 						((b.avg_rating as number) || 0) -
 						((a.avg_rating as number) || 0)
 					);
+				}
 				if (sort === "most-reviewed")
 					return (
 						((b.rating_count as number) || 0) -
 						((a.rating_count as number) || 0)
 					);
-				// newest — featured first, then by date desc
-				if ((b.featured as number) !== (a.featured as number))
-					return (b.featured as number) - (a.featured as number);
+				// newest — currently featured first, then by date desc
+				const featuredDifference =
+					Number(isCurrentlyFeatured(b)) -
+					Number(isCurrentlyFeatured(a));
+				if (featuredDifference !== 0) return featuredDifference;
 				return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
 			});
 		}

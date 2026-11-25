@@ -40,6 +40,7 @@ export const editProjectSchema = z
     github_repos: z.array(githubRepoSchema).optional(),
     logo_url: z.string().nullable().optional(),
     research_images: z.array(z.string()).optional(),
+    banner_url: z.string().url().nullable().optional(),
   })
   .refine(
     (body) =>
