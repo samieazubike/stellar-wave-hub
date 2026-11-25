@@ -1,7 +1,7 @@
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { getSupabase } from "@/lib/firebase";
-import { getFeaturedTiers } from "@/lib/featured-pricing";
-import { verifyStellarPayment } from "@/lib/payments";
+import { getSpotlightTiers } from "@/lib/pricing";
+import { recordPayment, verifyStellarPayment } from "@/lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 
     const { data: project, error: projError } = await supabase
       .from("projects")
-      .select('"numericId",user_id')
+      .select('"numericId",user_id,name,featured_expires_at')
       .eq("numericId", Number(project_id))
       .maybeSingle();
 
@@ -114,31 +114,46 @@ export async function POST(request: Request) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const tier = getFeaturedTiers().find((candidate) => candidate.days === days);
+    const tier = getSpotlightTiers().find((candidate) => candidate.days === days);
     if (!tier) {
       return Response.json({ error: "Unsupported spotlight duration" }, { status: 400 });
     }
 
     const payment = await verifyStellarPayment(tx_hash, tier.priceXlm);
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + days * 86400 * 1000).toISOString();
 
-    const { error: paymentError } = await supabase.from("payments").insert({
-      tx_hash: payment.txHash,
-      product: "spotlight",
-      user_id: auth.userId,
-      project_id: Number(project_id),
-      amount: payment.amountXlm,
-      duration_days: days,
-      source_address: payment.sourceAddress,
-      destination_address: payment.destinationAddress,
-      network: payment.network,
-      created_at: now.toISOString(),
-    });
-    if (paymentError?.code === "23505") {
-      return Response.json({ error: "This transaction has already been redeemed" }, { status: 409 });
+    // Activate the featured spotlight for the project. When the current
+    // spotlight is still active, the purchased days stack onto the current
+    // expiry instead of restarting from now (issue #453).
+    const now = new Date();
+    const currentExpiry = project.featured_expires_at
+      ? new Date(String(project.featured_expires_at))
+      : null;
+    const extended = Boolean(currentExpiry && currentExpiry.getTime() > now.getTime());
+    const base = extended && currentExpiry ? currentExpiry : now;
+    const expiresAt = new Date(base.getTime() + days * 86400 * 1000).toISOString();
+
+    try {
+      await recordPayment(
+        {
+          tx_hash: payment.txHash,
+          product: "spotlight",
+          user_id: auth.userId,
+          project_id: Number(project_id),
+          amount: payment.amountXlm,
+          duration_days: days,
+          source_address: payment.sourceAddress,
+          destination_address: payment.destinationAddress,
+          network: payment.network,
+          created_at: now.toISOString(),
+        },
+        { projectName: typeof project.name === "string" ? project.name : undefined },
+      );
+    } catch (paymentError) {
+      if ((paymentError as { code?: string })?.code === "23505") {
+        return Response.json({ error: "This transaction has already been redeemed" }, { status: 409 });
+      }
+      throw paymentError;
     }
-    if (paymentError) throw paymentError;
 
     const { error: updateError } = await supabase
       .from("projects")
@@ -172,6 +187,7 @@ export async function POST(request: Request) {
       price_xlm: tier.priceXlm,
       days,
       expires_at: expiresAt,
+      extended,
     });
   } catch (err) {
     console.error("Activate featured project error:", err);

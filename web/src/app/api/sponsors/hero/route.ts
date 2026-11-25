@@ -5,12 +5,12 @@ import { getSupabase } from "@/lib/firebase";
 import { heroSponsorsCol } from "@/lib/db";
 import { checkRateLimit, getClientIp, rateLimitExceededResponse } from "@/lib/rate-limit";
 import { parseJsonBody } from "@/lib/validation/parse-body";
+import { buildMemo, getPrice } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
 const TABLE = "hero_sponsors";
 const WEEKS_AHEAD = 8;
-const DEFAULT_PRICE_XLM = 150;
 const bookingRateLimit = { limit: 10, windowMs: 60_000 };
 
 type HeroBooking = {
@@ -21,11 +21,6 @@ type HeroBooking = {
   tx_hash: string;
   created_at: string;
 };
-
-function priceXlm(): number {
-  const raw = Number(process.env.NEXT_PUBLIC_PRICE_HERO_SPONSOR_XLM);
-  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_PRICE_XLM;
-}
 
 function sponsorWallet(): string | null {
   const wallet = process.env.HERO_SPONSOR_WALLET;
@@ -119,7 +114,7 @@ export async function GET() {
     }));
 
     return Response.json({
-      price_xlm: priceXlm(),
+      price_xlm: getPrice("hero_sponsor"),
       current: byWeek.get(currentWeek) ?? null,
       weeks,
     });
@@ -162,8 +157,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 
-  const price = priceXlm();
-  const invalidPayment = await verifyHeroPayment(txHash, `hero:${weekStart}`, price, wallet);
+  let price: number;
+  try {
+    price = getPrice("hero_sponsor");
+  } catch (err) {
+    console.error("Hero sponsor price is misconfigured:", err);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+  const invalidPayment = await verifyHeroPayment(txHash, buildMemo("hero_sponsor", weekStart), price, wallet);
   if (invalidPayment) {
     return Response.json({ error: invalidPayment }, { status: 400 });
   }
