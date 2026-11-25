@@ -4,6 +4,7 @@ import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { editProjectSchema } from "@/lib/validation/schemas/projects";
 import { revalidatePublicProjectCache } from "@/lib/public-project-cache";
+import { isPro } from "@/lib/pro";
 export const dynamic = "force-dynamic";
 
 export async function PUT(
@@ -27,6 +28,12 @@ export async function PUT(
 
   const parsed = await parseJsonBody(request, editProjectSchema);
   if (!parsed.success) return parsed.response;
+  if (parsed.data.banner_url !== undefined && !isPro(project)) {
+    return Response.json(
+      { error: "An active Pro plan is required to edit the project banner" },
+      { status: 403 },
+    );
+  }
   if (
     !isOwner &&
     !isAdmin &&
@@ -38,7 +45,7 @@ export async function PUT(
 
   try {
     const body = parsed.data;
-    const allowed = ["name", "description", "category", "stellar_account_id", "stellar_contract_id", "stellar_network", "tags", "website_url", "github_url", "github_repos", "logo_url", "research_images"] as const;
+    const allowed = ["name", "description", "category", "stellar_account_id", "stellar_contract_id", "stellar_network", "tags", "website_url", "github_url", "github_repos", "logo_url", "research_images", "banner_url"] as const;
     const updates: Record<string, unknown> = {
       updated_at: new Date(Math.max(Date.now(), Date.parse(project.updated_at) + 1)).toISOString(),
     };

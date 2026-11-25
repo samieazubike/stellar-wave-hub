@@ -61,6 +61,7 @@ interface Project {
 	user_id: number;
 	username?: string;
 	logo_url?: string;
+	banner_url?: string | null;
 	owner_verified_at?: string | null;
 	created_at: string;
 }
@@ -963,6 +964,19 @@ export default function ProjectDetailPage({
 
 	return (
 		<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+			{project.banner_url && (
+				<div className="relative mb-8 aspect-[3/1] overflow-hidden rounded-2xl border border-dust/30 bg-void/40">
+					<Image
+						src={project.banner_url}
+						alt={`${project.name} banner`}
+						fill
+						unoptimized
+						sizes="(max-width: 1024px) 100vw, 1024px"
+						className="object-cover"
+						priority
+					/>
+				</div>
+			)}
 			{/* Header */}
 			<div className="mb-8 animate-in">
 				<div className="flex items-start gap-4 mb-4">

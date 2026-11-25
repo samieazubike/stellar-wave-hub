@@ -13,6 +13,7 @@ const mockInitialProject = {
   owner_verified_at: "2026-10-15T00:00:00.000Z",
   owner_verified_address: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
   status: "submitted",
+  pro_until: null as string | null,
   updated_at: "2026-10-20T00:00:00.000Z",
 };
 
@@ -162,6 +163,45 @@ describe("PUT /api/projects/[id]/edit - Role Access & Project Owner Edit", () =>
       const body = await res.json();
       expect(body.project.name).toBe("Owner Edited Name");
       expect(mockRevalidateCache).toHaveBeenCalled();
+    });
+
+    it("denies free owners from setting or removing a banner", async () => {
+      const req = new Request("http://localhost/api/projects/10/edit", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ownerToken}`,
+        },
+        body: JSON.stringify({ banner_url: "https://images.example/banner.webp" }),
+      });
+      const res = await PUT(req, params);
+      expect(res.status).toBe(403);
+      expect(mockQueryBuilder.update).not.toHaveBeenCalled();
+    });
+
+    it("allows active Pro owners to set a banner", async () => {
+      currentProject = {
+        ...mockInitialProject,
+        pro_until: new Date(Date.now() + 60_000).toISOString(),
+      };
+      mockSupabaseUpdatedResult = {
+        ...currentProject,
+        banner_url: "https://images.example/banner.webp",
+      };
+
+      const req = new Request("http://localhost/api/projects/10/edit", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ownerToken}`,
+        },
+        body: JSON.stringify({ banner_url: "https://images.example/banner.webp" }),
+      });
+      const res = await PUT(req, params);
+      expect(res.status).toBe(200);
+      expect(lastSupabaseUpdates).toMatchObject({
+        banner_url: "https://images.example/banner.webp",
+      });
     });
 
     it("allows owner to edit even when project status is approved (not submitted)", async () => {
