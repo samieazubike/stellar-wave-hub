@@ -1,69 +1,59 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const {verifyApiKey, getSupabase, state, range} = vi.hoisted(() => {
-	const state = {
-		keyValid: true,
-		data: [{numericId: 7, name: "Orbit", slug: "orbit"}] as Array<Record<string, unknown>> | null,
-	};
-	const range = vi.fn(async () => ({data: state.data, count: 1 as number | null, error: null as Error | null}));
-	const query = {
-		in: vi.fn(() => query),
-		order: vi.fn(() => query),
-		range,
-	};
-	const select = vi.fn(() => query);
-	const from = vi.fn(() => ({select}));
-	const getSupabase = vi.fn(() => ({from}));
-	const verifyApiKey = vi.fn(async (request: Request) =>
-		state.keyValid && request.headers.get("X-API-Key") === "swh_live_test"
-			? {id: "key-1", userId: 1, tier: "free"}
-			: null,
-	);
-	return {verifyApiKey, getSupabase, state, range};
-});
+const { verifyKey, approvedProjects, latestSnapshot } = vi.hoisted(() => ({
+  verifyKey: vi.fn(),
+  approvedProjects: vi.fn(),
+  latestSnapshot: vi.fn(),
+}));
+vi.mock("@/lib/api-keys", () => ({ verifyApiKey: verifyKey }));
+vi.mock("@/lib/public-api-projects", () => ({
+  getApprovedProjects: approvedProjects,
+  getLatestFinancialSnapshot: latestSnapshot,
+  publicApiCorsHeaders: {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, X-API-Key, Content-Type",
+  },
+}));
 
-vi.mock("@/lib/api-keys", () => ({verifyApiKey}));
-vi.mock("@/lib/firebase", () => ({getSupabase}));
+import { GET as listProjects, OPTIONS as listOptions } from "./route";
+import { GET as getProject } from "./[slug]/route";
 
-import {GET} from "./route";
-
-function request(query = "", apiKey = "swh_live_test") {
-	return GET(new Request(`http://localhost/api/v1/projects${query}`, {
-		headers: {"X-API-Key": apiKey},
-	}));
-}
+const projects = [
+  { id: 1, slug: "first", name: "First", description: "Wallet", category: "defi", tags: ["payments"], created_at: "2026-11-01", rating: { average: 4, count: 2 } },
+  { id: 2, slug: "second", name: "Second", description: "Tools", category: "tooling", tags: [], created_at: "2026-11-20", rating: { average: null, count: 0 } },
+];
 
 beforeEach(() => {
-	vi.clearAllMocks();
-	state.keyValid = true;
-	state.data = [{numericId: 7, name: "Orbit", slug: "orbit"}];
+  vi.clearAllMocks();
+  verifyKey.mockResolvedValue(true);
+  approvedProjects.mockResolvedValue(projects);
+  latestSnapshot.mockResolvedValue({ captured_at: "2026-11-25", summary: { balances: [] } });
 });
 
-describe("GET /api/v1/projects", () => {
-	it("requires an API key", async () => {
-		const response = await GET(new Request("http://localhost/api/v1/projects"));
-		expect(response.status).toBe(401);
-	});
+describe("public projects API", () => {
+  it("rejects requests without a valid key and sends CORS headers", async () => {
+    verifyKey.mockResolvedValue(false);
+    const response = await listProjects(new Request("http://localhost/api/v1/projects"));
+    expect(response.status).toBe(401);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(approvedProjects).not.toHaveBeenCalled();
+    expect((await listOptions()).status).toBe(204);
+  });
 
-	it("returns paginated public projects", async () => {
-		const response = await request("?page=2&limit=5");
-		const data = await response.json();
+  it("filters, sorts, and paginates the stable list", async () => {
+    const response = await listProjects(new Request("http://localhost/api/v1/projects?sort=top-rated&page=1&limit=1"));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ projects: [{ slug: "first" }], pagination: { page: 1, limit: 1, total: 2, pages: 2 } });
+    const filtered = await listProjects(new Request("http://localhost/api/v1/projects?category=tooling&search=tools"));
+    expect((await filtered.json()).projects).toMatchObject([{ slug: "second" }]);
+  });
 
-		expect(response.status).toBe(200);
-		expect(data.data[0]).toMatchObject({id: 7, name: "Orbit"});
-		expect(data.pagination).toEqual({page: 2, limit: 5, total: 1, pages: 1});
-		expect(verifyApiKey).toHaveBeenCalled();
-	});
-
-	it("rejects invalid pagination", async () => {
-		const response = await request("?limit=101");
-		expect(response.status).toBe(400);
-	});
-
-	it("returns an explicit error when the project query fails", async () => {
-		range.mockResolvedValueOnce({data: null, count: null, error: new Error("database down")});
-
-		const response = await request();
-		expect(response.status).toBe(500);
-	});
+  it("returns 404 for unknown slugs and adds a requested financial snapshot", async () => {
+    const missing = await getProject(new Request("http://localhost/api/v1/projects/missing"), { params: Promise.resolve({ slug: "missing" }) });
+    expect(missing.status).toBe(404);
+    const found = await getProject(new Request("http://localhost/api/v1/projects/first?include=financials"), { params: Promise.resolve({ slug: "first" }) });
+    expect(await found.json()).toMatchObject({ project: { slug: "first" }, financials: { captured_at: "2026-11-25" } });
+    expect(latestSnapshot).toHaveBeenCalledWith(1);
+  });
 });

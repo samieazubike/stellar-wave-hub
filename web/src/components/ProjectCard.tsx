@@ -26,6 +26,8 @@ interface ProjectCardProps {
     created_at?: string;
     owner_verified_at?: string | null;
     stellar_account_id?: string | null;
+    has_active_jobs?: boolean;
+    active_job_url?: string | null;
     is_pro?: boolean | number | null;
     pro_until?: string | null;
     plan?: string | null;
@@ -132,6 +134,17 @@ export default function ProjectCard({
           {badge.label}
         </div>
       ) : null}
+
+      {project.has_active_jobs && project.active_job_url && (
+        <a
+          href={project.active_job_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute -top-2 -left-2 z-10 rounded-full border border-aurora/30 bg-aurora/20 px-2.5 py-1 text-xs font-bold text-aurora-bright"
+        >
+          Hiring
+        </a>
+      )}
 
       {/* Header */}
       <Link

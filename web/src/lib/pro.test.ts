@@ -33,6 +33,9 @@ describe("pro helpers", () => {
       isPro({ pro_until: "2026-11-01T00:00:00.000Z", is_pro: true }, now),
     ).toBe(false);
     expect(
+      isPro({ pro_until: "invalid-date", is_pro: true, plan: "pro" }, now),
+    ).toBe(false);
+    expect(
       getResearchImageLimit({ pro_until: "2026-11-01T00:00:00.000Z" }, now),
     ).toBe(FREE_RESEARCH_IMAGE_LIMIT);
   });

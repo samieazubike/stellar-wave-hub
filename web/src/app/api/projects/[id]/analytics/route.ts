@@ -1,166 +1,95 @@
-import {getAuthUser} from "@/lib/auth";
-import {isPro} from "@/lib/pro";
-import {getSupabase} from "@/lib/firebase";
+import { getAuthUser, hasMinRole } from "@/lib/auth";
+import { projectsCol } from "@/lib/db";
+import { getSupabase } from "@/lib/firebase";
 
 export const dynamic = "force-dynamic";
 
-const MAX_ANALYTICS_DAYS = 90;
-const FREE_ANALYTICS_DAYS = 7;
+const DEFAULT_DAYS = 30;
+const MAX_DAYS = 365;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function utcDay(timestamp: number): string {
+	return new Date(timestamp).toISOString().slice(0, 10);
+}
 
 export async function GET(
 	request: Request,
-	{params}: {params: Promise<{id: string}>},
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const auth = getAuthUser(request);
-	if (!auth) return Response.json({error: "Unauthorized"}, {status: 401});
+	if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-	const {id} = await params;
-	if (!id || id.length > 200) {
-		return Response.json({error: "Invalid project ID"}, {status: 400});
+	const { id } = await params;
+	const projectDocument = await projectsCol.ref.doc(id).get();
+	if (!projectDocument.exists) {
+		return Response.json({ error: "Project not found" }, { status: 404 });
 	}
 
-	try {
-		const supabase = getSupabase();
-		const isNumericId = /^\d+$/.test(id);
-		const numericId = Number(id);
-		if (isNumericId && (!Number.isSafeInteger(numericId) || numericId <= 0)) {
-			return Response.json({error: "Invalid project ID"}, {status: 400});
-		}
+	const project = projectDocument.data()!;
+	if (
+		project.user_id !== auth.userId &&
+		!hasMinRole(auth.role, "admin")
+	) {
+		return Response.json({ error: "Forbidden" }, { status: 403 });
+	}
 
-		const {data: project, error: projectError} = await supabase
-			.from("projects")
-			.select('"numericId",user_id,name,slug,pro_until')
-			.eq(isNumericId ? "numericId" : "slug", isNumericId ? numericId : id)
-			.maybeSingle();
-
-		if (projectError) throw projectError;
-		if (!project) return Response.json({error: "Project not found"}, {status: 404});
-		if (Number(project.user_id) !== auth.userId) {
-			return Response.json({error: "Forbidden"}, {status: 403});
-		}
-		const projectId = Number(project["numericId"]);
-		if (!Number.isSafeInteger(projectId) || projectId <= 0) {
-			throw new Error("Project has an invalid numeric ID");
-		}
-
-		const projectIsPro = isPro(project);
-		const requestedDaysParam = new URL(request.url).searchParams.get("days");
-		let requestedDays = requestedDaysParam === null
-			? (projectIsPro ? MAX_ANALYTICS_DAYS : FREE_ANALYTICS_DAYS)
-			: Number(requestedDaysParam);
-		if (!Number.isInteger(requestedDays) || requestedDays < 1) {
-			return Response.json({error: "days must be a positive integer"}, {status: 400});
-		}
-		requestedDays = Math.min(requestedDays, MAX_ANALYTICS_DAYS);
-		const days = projectIsPro
-			? requestedDays
-			: Math.min(requestedDays, FREE_ANALYTICS_DAYS);
-		const upgradeRequired = !projectIsPro && requestedDays > FREE_ANALYTICS_DAYS;
-
-		const today = new Date();
-		const start = new Date(Date.UTC(
-			today.getUTCFullYear(),
-			today.getUTCMonth(),
-			today.getUTCDate() - days + 1,
-		));
-		const startDay = start.toISOString().slice(0, 10);
-		const endDay = today.toISOString().slice(0, 10);
-		const startTimestamp = start.toISOString();
-		const endTimestamp = today.toISOString();
-
-		const {data: viewRows, error: viewsError} = await supabase
-			.from("project_views_daily")
-			.select("day,views")
-			.eq("project_id", projectId)
-			.gte("day", startDay)
-			.lte("day", endDay)
-			.order("day", {ascending: true});
-		if (viewsError) throw viewsError;
-
-		const viewsByDay = new Map(
-			(viewRows ?? []).map((row) => [String(row.day), Number(row.views)]),
-		);
-		const dailyViews: {day: string; views: number}[] = [];
-		for (let offset = 0; offset < days; offset += 1) {
-			const day = new Date(start.getTime() + offset * 24 * 60 * 60 * 1000)
-				.toISOString()
-				.slice(0, 10);
-			dailyViews.push({day, views: viewsByDay.get(day) ?? 0});
-		}
-
-		const totalViews = dailyViews.reduce((total, entry) => total + entry.views, 0);
-		let referrers: {host: string; views: number}[] = [];
-		let conversions: {tips: number; ratings: number; tipRate: number; ratingRate: number} | null = null;
-
-		if (projectIsPro) {
-			const [
-				{data: referrerRows, error: referrersError},
-				{count: tipCount, error: tipsError},
-				{count: ratingCount, error: ratingsError},
-			] = await Promise.all([
-				supabase
-					.from("project_views_referrers_daily")
-					.select("referrer_host,views")
-					.eq("project_id", projectId)
-					.gte("day", startDay)
-					.lte("day", endDay),
-				supabase
-					.from("payments")
-					.select("id", {count: "exact", head: true})
-					.eq("project_id", projectId)
-					.eq("product", "tip")
-					.gte("created_at", startTimestamp)
-					.lte("created_at", endTimestamp),
-				supabase
-					.from("ratings")
-					.select('"numericId"', {count: "exact", head: true})
-					.eq("project_id", projectId)
-					.gte("created_at", startTimestamp)
-					.lte("created_at", endTimestamp),
-			]);
-
-			if (referrersError) throw referrersError;
-			if (tipsError) throw tipsError;
-			if (ratingsError) throw ratingsError;
-
-			const viewsByHost = new Map<string, number>();
-			for (const row of referrerRows ?? []) {
-				const host = String(row.referrer_host);
-				viewsByHost.set(host, (viewsByHost.get(host) ?? 0) + Number(row.views));
-			}
-			referrers = [...viewsByHost.entries()]
-				.map(([host, views]) => ({host, views}))
-				.sort((a, b) => b.views - a.views);
-
-			const tips = tipCount ?? 0;
-			const ratings = ratingCount ?? 0;
-			conversions = {
-				tips,
-				ratings,
-				tipRate: totalViews > 0 ? (tips / totalViews) * 100 : 0,
-				ratingRate: totalViews > 0 ? (ratings / totalViews) * 100 : 0,
-			};
-		}
-
+	const requestedDays = new URL(request.url).searchParams.get("days");
+	const days = requestedDays === null ? DEFAULT_DAYS : Number(requestedDays);
+	if (!Number.isInteger(days) || days < 1 || days > MAX_DAYS) {
 		return Response.json(
-			{
-				project: {
-					id: Number(project["numericId"]),
-					name: project.name,
-					slug: project.slug,
-				},
-				isPro: projectIsPro,
-				days,
-				upgradeRequired,
-				dailyViews,
-				totalViews,
-				referrers,
-				conversions,
-			},
-			{headers: {"Cache-Control": "private, no-store"}},
+			{ error: `days must be an integer between 1 and ${MAX_DAYS}` },
+			{ status: 400 },
 		);
-	} catch (error) {
-		console.error("Project analytics error:", error);
-		return Response.json({error: "Internal server error"}, {status: 500});
 	}
+
+	const now = Date.now();
+	const today = utcDay(now);
+	const startDay = utcDay(now - (days - 1) * DAY_MS);
+	const { data, error } = await getSupabase()
+		.from("project_views_daily")
+		.select("day, views")
+		.eq("project_id", project.numericId)
+		.gte("day", startDay)
+		.lte("day", today)
+		.order("day", { ascending: true });
+
+	if (error) {
+		console.error("Project analytics query failed:", error);
+		if (error.code === "42P01" || error.code === "PGRST205") {
+			return Response.json(
+				{ error: "Daily project view tracking is not available yet" },
+				{ status: 503 },
+			);
+		}
+		return Response.json(
+			{ error: "Unable to load project analytics" },
+			{ status: 500 },
+		);
+	}
+
+	const viewsByDay = new Map<string, number>();
+	for (const row of data ?? []) {
+		const day = String(row.day);
+		const views = Number(row.views);
+		if (!Number.isFinite(views) || views < 0) continue;
+		viewsByDay.set(day, Math.floor(views));
+	}
+
+	const dailyViews = Array.from({ length: days }, (_, index) => {
+		const day = utcDay(Date.parse(`${startDay}T00:00:00.000Z`) + index * DAY_MS);
+		return { day, views: viewsByDay.get(day) ?? 0 };
+	});
+	const totalViews = dailyViews.reduce((total, entry) => total + entry.views, 0);
+
+	return Response.json(
+		{
+			days,
+			startDay,
+			endDay: today,
+			totalViews,
+			averageViewsPerDay: totalViews / days,
+			dailyViews,
+		},
+		{ headers: { "Cache-Control": "private, no-store" } },
+	);
 }

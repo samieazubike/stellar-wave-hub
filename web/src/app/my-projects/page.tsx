@@ -719,7 +719,7 @@ export default function MyProjectsPage() {
 									Edit
 								</Link>
 								<Link
-									href={`/projects/${project.slug}/analytics`}
+									href={`/my-projects/${project.id}/analytics`}
 									className="btn-ghost text-sm !py-1.5 !px-3"
 								>
 									Analytics

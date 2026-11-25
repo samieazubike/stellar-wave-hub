@@ -1,59 +1,57 @@
-import {verifyApiKey} from "@/lib/api-keys";
-import {getSupabase} from "@/lib/firebase";
+import { verifyApiKey } from "@/lib/api-keys";
+import { getApprovedProjects, publicApiCorsHeaders } from "@/lib/public-api-projects";
 
 export const dynamic = "force-dynamic";
 
+function json(body: unknown, status = 200) {
+  return Response.json(body, { status, headers: publicApiCorsHeaders });
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: publicApiCorsHeaders });
+}
+
 export async function GET(request: Request) {
-	const apiKey = await verifyApiKey(request);
-	if (!apiKey) {
-		return Response.json(
-			{error: "A valid API key is required. Send it in the X-API-Key header."},
-			{status: 401},
-		);
-	}
+  try {
+    if (!await verifyApiKey(request)) return json({ error: "Invalid API key" }, 401);
+    const params = new URL(request.url).searchParams;
+    const pageText = params.get("page") || "1";
+    const limitText = params.get("limit") || "20";
+    const sort = params.get("sort") || "newest";
+    if (!/^[1-9]\d*$/.test(pageText) || !/^[1-9]\d*$/.test(limitText) ||
+      !Number.isSafeInteger(Number(pageText)) || Number(limitText) > 100 ||
+      !["newest", "top-rated", "most-reviewed"].includes(sort)) {
+      return json({ error: "Invalid page, limit, or sort" }, 400);
+    }
+    const page = Number(pageText);
+    const limit = Number(limitText);
+    const category = params.get("category")?.trim().toLowerCase() || "";
+    const search = params.get("search")?.trim().toLowerCase() || "";
+    if (category.length > 80 || search.length > 200) {
+      return json({ error: "Filter is too long" }, 400);
+    }
 
-	const url = new URL(request.url);
-	const rawLimit = url.searchParams.get("limit");
-	const rawPage = url.searchParams.get("page");
-	const limit = rawLimit === null ? 20 : Number(rawLimit);
-	const page = rawPage === null ? 1 : Number(rawPage);
-	if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-		return Response.json({error: "limit must be an integer between 1 and 100"}, {status: 400});
-	}
-	if (!Number.isInteger(page) || page < 1) {
-		return Response.json({error: "page must be a positive integer"}, {status: 400});
-	}
-
-	try {
-		const offset = (page - 1) * limit;
-		const {data, count, error} = await getSupabase()
-			.from("projects")
-			.select('"numericId",name,slug,description,category,tags,website_url,github_url,logo_url,created_at', {
-				count: "exact",
-			})
-			.in("status", ["approved", "featured"])
-			.order("created_at", {ascending: false})
-			.range(offset, offset + limit - 1);
-
-		if (error) throw error;
-
-		return Response.json(
-			{
-				data: (data ?? []).map((project) => ({
-					...project,
-					id: Number(project["numericId"]),
-				})),
-				pagination: {
-					page,
-					limit,
-					total: count ?? 0,
-					pages: Math.ceil((count ?? 0) / limit),
-				},
-			},
-			{headers: {"Cache-Control": "private, no-store"}},
-		);
-	} catch (error) {
-		console.error("GET /api/v1/projects error:", error);
-		return Response.json({error: "Internal server error"}, {status: 500});
-	}
+    const projects = (await getApprovedProjects())
+      .filter((project) => !category || project.category.toLowerCase() === category)
+      .filter((project) => !search || [project.name, project.description, ...project.tags]
+        .some((value) => value.toLowerCase().includes(search)));
+    projects.sort((a, b) => {
+      if (sort === "top-rated") {
+        const difference = (b.rating.average ?? -1) - (a.rating.average ?? -1);
+        if (difference) return difference;
+      } else if (sort === "most-reviewed") {
+        const difference = b.rating.count - a.rating.count;
+        if (difference) return difference;
+      }
+      return b.created_at.localeCompare(a.created_at) || a.id - b.id;
+    });
+    const total = projects.length;
+    return json({
+      projects: projects.slice((page - 1) * limit, page * limit),
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error("Public projects API error:", error);
+    return json({ error: "Internal server error" }, 500);
+  }
 }

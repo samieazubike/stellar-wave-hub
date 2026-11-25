@@ -1,4 +1,5 @@
 import { getSupabase } from "@/lib/firebase";
+import { getActiveJobsByProject } from "@/lib/active-jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,18 @@ export async function GET(request: Request) {
       [rows[i], rows[j]] = [rows[j], rows[i]];
     }
 
-    return Response.json({ spotlights: rows });
+    const jobsByProject = await getActiveJobsByProject(
+      rows.map((project) => Number(project.id)),
+    );
+    const spotlights = rows.map((project) => ({
+      ...project,
+      ...(jobsByProject.get(Number(project.id)) ?? {
+        has_active_jobs: false,
+        active_job_url: null,
+      }),
+    }));
+
+    return Response.json({ spotlights });
   } catch (err) {
     console.error("Spotlights error:", err);
     return Response.json({ error: "Internal server error" }, { status: 500 });

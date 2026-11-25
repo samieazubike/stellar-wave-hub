@@ -73,6 +73,8 @@ interface Project {
 	pro_until?: string | null;
 	plan?: string | null;
 	created_at: string;
+	has_active_jobs?: boolean;
+	active_job_url?: string | null;
 }
 
 interface Rating {
@@ -1107,6 +1109,16 @@ export default function ProjectDetailPage({
 								<span className="featured-badge tag tag-solar">
 									Featured
 								</span>
+							)}
+							{project.has_active_jobs && project.active_job_url && (
+								<a
+									href={project.active_job_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="tag tag-aurora inline-flex items-center"
+								>
+									Hiring
+								</a>
 							)}
 							<ProBadge project={project} />
 							{isOnChainProject && process.env.NEXT_PUBLIC_CONTRACT_ID && (
