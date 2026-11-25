@@ -35,6 +35,8 @@ const NETWORK_OPTIONS = [
 
 const DEFAULT_SORT = "newest";
 const DEFAULT_LIMIT = 12;
+const VIEW_STORAGE_KEY = "explore-view";
+type ProjectView = "grid" | "list";
 
 function normalizeCategory(value: string | null): string {
 	if (!value) return "All";
@@ -118,6 +120,28 @@ function ExplorePageContent() {
 	});
 	const [loading, setLoading] = useState(true);
 	const [httpPage, setHttpPage] = useState(1);
+	const [view, setView] = useState<ProjectView>("grid");
+	const [viewPreferenceLoaded, setViewPreferenceLoaded] = useState(false);
+
+	useEffect(() => {
+		try {
+			const savedView = window.localStorage.getItem(VIEW_STORAGE_KEY);
+			if (savedView === "grid" || savedView === "list") setView(savedView);
+		} catch (error) {
+			console.warn("Unable to load Explore view preference.", error);
+		} finally {
+			setViewPreferenceLoaded(true);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!viewPreferenceLoaded) return;
+		try {
+			window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+		} catch (error) {
+			console.warn("Unable to save Explore view preference.", error);
+		}
+	}, [view, viewPreferenceLoaded]);
 
 	// The URL is the single source of truth for the view, so reloads, shared
 	// links and back/forward all restore the same filters.
@@ -375,6 +399,196 @@ function ExplorePageContent() {
 					</button>
 				))}
 			</div>
+
+			<div className="flex justify-end mb-4">
+				<div
+					className="inline-flex items-center gap-1 rounded-xl border border-dust/30 bg-stardust/40 p-1"
+					role="group"
+					aria-label="Project view"
+				>
+					<button
+						type="button"
+						aria-label="Grid view"
+						aria-pressed={view === "grid"}
+						onClick={() => setView("grid")}
+						className={`rounded-lg p-2 transition-colors ${
+							view === "grid"
+								? "bg-nova/20 text-nova-bright"
+								: "text-ash hover:text-starlight"
+						}`}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<rect x="3" y="3" width="7" height="7" rx="1" />
+							<rect x="14" y="3" width="7" height="7" rx="1" />
+							<rect x="3" y="14" width="7" height="7" rx="1" />
+							<rect x="14" y="14" width="7" height="7" rx="1" />
+						</svg>
+					</button>
+					<button
+						type="button"
+						aria-label="List view"
+						aria-pressed={view === "list"}
+						onClick={() => setView("list")}
+						className={`rounded-lg p-2 transition-colors ${
+							view === "list"
+								? "bg-nova/20 text-nova-bright"
+								: "text-ash hover:text-starlight"
+						}`}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<line x1="8" y1="6" x2="21" y2="6" />
+							<line x1="8" y1="12" x2="21" y2="12" />
+							<line x1="8" y1="18" x2="21" y2="18" />
+							<line x1="3" y1="6" x2="3.01" y2="6" />
+							<line x1="3" y1="12" x2="3.01" y2="12" />
+							<line x1="3" y1="18" x2="3.01" y2="18" />
+						</svg>
+					</button>
+				</div>
+			</div>
+
+			{/* Results */}
+			{loading ? (
+				<div
+					className={
+						view === "grid"
+							? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+							: "flex flex-col gap-3"
+					}
+				>
+					{[...Array(6)].map((_, i) => (
+						<div
+							key={i}
+							className={`skeleton rounded-2xl ${view === "grid" ? "h-56" : "h-20"}`}
+						/>
+					))}
+				</div>
+			) : displayProjects.length > 0 ? (
+				<>
+					<div
+						className={
+							view === "grid"
+								? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+								: "flex flex-col gap-3"
+						}
+					>
+						{displayProjects.map((project, i) =>
+							project._isSponsored ? (
+								<div key={`sponsored-${project.id}`} className="relative">
+									{/* Subtle outer glow to visually distinguish the sponsored card */}
+									<div
+										className="absolute inset-0 rounded-2xl pointer-events-none"
+										style={{
+											boxShadow:
+												"0 0 0 1px rgba(var(--solar-rgb,251,191,36),0.25)",
+										}}
+										aria-hidden="true"
+									/>
+									<ProjectCard
+										project={project}
+										index={i}
+										variant={view}
+										badge={{
+											label: "Sponsored",
+											variant: "solar",
+										}}
+									/>
+								</div>
+							) : (
+								<ProjectCard
+									key={project.id}
+									project={project}
+									index={i}
+									variant={view}
+								/>
+							),
+						)}
+					</div>
+
+					{/* Pagination */}
+					{pagination.pages > 1 && (
+						<div className="flex items-center justify-center gap-2 mt-12">
+							<button
+								disabled={pagination.page <= 1}
+								onClick={() => handlePageChange(pagination.page - 1)}
+							className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+							>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+								>
+									<path d="m15 18-6-6 6-6" />
+								</svg>
+							</button>
+							<span className="text-sm text-ash px-4">
+								Page {pagination.page} of {pagination.pages}
+							</span>
+							<button
+								disabled={pagination.page >= pagination.pages}
+								onClick={() => handlePageChange(pagination.page + 1)}
+							className="btn-ghost !py-2 !px-3 disabled:opacity-30 disabled:cursor-not-allowed"
+							>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+								>
+									<path d="m9 18 6-6-6-6" />
+								</svg>
+							</button>
+						</div>
+					)}
+				</>
+			) : (
+				<div className="glass rounded-2xl p-16 text-center">
+					<div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-stardust/50 flex items-center justify-center">
+						<svg
+							width="28"
+							height="28"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="var(--ash)"
+							strokeWidth="1.5"
+						>
+							<circle cx="11" cy="11" r="8" />
+							<path d="m21 21-4.3-4.3" />
+						</svg>
+					</div>
+					<h3 className="font-semibold text-lg text-moonlight mb-2">
+						No projects found
+					</h3>
+					<p className="text-ash">
+						Some projects may not be available yet. Try adjusting your search or filters.
+					</p>
+				</div>
+			)}
 		</div>
 	);
 }
