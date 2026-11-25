@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { FEATURED_DURATIONS, type FeaturedTier } from "@/lib/featured-pricing";
 import { payWithFreighter } from "@/lib/payments-client";
+import { PayFallback } from "@/components/PayFallback";
+import { XlmPrice } from "@/components/XlmPrice";
 
 interface FeaturedConfig {
   tiers: FeaturedTier[];
@@ -47,6 +49,38 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
 
   const selectedTier = config?.tiers.find((tier) => tier.days === selectedDays);
 
+  async function verifyAndActivate(txHash: string) {
+    if (!token) return;
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/featured/activate", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ project_id: projectId, days: selectedDays, tx_hash: txHash }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Payment was sent but the spotlight could not be activated.");
+      }
+      onActivated(data.expires_at);
+      setMessage(`${selectedDays}-day spotlight activated.`);
+      setOpen(false);
+    } catch (reason) {
+      setError(
+        `${reason instanceof Error ? reason.message : "Spotlight activation failed."} Payment transaction: ${txHash}.`,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function activate() {
     if (!token || !config || !selectedTier) return;
     if (!config.destination) {
@@ -73,29 +107,7 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
       return;
     }
 
-    try {
-      const response = await fetch("/api/featured/activate", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ project_id: projectId, days: selectedDays, tx_hash: txHash }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Payment was sent but the spotlight could not be activated.");
-      }
-      onActivated(data.expires_at);
-      setMessage(`${selectedDays}-day spotlight activated.`);
-      setOpen(false);
-    } catch (reason) {
-      setError(
-        `${reason instanceof Error ? reason.message : "Spotlight activation failed."} Payment transaction: ${txHash}.`,
-      );
-    } finally {
-      setBusy(false);
-    }
+    await verifyAndActivate(txHash);
   }
 
   return (
@@ -150,7 +162,10 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
                     </span>
                   </span>
                 </span>
-                <span className="font-semibold text-nova-bright">{tier.priceXlm} XLM</span>
+                <span className="font-semibold text-nova-bright inline-flex items-center">
+                  {tier.priceXlm} XLM
+                  <XlmPrice amount={tier.priceXlm} />
+                </span>
               </label>
             ))}
           </fieldset>
@@ -183,6 +198,16 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
                 ? `Pay ${selectedTier.priceXlm} XLM`
                 : "Loading prices..."}
           </button>
+
+          {config?.destination && selectedTier && (
+            <PayFallback
+              destination={config.destination}
+              amountXlm={selectedTier.priceXlm}
+              memo="spotlight"
+              disabled={busy || !token}
+              onVerifyTxHash={verifyAndActivate}
+            />
+          )}
         </div>
       )}
     </div>

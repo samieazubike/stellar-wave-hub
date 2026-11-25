@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import VerifiedBadge from "./VerifiedBadge";
+import ProBadge from "./ProBadge";
+import BookmarkButton from "./BookmarkButton";
 import { useCompare } from "@/context/CompareContext";
 
 interface ProjectCardProps {
@@ -26,8 +28,12 @@ interface ProjectCardProps {
     stellar_account_id?: string | null;
     has_active_jobs?: boolean;
     active_job_url?: string | null;
+    is_pro?: boolean | number | null;
+    pro_until?: string | null;
+    plan?: string | null;
   };
   index?: number;
+  variant?: "grid" | "list";
   badge?: {
     label: string;
     variant?: "solar" | "aurora" | "nova" | "plasma";
@@ -47,7 +53,12 @@ const categoryColors: Record<string, string> = {
   other: "tag-nova",
 };
 
-export default function ProjectCard({ project, index = 0, badge }: ProjectCardProps) {
+export default function ProjectCard({
+  project,
+  index = 0,
+  variant = "grid",
+  badge,
+}: ProjectCardProps) {
   const { isSelected, toggleProject, projects } = useCompare();
   const colorClass = categoryColors[project.category?.toLowerCase()] || "tag-nova";
   const tags = project.tags ? project.tags.split(",").slice(0, 3) : [];
@@ -56,11 +67,19 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
 
   return (
     <article
-      className={`group relative glass glass-hover rounded-2xl p-6 flex flex-col transition-all duration-300 animate-in animate-in-delay-${Math.min(index + 1, 5)}`}
+      className={`group relative glass glass-hover rounded-2xl transition-all duration-300 animate-in animate-in-delay-${Math.min(index + 1, 5)} ${
+        variant === "list"
+          ? "flex flex-row items-center gap-3 p-3 sm:gap-4 sm:p-4"
+          : "flex flex-col p-6"
+      }`}
     >
       {/* Featured badge or section badge */}
       {project.featured === 1 ? (
-        <div className="absolute -top-2 -right-2 featured-badge bg-solar/20 text-solar-bright text-xs font-bold px-2.5 py-1 rounded-full border border-solar/30 flex items-center gap-1">
+        <div
+          className={`featured-badge bg-solar/20 text-solar-bright text-xs font-bold px-2.5 py-1 rounded-full border border-solar/30 flex items-center gap-1 ${
+            variant === "list" ? "shrink-0" : "absolute -top-2 -right-2"
+          }`}
+        >
           <svg
             width="12"
             height="12"
@@ -73,7 +92,9 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
         </div>
       ) : badge ? (
         <div
-          className={`absolute -top-2 -right-2 text-xs font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
+          className={`text-xs font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
+            variant === "list" ? "shrink-0" : "absolute -top-2 -right-2"
+          } ${
             badge.variant === "aurora"
               ? "bg-aurora/20 text-aurora-bright border-aurora/30"
               : badge.variant === "solar"
@@ -128,16 +149,30 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
       {/* Header */}
       <Link
         href={`/projects/${project.slug}`}
-        className="flex flex-1 flex-col gap-4"
+        className={`flex min-w-0 flex-1 ${
+          variant === "list"
+            ? "flex-row items-center gap-3 sm:gap-4"
+            : "flex-col gap-4"
+        }`}
       >
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-lg font-bold text-nova-bright group-hover:from-nova/40 group-hover:to-plasma/40 transition-all overflow-hidden">
+      <div
+        className={`flex min-w-0 ${
+          variant === "list"
+            ? "w-28 shrink-0 items-center gap-2 sm:w-44 sm:gap-3"
+            : "items-start gap-3"
+        }`}
+      >
+        <div
+          className={`rounded-xl bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-lg font-bold text-nova-bright group-hover:from-nova/40 group-hover:to-plasma/40 transition-all overflow-hidden ${
+            variant === "list" ? "h-9 w-9" : "w-11 h-11"
+          }`}
+        >
           {project.logo_url ? (
             <Image
               src={project.logo_url}
               alt={`${project.name} logo`}
-              width={44}
-              height={44}
+              width={variant === "list" ? 36 : 44}
+              height={variant === "list" ? 36 : 44}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -147,6 +182,7 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-starlight group-hover:text-nova-bright transition-colors truncate flex items-center gap-1.5">
             <span className="truncate">{project.name}</span>
+            <ProBadge project={project} size="sm" />
             <VerifiedBadge
               verifiedAt={project.owner_verified_at}
               account={project.stellar_account_id}
@@ -159,12 +195,18 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
       </div>
 
       {/* Description */}
-      <p className="text-sm text-moonlight/80 leading-relaxed line-clamp-2 flex-1">
+      <p
+        className={`text-sm text-moonlight/80 leading-relaxed ${
+          variant === "list"
+            ? "min-w-0 flex-1 line-clamp-1"
+            : "line-clamp-2 flex-1"
+        }`}
+      >
         {project.description}
       </p>
 
       {/* Tags */}
-      {tags.length > 0 && (
+      {tags.length > 0 && variant === "grid" && (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((tag) => (
             <span
@@ -178,7 +220,13 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-dust/20">
+      <div
+        className={`flex items-center justify-between ${
+          variant === "list"
+            ? "shrink-0 gap-2 border-t-0 pt-0 sm:gap-3"
+            : "pt-2 border-t border-dust/20"
+        }`}
+      >
         <div className="flex items-center gap-1.5">
           <span className={`tag ${colorClass}`}>{project.category}</span>
           {project.stellar_contract_id && (
@@ -227,34 +275,39 @@ export default function ProjectCard({ project, index = 0, badge }: ProjectCardPr
         </div>
       </div>
       </Link>
-      <button
-        type="button"
-        onClick={() =>
-          toggleProject({
-            id: project.id,
-            name: project.name,
-            slug: project.slug,
-          })
-        }
-        disabled={compareLimitReached}
-        aria-pressed={selected}
-        aria-label={
-          selected
-            ? `Remove ${project.name} from comparison`
-            : compareLimitReached
-              ? `Comparison limit reached; ${project.name} cannot be added`
-              : `Add ${project.name} to comparison`
-        }
-        title={compareLimitReached ? "Choose up to 3 projects" : undefined}
-        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
-          selected
-            ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
-            : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
-        } disabled:cursor-not-allowed disabled:opacity-45`}
-      >
-        <span aria-hidden="true">{selected ? "✓" : "+"}</span>
-        {selected ? "Added to compare" : "Add to compare"}
-      </button>
+      <div className={variant === "list" ? "shrink-0 flex items-center gap-2" : "mt-4 flex gap-2"}>
+        <BookmarkButton projectId={project.id} projectName={project.name} />
+        <button
+          type="button"
+          onClick={() =>
+            toggleProject({
+              id: project.id,
+              name: project.name,
+              slug: project.slug,
+            })
+          }
+          disabled={compareLimitReached}
+          aria-pressed={selected}
+          aria-label={
+            selected
+              ? `Remove ${project.name} from comparison`
+              : compareLimitReached
+                ? `Comparison limit reached; ${project.name} cannot be added`
+                : `Add ${project.name} to comparison`
+          }
+          title={compareLimitReached ? "Choose up to 3 projects" : undefined}
+          className={`${variant === "list" ? "shrink-0 rounded-lg p-2 text-xs" : "min-w-0 flex-1 gap-2 rounded-xl px-4 py-2.5 text-sm"} flex items-center justify-center border font-semibold transition-colors ${
+            selected
+              ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
+              : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
+          } disabled:cursor-not-allowed disabled:opacity-45`}
+        >
+          <span aria-hidden="true">{selected ? "✓" : "+"}</span>
+          <span className={variant === "list" ? "sr-only" : undefined}>
+            {selected ? "Added to compare" : "Add to compare"}
+          </span>
+        </button>
+      </div>
     </article>
   );
 }

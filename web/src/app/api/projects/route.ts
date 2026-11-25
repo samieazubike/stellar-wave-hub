@@ -4,6 +4,11 @@ import {parseJsonBody} from "@/lib/validation/parse-body";
 import {createProjectSchema} from "@/lib/validation/schemas/projects";
 import {publicProjectCacheHeaders} from "@/lib/public-project-cache";
 import {notifyMaintainersOfSubmission} from "@/lib/notifications";
+import {
+	FREE_RESEARCH_IMAGE_LIMIT,
+	PRO_RESEARCH_IMAGE_LIMIT,
+	isPro,
+} from "@/lib/pro";
 import slugify from "slugify";
 import {getSupabase} from "@/lib/firebase";
 import {checkRateLimit, getClientIp, rateLimitExceededResponse} from "@/lib/rate-limit";
@@ -126,6 +131,15 @@ export async function GET(request: Request) {
 			}),
 		);
 
+		const isCurrentlyFeatured = (project: Record<string, unknown>) => {
+			if (project.featured !== 1) return false;
+			const featuredUntil = project.featured_until;
+			return (
+				featuredUntil == null ||
+				Date.parse(String(featuredUntil)) > now
+			);
+		};
+
 		// Sort
 		if (sort === "new-this-week") {
 			// Sort strictly by created_at descending (newest first)
@@ -150,19 +164,26 @@ export async function GET(request: Request) {
 					return (a.created_at as string) < (b.created_at as string)
 						? -1
 						: 1;
-				if (sort === "top-rated")
+				if (sort === "top-rated") {
+					const featuredDifference =
+						Number(isCurrentlyFeatured(b)) -
+						Number(isCurrentlyFeatured(a));
+					if (featuredDifference !== 0) return featuredDifference;
 					return (
 						((b.avg_rating as number) || 0) -
 						((a.avg_rating as number) || 0)
 					);
+				}
 				if (sort === "most-reviewed")
 					return (
 						((b.rating_count as number) || 0) -
 						((a.rating_count as number) || 0)
 					);
-				// newest — featured first, then by date desc
-				if ((b.featured as number) !== (a.featured as number))
-					return (b.featured as number) - (a.featured as number);
+				// newest — currently featured first, then by date desc
+				const featuredDifference =
+					Number(isCurrentlyFeatured(b)) -
+					Number(isCurrentlyFeatured(a));
+				if (featuredDifference !== 0) return featuredDifference;
 				return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
 			});
 		}
@@ -221,6 +242,19 @@ export async function POST(request: Request) {
 		logo_url,
 		research_images,
 	} = parsed.data;
+
+	const projectIsPro = isPro(null);
+	const maxResearchImages = projectIsPro
+		? PRO_RESEARCH_IMAGE_LIMIT
+		: FREE_RESEARCH_IMAGE_LIMIT;
+	if (Array.isArray(research_images) && research_images.length > maxResearchImages) {
+		return Response.json(
+			{
+				error: `Maximum ${maxResearchImages} research images allowed for free projects. Upgrade to Pro for up to ${PRO_RESEARCH_IMAGE_LIMIT} images.`,
+			},
+			{status: 400},
+		);
+	}
 
 	try {
 

@@ -75,27 +75,24 @@ export default function MaintainerDashboardPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!user) {
-      const countdownTimer = setTimeout(() => setRedirectCountdown(3), 0);
-      const timer = setTimeout(() => {
-        router.replace("/login?redirect=/maintainer");
-      }, 3000);
-      return () => {
-        clearTimeout(countdownTimer);
-        clearTimeout(timer);
-      };
-    }
+    const redirectPath = !user
+      ? "/login?redirect=/maintainer"
+      : !hasMinRole(user.role, "maintainer")
+        ? "/explore"
+        : null;
+    if (!redirectPath) return;
 
-    if (!hasMinRole(user.role, "maintainer")) {
-      const countdownTimer = setTimeout(() => setRedirectCountdown(3), 0);
-      const timer = setTimeout(() => {
-        router.replace("/explore");
-      }, 3000);
-      return () => {
-        clearTimeout(countdownTimer);
-        clearTimeout(timer);
-      };
-    }
+    const countdownTimer = window.setTimeout(
+      () => setRedirectCountdown(3),
+      0,
+    );
+    const redirectTimer = window.setTimeout(() => {
+      router.replace(redirectPath);
+    }, 3000);
+    return () => {
+      window.clearTimeout(countdownTimer);
+      window.clearTimeout(redirectTimer);
+    };
   }, [user, authLoading, router]);
 
   // Fetch maintainer dashboard data

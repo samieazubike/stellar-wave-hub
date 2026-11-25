@@ -1,5 +1,10 @@
 /** Claims older than this are treated as released (no cron needed). */
-export const CLAIM_TTL_MINUTES = Number(process.env.CLAIM_TTL_MINUTES) || 30;
+export function parseClaimTtlMinutes(value: string | undefined): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 30;
+}
+
+export const CLAIM_TTL_MINUTES = parseClaimTtlMinutes(process.env.CLAIM_TTL_MINUTES);
 
 export interface ClaimableProject {
   claimed_by?: number | string | null;

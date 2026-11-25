@@ -1,8 +1,11 @@
 "use client";
 
-import {useEffect, useMemo, useState, useCallback, Suspense} from "react";
+import {useEffect, useMemo, useState, useCallback, Suspense, useRef} from "react";
 import {useRouter, useSearchParams, usePathname} from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import ProjectCard from "@/components/ProjectCard";
+import {useRecentlyViewed} from "@/lib/useRecentlyViewed";
 
 const CATEGORIES = [
 	"All",
@@ -27,8 +30,16 @@ const SORT_OPTIONS = [
 	{value: "oldest", label: "Oldest"},
 ];
 
+const NETWORK_OPTIONS = [
+	{value: "all", label: "All networks"},
+	{value: "testnet", label: "Testnet"},
+	{value: "mainnet", label: "Mainnet"},
+];
+
 const DEFAULT_SORT = "newest";
 const DEFAULT_LIMIT = 12;
+const VIEW_STORAGE_KEY = "explore-view";
+type ProjectView = "grid" | "list";
 
 function normalizeCategory(value: string | null): string {
 	if (!value) return "All";
@@ -45,6 +56,11 @@ function normalizeSort(value: string | null): string {
 		: DEFAULT_SORT;
 }
 
+function normalizeNetwork(value: string | null): string {
+	if (!value) return "all";
+	return NETWORK_OPTIONS.some((o) => o.value === value) ? value : "all";
+}
+
 function normalizePage(value: string | null): number {
 	const parsed = parseInt(value ?? "", 10);
 	if (!Number.isFinite(parsed) || parsed < 1) return 1;
@@ -52,6 +68,24 @@ function normalizePage(value: string | null): number {
 }
 /** Position (0-based) at which the sponsored card is inserted. */
 const SPONSORED_SLOT = 3;
+
+const LAST_RANDOM_SLUG_KEY = "swh_last_random_slug";
+
+function readLastRandomSlug(): string | null {
+        try {
+                return window.sessionStorage.getItem(LAST_RANDOM_SLUG_KEY);
+        } catch {
+                return null;
+        }
+}
+
+function writeLastRandomSlug(slug: string) {
+        try {
+                window.sessionStorage.setItem(LAST_RANDOM_SLUG_KEY, slug);
+        } catch {
+                // Session storage is optional; the exclude param still works within this view.
+        }
+}
 
 interface Project {
 	id: number;
@@ -83,6 +117,13 @@ interface Pagination {
 	pages: number;
 }
 
+interface Suggestion {
+	id: number;
+	name: string;
+	slug: string;
+	logo_url: string | null;
+}
+
 /**
  * Returns true when the user's search string is an exact (case-insensitive)
  * match of an organic project name already on the page.  In that case we
@@ -99,6 +140,7 @@ function ExplorePageContent() {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const queryString = searchParams.toString();
+	const {recent: recentlyViewed, clear: clearRecentlyViewed} = useRecentlyViewed();
 
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [pagination, setPagination] = useState<Pagination>({
@@ -108,13 +150,40 @@ function ExplorePageContent() {
 		pages: 0,
 	});
 	const [loading, setLoading] = useState(true);
-	const [httpPage, setHttpPage] = useState(1);
+	const [view, setView] = useState<ProjectView>("grid");
+	const [viewPreferenceLoaded, setViewPreferenceLoaded] = useState(false);
+
+	useEffect(() => {
+		try {
+			const savedView = window.localStorage.getItem(VIEW_STORAGE_KEY);
+			if (savedView === "grid" || savedView === "list") setView(savedView);
+		} catch (error) {
+			console.warn("Unable to load Explore view preference.", error);
+		} finally {
+			setViewPreferenceLoaded(true);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!viewPreferenceLoaded) return;
+		try {
+			window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+		} catch (error) {
+			console.warn("Unable to save Explore view preference.", error);
+		}
+	}, [view, viewPreferenceLoaded]);
+	const [randomLoading, setRandomLoading] = useState(false);
+	const [randomError, setRandomError] = useState<string | null>(null);
+	const lastRandomSlug = useRef<string | null>(null);
 
 	// The URL is the single source of truth for the view, so reloads, shared
 	// links and back/forward all restore the same filters.
 	const category = normalizeCategory(searchParams.get("category"));
 	const search = searchParams.get("search") ?? "";
 	const sort = normalizeSort(searchParams.get("sort"));
+	const network = normalizeNetwork(searchParams.get("network"));
+	const hasContract = searchParams.get("hasContract") === "true";
+	const openSource = searchParams.get("openSource") === "true";
 	const substantialOnly = searchParams.get("substantial") === "true";
 	const page = normalizePage(searchParams.get("page"));
 
@@ -132,6 +201,35 @@ function ExplorePageContent() {
 		[queryString, pathname, router],
 	);
 
+	// "Surprise me" (#513): open a random approved project, excluding the one
+	// the previous click landed on so repeated clicks do not repeat.
+	const handleSurprise = useCallback(async () => {
+		if (randomLoading) return;
+		setRandomLoading(true);
+		setRandomError(null);
+		try {
+			const previous = lastRandomSlug.current ?? readLastRandomSlug();
+			const params = new URLSearchParams();
+			if (previous) params.set("exclude", previous);
+
+			const res = await fetch(`/api/projects/random?${params}`, {cache: "no-store"});
+			const data = await res.json();
+			if (!res.ok || typeof data.slug !== "string" || !data.slug) {
+				throw new Error(
+					typeof data.error === "string" ? data.error : "No project found",
+				);
+			}
+
+			lastRandomSlug.current = data.slug;
+			writeLastRandomSlug(data.slug);
+			router.push(`/projects/${data.slug}`);
+		} catch {
+			setRandomError("Couldn't find a random project. Try again.");
+		} finally {
+			setRandomLoading(false);
+		}
+	}, [randomLoading, router]);
+
 	// ------------------------------------------------------------------ //
 	// Fetch organic results                                                //
 	// ------------------------------------------------------------------ //
@@ -141,6 +239,9 @@ function ExplorePageContent() {
 		if (category !== "All") params.set("category", category.toLowerCase());
 		if (search) params.set("search", search);
 		if (substantialOnly) params.set("substantial", "true");
+		if (network !== "all") params.set("network", network);
+		if (hasContract) params.set("hasContract", "true");
+		if (openSource) params.set("openSource", "true");
 		params.set("sort", sort);
 		params.set("page", String(page));
 		params.set("limit", String(DEFAULT_LIMIT));
@@ -152,12 +253,11 @@ function ExplorePageContent() {
 			const data = await res.json();
 			setProjects(data.projects || []);
 			setPagination((prev) => ({...prev, ...data.pagination}));
-			setHttpPage(data.pagination?.page ?? page);
 		} catch {
 			setProjects([]);
 		}
 		setLoading(false);
-	}, [category, search, sort, substantialOnly, page]);
+	}, [category, search, sort, substantialOnly, network, hasContract, openSource, page]);
 
 	useEffect(() => {
 		const timer = window.setTimeout(() => void fetchProjects(), 0);
@@ -166,9 +266,14 @@ function ExplorePageContent() {
 
 	const toggleSubstantial = () =>
 		updateParams({substantial: substantialOnly ? null : "true"});
+	const toggleHasContract = () =>
+		updateParams({hasContract: hasContract ? null : "true"});
+	const toggleOpenSource = () =>
+		updateParams({openSource: openSource ? null : "true"});
+	const handleNetworkChange = (value: string) =>
+		updateParams({network: value === "all" ? null : value});
 	const handleCategoryChange = (cat: string) =>
 		updateParams({category: cat === "All" ? null : cat.toLowerCase()});
-	const handleSearchChange = (value: string) => updateParams({search: value});
 	const handleSortChange = (value: string) =>
 		updateParams({sort: value === DEFAULT_SORT ? null : value});
 	const handlePageChange = (nextPage: number) =>
@@ -212,24 +317,126 @@ function ExplorePageContent() {
 		return [...projects.slice(0, insertAt), sponsored, ...projects.slice(insertAt)];
 	}, [projects, sponsored, search]);
 
+	const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+	const [suggestionQuery, setSuggestionQuery] = useState(search);
+	const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+	const [activeSuggestion, setActiveSuggestion] = useState(-1);
+	const searchContainerRef = useRef<HTMLDivElement>(null);
+
+	const handleSearchChange = (value: string) => {
+		setSuggestionQuery(value);
+		setActiveSuggestion(-1);
+		setSuggestionsOpen(Boolean(value.trim()));
+		updateParams({search: value});
+	};
+
+	useEffect(() => {
+		if (!suggestionQuery.trim()) {
+			const timer = window.setTimeout(() => {
+				setSuggestions([]);
+				setSuggestionsOpen(false);
+				setActiveSuggestion(-1);
+			}, 0);
+			return () => window.clearTimeout(timer);
+		}
+
+		const controller = new AbortController();
+		const timer = window.setTimeout(async () => {
+			try {
+				const res = await fetch(
+					`/api/projects/suggest?q=${encodeURIComponent(suggestionQuery.trim())}`,
+					{signal: controller.signal, cache: "no-store"},
+				);
+				const data = await res.json();
+				if (!controller.signal.aborted) {
+					setSuggestions(data.suggestions ?? []);
+					setSuggestionsOpen(true);
+					setActiveSuggestion(-1);
+				}
+			} catch (error) {
+				if (!(error instanceof DOMException && error.name === "AbortError")) {
+					setSuggestions([]);
+				}
+			}
+		}, 250);
+
+		return () => {
+			window.clearTimeout(timer);
+			controller.abort();
+		};
+	}, [suggestionQuery]);
+
+	useEffect(() => {
+		const timer = window.setTimeout(() => {
+			setSuggestionQuery(search);
+			setActiveSuggestion(-1);
+		}, 0);
+		return () => window.clearTimeout(timer);
+	}, [search]);
+
+	useEffect(() => {
+		const handleOutsideClick = (event: MouseEvent) => {
+			if (!searchContainerRef.current?.contains(event.target as Node)) {
+				setSuggestionsOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleOutsideClick);
+		return () => document.removeEventListener("mousedown", handleOutsideClick);
+	}, []);
+
+	const navigateToSuggestion = (suggestion: Suggestion) => {
+		setSuggestionsOpen(false);
+		router.push(`/projects/${suggestion.slug}`);
+	};
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 			{/* Header */}
-			<div className="mb-10 animate-in">
-				<h1 className="font-display font-bold text-3xl sm:text-4xl text-starlight mb-2">
-					Explore Projects
-				</h1>
-				<p className="text-ash text-lg">
-					Discover projects built through the Stellar Wave Program
-				</p>
+			<div className="mb-10 animate-in flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+				<div>
+					<h1 className="font-display font-bold text-3xl sm:text-4xl text-starlight mb-2">
+						Explore Projects
+					</h1>
+					<p className="text-ash text-lg">
+						Discover projects built through the Stellar Wave Program
+					</p>
+				</div>
+				<div className="flex flex-col items-start sm:items-end gap-1.5">
+					<button
+						type="button"
+						onClick={handleSurprise}
+						disabled={randomLoading}
+						aria-busy={randomLoading}
+						className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-nova text-white glow-nova hover:bg-nova/90 disabled:opacity-60 disabled:cursor-wait transition-all"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1" />
+						</svg>
+						{randomLoading ? "Finding a project..." : "Surprise me"}
+					</button>
+					{randomError && (
+						<p role="alert" className="text-xs text-supernova">
+							{randomError}
+						</p>
+					)}
+				</div>
 			</div>
 
 			<div className="flex flex-col lg:flex-row gap-4 mb-8 animate-in animate-in-delay-1">
 				{/* Search */}
-				<div className="relative flex-1">
+				<div ref={searchContainerRef} className="relative flex-1">
 					<svg
-						className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ash"
+						className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ash z-10"
 						width="18"
 						height="18"
 						viewBox="0 0 24 24"
@@ -238,17 +445,112 @@ function ExplorePageContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						>
+					>
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
 					</svg>
-						<input
+					<input
 						type="text"
+						role="combobox"
+						aria-label="Search projects"
+						aria-autocomplete="list"
+						aria-expanded={suggestionsOpen && suggestions.length > 0}
+						aria-controls="project-suggestions"
+						aria-activedescendant={
+							activeSuggestion >= 0
+								? `project-suggestion-${activeSuggestion}`
+								: undefined
+						}
 						placeholder="Search projects..."
 						className="input-field !pl-11"
 						value={search}
 						onChange={(e) => handleSearchChange(e.target.value)}
+						onFocus={() => {
+							if (suggestionQuery.trim() && suggestions.length > 0) {
+								setSuggestionsOpen(true);
+							}
+						}}
+						onKeyDown={(event) => {
+							if (event.key === "ArrowDown") {
+								event.preventDefault();
+								if (suggestions.length === 0) return;
+								setSuggestionsOpen(true);
+								setActiveSuggestion((current) =>
+									current >= suggestions.length - 1 ? 0 : current + 1,
+								);
+							} else if (event.key === "ArrowUp") {
+								event.preventDefault();
+								if (suggestions.length === 0) return;
+								setSuggestionsOpen(true);
+								setActiveSuggestion((current) =>
+									current <= 0 ? suggestions.length - 1 : current - 1,
+								);
+							} else if (event.key === "Enter") {
+								if (suggestionsOpen && suggestions.length > 0) {
+									event.preventDefault();
+									const selected = suggestions[activeSuggestion >= 0 ? activeSuggestion : 0];
+									navigateToSuggestion(selected);
+								}
+							} else if (event.key === "Escape") {
+								event.preventDefault();
+								setSuggestionsOpen(false);
+								setActiveSuggestion(-1);
+							}
+						}}
 					/>
+
+					{suggestionsOpen && suggestions.length > 0 && (
+						<div
+							id="project-suggestions"
+							role="listbox"
+							aria-label="Project suggestions"
+							className="absolute z-20 left-0 right-0 mt-2 rounded-2xl border border-stardust/70 bg-[#111827] shadow-2xl overflow-hidden"
+						>
+							{suggestions.map((suggestion, i) => (
+								<button
+									key={suggestion.id}
+									id={`project-suggestion-${i}`}
+									role="option"
+									aria-selected={activeSuggestion === i}
+									type="button"
+									onMouseEnter={() => setActiveSuggestion(i)}
+									onClick={() => navigateToSuggestion(suggestion)}
+									className={`flex items-center gap-3 px-4 py-3 w-full text-left transition-colors ${
+										activeSuggestion === i
+											? "bg-nova/20 text-starlight"
+											: "text-moonlight hover:bg-stardust/40"
+									}`}
+								>
+									{suggestion.logo_url ? (
+										<div className="w-9 h-9 shrink-0 rounded-lg overflow-hidden bg-stardust">
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img
+												src={suggestion.logo_url}
+												alt=""
+												className="w-full h-full object-cover"
+											/>
+										</div>
+									) : (
+										<div className="w-9 h-9 shrink-0 rounded-lg bg-stardust flex items-center justify-center text-sm font-bold text-nova-bright" aria-hidden="true">
+											{suggestion.name.trim().slice(0, 1).toUpperCase()}
+										</div>
+									)}
+									<span className="font-medium truncate">{suggestion.name}</span>
+									<svg
+										className="ml-auto shrink-0 text-ash"
+										width="16"
+										height="16"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2"
+									>
+										<path d="m9 18 6-6-6-6" />
+									</svg>
+								</button>
+							))}
+						</div>
+					)}
 				</div>
 
 				{/* Sort */}
@@ -263,6 +565,20 @@ function ExplorePageContent() {
 					}}
 				>
 					{SORT_OPTIONS.map((opt) => (
+						<option key={opt.value} value={opt.value}>
+							{opt.label}
+						</option>
+					))}
+				</select>
+
+				{/* Network */}
+				<select
+					aria-label="Stellar network"
+					value={network}
+					onChange={(e) => handleNetworkChange(e.target.value)}
+					className="input-field !w-auto !pr-10 appearance-none cursor-pointer"
+				>
+					{NETWORK_OPTIONS.map((opt) => (
 						<option key={opt.value} value={opt.value}>
 							{opt.label}
 						</option>
@@ -289,10 +605,38 @@ function ExplorePageContent() {
 						strokeWidth="2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						>
+					>
 						<polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
 					</svg>
 					Substantial only
+				</button>
+
+				{/* Has Soroban contract toggle */}
+				<button
+					type="button"
+					aria-pressed={hasContract}
+					onClick={toggleHasContract}
+					className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+						hasContract
+							? "bg-nova text-white glow-nova"
+							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+					}`.trim()}
+				>
+					Has Soroban contract
+				</button>
+
+				{/* Open source toggle */}
+				<button
+					type="button"
+					aria-pressed={openSource}
+					onClick={toggleOpenSource}
+					className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+						openSource
+							? "bg-nova text-white glow-nova"
+							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+					}`.trim()}
+				>
+					Open source
 				</button>
 			</div>
 
@@ -305,24 +649,156 @@ function ExplorePageContent() {
 						className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
 							category === cat
 								? "bg-nova text-white glow-nova"
-							: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
-						}`.trim()}
-						>
+								: "bg-stardust/50 text-moonlight hover:bg-stardust hover:text-starlight"
+						}`}
+					>
 						{cat}
-						</button>
+					</button>
 				))}
+			</div>
+
+			{/* Recently viewed (#509) */}
+			{recentlyViewed.length > 0 && (
+				<section aria-label="Recently viewed projects" className="mb-8 animate-in">
+					<div className="flex items-center justify-between gap-4 mb-3">
+						<h2 className="text-xs font-semibold uppercase tracking-wider text-ash">
+							Recently viewed
+						</h2>
+						<button
+							type="button"
+							onClick={clearRecentlyViewed}
+							className="text-xs font-medium text-ash hover:text-starlight transition-colors"
+						>
+							Clear
+						</button>
+					</div>
+					<div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+						{recentlyViewed.map((project) => (
+							<Link
+								key={project.slug}
+								href={`/projects/${project.slug}`}
+								className="shrink-0 flex items-center gap-2.5 max-w-[220px] rounded-xl bg-stardust/50 hover:bg-stardust px-3 py-2 transition-colors"
+							>
+								<span className="w-8 h-8 rounded-lg bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-sm font-bold text-nova-bright overflow-hidden">
+									{project.logo_url ? (
+										<Image
+											src={project.logo_url}
+											alt={`${project.name} logo`}
+											width={32}
+											height={32}
+											className="w-full h-full object-cover"
+										/>
+									) : (
+										project.name[0]
+									)}
+								</span>
+								<span className="min-w-0">
+									<span className="block text-sm font-medium text-moonlight truncate">
+										{project.name}
+									</span>
+									{project.category && (
+										<span className="block text-[11px] text-ash truncate">
+											{project.category}
+										</span>
+									)}
+								</span>
+							</Link>
+						))}
+					</div>
+				</section>
+			)}
+			<div className="flex justify-end mb-4">
+				<div
+					className="inline-flex items-center gap-1 rounded-xl border border-dust/30 bg-stardust/40 p-1"
+					role="group"
+					aria-label="Project view"
+				>
+					<button
+						type="button"
+						aria-label="Grid view"
+						aria-pressed={view === "grid"}
+						onClick={() => setView("grid")}
+						className={`rounded-lg p-2 transition-colors ${
+							view === "grid"
+								? "bg-nova/20 text-nova-bright"
+								: "text-ash hover:text-starlight"
+						}`}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<rect x="3" y="3" width="7" height="7" rx="1" />
+							<rect x="14" y="3" width="7" height="7" rx="1" />
+							<rect x="3" y="14" width="7" height="7" rx="1" />
+							<rect x="14" y="14" width="7" height="7" rx="1" />
+						</svg>
+					</button>
+					<button
+						type="button"
+						aria-label="List view"
+						aria-pressed={view === "list"}
+						onClick={() => setView("list")}
+						className={`rounded-lg p-2 transition-colors ${
+							view === "list"
+								? "bg-nova/20 text-nova-bright"
+								: "text-ash hover:text-starlight"
+						}`}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<line x1="8" y1="6" x2="21" y2="6" />
+							<line x1="8" y1="12" x2="21" y2="12" />
+							<line x1="8" y1="18" x2="21" y2="18" />
+							<line x1="3" y1="6" x2="3.01" y2="6" />
+							<line x1="3" y1="12" x2="3.01" y2="12" />
+							<line x1="3" y1="18" x2="3.01" y2="18" />
+						</svg>
+					</button>
+				</div>
 			</div>
 
 			{/* Results */}
 			{loading ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<div
+					className={
+						view === "grid"
+							? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+							: "flex flex-col gap-3"
+					}
+				>
 					{[...Array(6)].map((_, i) => (
-						<div key={i} className="skeleton h-56 rounded-2xl" />
+						<div
+							key={i}
+							className={`skeleton rounded-2xl ${view === "grid" ? "h-56" : "h-20"}`}
+						/>
 					))}
 				</div>
 			) : displayProjects.length > 0 ? (
 				<>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div
+						className={
+							view === "grid"
+								? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+								: "flex flex-col gap-3"
+						}
+					>
 						{displayProjects.map((project, i) =>
 							project._isSponsored ? (
 								<div key={`sponsored-${project.id}`} className="relative">
@@ -338,6 +814,7 @@ function ExplorePageContent() {
 									<ProjectCard
 										project={project}
 										index={i}
+										variant={view}
 										badge={{
 											label: "Sponsored",
 											variant: "solar",
@@ -349,6 +826,7 @@ function ExplorePageContent() {
 									key={project.id}
 									project={project}
 									index={i}
+									variant={view}
 								/>
 							),
 						)}

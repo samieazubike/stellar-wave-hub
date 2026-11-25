@@ -11,6 +11,28 @@ import {
 } from "@stellar/stellar-sdk";
 import { formatXlmAmount } from "@/lib/featured-pricing";
 
+export interface Sep7PayUriOptions {
+  destination: string;
+  amountXlm: number;
+  memo?: string;
+}
+
+export function buildSep7PayUri({
+  destination,
+  amountXlm,
+  memo,
+}: Sep7PayUriOptions): string {
+  const params = new URLSearchParams({
+    destination,
+    amount: formatXlmAmount(amountXlm),
+  });
+  if (memo) {
+    params.set("memo", memo);
+    params.set("memo_type", "MEMO_TEXT");
+  }
+  return `web+stellar:pay?${params.toString()}`;
+}
+
 interface PayWithFreighterOptions {
   amountXlm: number;
   destination: string;

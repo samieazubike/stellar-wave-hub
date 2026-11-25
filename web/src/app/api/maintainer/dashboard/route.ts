@@ -3,7 +3,7 @@ import { getAuthUser, hasMinRole, getMaintainerCategories } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-interface ProjectRecord {
+interface ProjectRecord extends Record<string, unknown> {
   numericId?: number;
   id?: number;
   name: string;
@@ -33,7 +33,16 @@ export async function GET(request: Request) {
     const userCategories = isFullAdmin ? [] : await getMaintainerCategories(auth.userId);
 
     const snap = await projectsCol.ref.get();
-    const allDocs = snap.docs.map((d) => d.data() as ProjectRecord);
+    const allDocs = snap.docs
+      .map((d) => d.data())
+      .filter(
+        (project): project is ProjectRecord =>
+          typeof project.name === "string" &&
+          typeof project.slug === "string" &&
+          typeof project.description === "string" &&
+          typeof project.category === "string" &&
+          typeof project.status === "string",
+      );
 
     const userCache = new Map<number, string>();
     const getUsername = async (userId?: number | null): Promise<string | null> => {
