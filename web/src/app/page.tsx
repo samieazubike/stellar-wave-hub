@@ -345,7 +345,7 @@ export default function Home() {
 								Top Projects
 							</h2>
 							<p className="text-ash mt-1">
-								Highest rated projects in the Wave ecosystem
+								Featured projects and top-rated picks in the Wave ecosystem
 							</p>
 						</div>
 						<Link

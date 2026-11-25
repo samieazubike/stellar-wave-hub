@@ -125,6 +125,16 @@ export async function GET(request: Request) {
 			}),
 		);
 
+		const now = Date.now();
+		const isCurrentlyFeatured = (project: Record<string, unknown>) => {
+			if (project.featured !== 1) return false;
+			const featuredUntil = project.featured_until;
+			return (
+				featuredUntil == null ||
+				Date.parse(String(featuredUntil)) > now
+			);
+		};
+
 		// Sort
 		if (sort === "new-this-week") {
 			// Sort strictly by created_at descending (newest first)
