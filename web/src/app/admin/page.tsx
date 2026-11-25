@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { hasMinRole } from "@/lib/roles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -80,7 +80,7 @@ interface Project {
 
 // ─── Fetch helpers ──────────────────────────────────────────────────
 
-function useAdminProjects(status: string | null, token: string | null) {
+function useAdminProjects(status: string | null, token: string | null, enabled: boolean = true) {
   return useQuery<Project[]>({
     queryKey: ["admin-projects", status],
     queryFn: async () => {
@@ -92,7 +92,7 @@ function useAdminProjects(status: string | null, token: string | null) {
       const data = await res.json();
       return data.projects || [];
     },
-    enabled: !!token,
+    enabled: !!token && enabled,
   });
 }
 
@@ -108,6 +108,34 @@ function usePendingProjects(token: string | null) {
       return data.projects || [];
     },
     enabled: !!token,
+  });
+}
+
+interface MaintainerApplication {
+  id: number;
+  user_id: number;
+  status: string;
+  reason: string;
+  created_at: string;
+  user?: {
+    username: string;
+    email: string;
+    github_url: string;
+  };
+}
+
+function useMaintainerApplications(token: string | null, enabled: boolean = true) {
+  return useQuery<MaintainerApplication[]>({
+    queryKey: ["admin-maintainer-applications"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/maintainer-applications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch applications");
+      const data = await res.json();
+      return data.applications || [];
+    },
+    enabled: !!token && enabled,
   });
 }
 
@@ -153,6 +181,172 @@ interface PromoCode {
   uses: number;
   expires_at: string | null;
   created_at: string;
+}
+
+interface AdminReport {
+  id: number;
+  reporter_username: string;
+  target_type: "project" | "rating";
+  target_name: string;
+  target_excerpt: string;
+  target_url: string | null;
+  reason: string;
+  details: string | null;
+  status: "open" | "resolved" | "dismissed";
+  created_at: string;
+}
+
+type ReportFilter = "open" | "resolved" | "dismissed" | "all";
+
+function ReportsTab({ token }: { token: string | null }) {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<ReportFilter>("open");
+  const { data: reports = [], isLoading, isError, error } = useQuery<AdminReport[]>({
+    queryKey: ["admin-reports", status],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/reports?status=${status}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch reports");
+      return data.reports || [];
+    },
+    enabled: !!token,
+  });
+  const updateReport = useMutation({
+    mutationFn: async ({ id, nextStatus }: { id: number; nextStatus: "resolved" | "dismissed" }) => {
+      const res = await fetch("/api/admin/reports", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id, status: nextStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update report");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-reports"] }),
+  });
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-starlight">Reports inbox</h2>
+          <p className="text-sm text-ash">Review reports about projects and reviews.</p>
+        </div>
+        <select
+          aria-label="Filter reports by status"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as ReportFilter)}
+          className="input-field w-auto min-w-40"
+        >
+          <option value="open">Open reports</option>
+          <option value="resolved">Resolved</option>
+          <option value="dismissed">Dismissed</option>
+          <option value="all">All reports</option>
+        </select>
+      </div>
+
+      {updateReport.isError && (
+        <div role="alert" className="bg-supernova/10 border border-supernova/20 text-supernova rounded-xl px-4 py-3 text-sm">
+          {updateReport.error.message}
+        </div>
+      )}
+      {isError && (
+        <div role="alert" className="bg-supernova/10 border border-supernova/20 text-supernova rounded-xl px-4 py-3 text-sm">
+          {error.message}
+        </div>
+      )}
+      {isLoading ? (
+        <Skeletons count={3} />
+      ) : isError ? null : reports.length > 0 ? (
+        <div className="space-y-3">
+          {reports.map((report) => (
+            <article key={report.id} className="glass rounded-2xl p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="rounded-md bg-supernova/10 px-2 py-1 font-medium uppercase tracking-wide text-supernova">
+                      {report.target_type}
+                    </span>
+                    <span className="text-ash">Reported by {report.reporter_username}</span>
+                    <span className="text-ash">·</span>
+                    <time className="text-ash" dateTime={report.created_at}>
+                      {new Date(report.created_at).toLocaleString()}
+                    </time>
+                    {report.status !== "open" && (
+                      <span className="rounded-md bg-white/5 px-2 py-1 capitalize text-ash">
+                        {report.status}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-starlight">{report.reason}</h3>
+                    {report.details && (
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-moonlight/75">
+                        {report.details}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-dust/30 bg-stardust/30 px-4 py-3">
+                    <p className="mb-1 text-xs uppercase tracking-wider text-ash">Reported target</p>
+                    {report.target_url ? (
+                      <Link
+                        href={report.target_url}
+                        className="font-medium text-plasma-bright underline underline-offset-2"
+                      >
+                        {report.target_name}
+                      </Link>
+                    ) : (
+                      <p className="font-medium text-ash">{report.target_name}</p>
+                    )}
+                    {report.target_excerpt && (
+                      <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm text-moonlight/70">
+                        {report.target_excerpt}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {report.status === "open" && (
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      disabled={updateReport.isPending}
+                      onClick={() => updateReport.mutate({ id: report.id, nextStatus: "resolved" })}
+                      className="rounded-lg border border-aurora/25 bg-aurora/10 px-3 py-2 text-xs font-medium text-aurora-bright transition-colors hover:bg-aurora/20 disabled:opacity-50"
+                    >
+                      Resolve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={updateReport.isPending}
+                      onClick={() => updateReport.mutate({ id: report.id, nextStatus: "dismissed" })}
+                      className="rounded-lg border border-dust/40 bg-white/5 px-3 py-2 text-xs font-medium text-moonlight transition-colors hover:bg-white/10 disabled:opacity-50"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--aurora)" strokeWidth="1.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+          }
+          title={status === "open" ? "Inbox clear" : "No reports found"}
+          subtitle={status === "open" ? "There are no open reports to review" : "No reports match this status"}
+        />
+      )}
+    </div>
+  );
 }
 
 function useAdminPromoCodes(token: string | null) {
@@ -346,6 +540,321 @@ function PromoCodesTab({ token }: { token: string | null }) {
   );
 }
 
+// ─── User management ─────────────────────────────────────────────────
+
+interface AdminUser {
+  id: number;
+  username: string;
+  email: string | null;
+  role: string;
+  created_at: string | null;
+}
+
+interface AdminUsersResponse {
+  users: AdminUser[];
+  pagination: { page: number; limit: number; total: number; pages: number };
+}
+
+const MANAGED_ROLES = ["contributor", "maintainer", "admin"] as const;
+
+function UserRoleEditor({
+  user,
+  currentUserId,
+  isPending,
+  onConfirm,
+}: {
+  user: AdminUser;
+  currentUserId: number;
+  isPending: boolean;
+  onConfirm: (userId: number, role: string) => void;
+}) {
+  const [nextRole, setNextRole] = useState<string | null>(null);
+  const isSelf = user.id === currentUserId;
+
+  return (
+    <AlertDialog
+      open={nextRole !== null}
+      onOpenChange={(open) => {
+        if (!open && !isPending) setNextRole(null);
+      }}
+    >
+      <Select
+        value={user.role}
+        onValueChange={(role) => setNextRole(role)}
+        disabled={isSelf || isPending}
+      >
+        <SelectTrigger
+          aria-label={`Role for ${user.username}`}
+          className="w-40"
+          title={isSelf ? "You cannot change your own role" : undefined}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {MANAGED_ROLES.map((role) => (
+            <SelectItem key={role} value={role}>
+              {role[0].toUpperCase() + role.slice(1)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Change {user.username}&apos;s role?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will change their access from{" "}
+            <span className="font-medium text-moonlight">{user.role}</span> to{" "}
+            <span className="font-medium text-moonlight">{nextRole}</span>.
+            {user.role === "admin" && nextRole !== "admin"
+              ? " The last administrator cannot be demoted."
+              : ""}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={isPending}
+            className="bg-nova/15 text-nova-bright border-nova/20 hover:bg-nova/25 focus:ring-nova/30"
+            onClick={() => {
+              if (nextRole) onConfirm(user.id, nextRole);
+              setNextRole(null);
+            }}
+          >
+            {isPending ? "Saving..." : "Confirm role change"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function UsersTab({
+  token,
+  currentUserId,
+}: {
+  token: string | null;
+  currentUserId: number;
+}) {
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [actionError, setActionError] = useState("");
+
+  const usersQuery = useQuery<AdminUsersResponse>({
+    queryKey: ["admin-users", search, roleFilter, page],
+    queryFn: async () => {
+      const params = new URLSearchParams({ search, page: String(page) });
+      if (roleFilter !== "all") params.set("role", roleFilter);
+      const response = await fetch(`/api/admin/users?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to load users");
+      return data;
+    },
+    enabled: !!token,
+  });
+
+  const updateRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
+      const response = await fetch(`/api/admin/users/${userId}/role`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to update role");
+    },
+    onMutate: () => setActionError(""),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (error) => {
+      setActionError(error.message);
+    },
+  });
+
+  const users = usersQuery.data?.users ?? [];
+  const total = usersQuery.data?.pagination.total ?? 0;
+  const pageSize = usersQuery.data?.pagination.limit ?? 25;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
+  return (
+    <section className="space-y-5">
+      <div className="glass rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-plasma-bright/80">
+              Community access
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-starlight">
+              User directory
+            </h2>
+            <p className="mt-1 text-sm text-ash">
+              Search accounts and manage their platform role.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(16rem,1fr)_10rem] lg:w-[30rem]">
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium text-ash">Search users</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Username or email"
+                className="input-field w-full text-sm"
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium text-ash">Role</span>
+              <select
+                value={roleFilter}
+                onChange={(event) => {
+                  setRoleFilter(event.target.value);
+                  setPage(1);
+                }}
+                className="input-field w-full text-sm"
+              >
+                <option value="all">All roles</option>
+                {MANAGED_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {role[0].toUpperCase() + role.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {actionError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-supernova/25 bg-supernova/10 px-4 py-3 text-sm text-supernova"
+        >
+          {actionError}
+        </div>
+      )}
+
+      <div className="glass overflow-hidden rounded-2xl">
+        {usersQuery.isLoading ? (
+          <div className="space-y-3 p-6" aria-label="Loading users">
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="h-12 animate-pulse rounded-lg bg-dust/15" />
+            ))}
+          </div>
+        ) : usersQuery.isError ? (
+          <div className="px-6 py-12 text-center">
+            <p role="alert" className="text-sm text-supernova">
+              {usersQuery.error.message}
+            </p>
+            <button
+              type="button"
+              onClick={() => usersQuery.refetch()}
+              className="btn-ghost mt-4 text-sm"
+            >
+              Try again
+            </button>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <p className="font-medium text-moonlight">No users found</p>
+            <p className="mt-1 text-sm text-ash">
+              Try a different search or role filter.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[42rem] text-left">
+              <thead className="border-b border-dust/25 bg-stardust/35">
+                <tr className="text-[11px] uppercase tracking-[0.16em] text-ash">
+                  <th scope="col" className="px-6 py-4 font-medium">User</th>
+                  <th scope="col" className="px-6 py-4 font-medium">Role</th>
+                  <th scope="col" className="px-6 py-4 font-medium">Joined</th>
+                  <th scope="col" className="px-6 py-4 text-right font-medium">Access</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-dust/15">
+                {users.map((listedUser) => (
+                  <tr key={listedUser.id} className="transition-colors hover:bg-stardust/25">
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-moonlight">{listedUser.username}</p>
+                      <p className="mt-0.5 text-xs text-ash">
+                        {listedUser.email || "No email on file"}
+                        {listedUser.id === currentUserId && (
+                          <span className="ml-2 text-plasma-bright">You</span>
+                        )}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex rounded-full border border-dust/30 bg-stardust/50 px-2.5 py-1 text-xs capitalize text-moonlight">
+                        {listedUser.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-ash">
+                      {listedUser.created_at
+                        ? new Date(listedUser.created_at).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end">
+                        <UserRoleEditor
+                          user={listedUser}
+                          currentUserId={currentUserId}
+                          isPending={updateRole.isPending}
+                          onConfirm={(userId, role) =>
+                            updateRole.mutate({ userId, role })
+                          }
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <footer className="flex flex-col gap-3 border-t border-dust/20 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-ash" aria-live="polite">
+            {total === 0
+              ? "0 users"
+              : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} of ${total} users`}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1 || usersQuery.isLoading}
+              className="btn-ghost !px-3 !py-1.5 text-xs disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <span className="min-w-16 text-center text-xs text-ash">
+              Page {page} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+              disabled={page >= pageCount || usersQuery.isLoading}
+              className="btn-ghost !px-3 !py-1.5 text-xs disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </footer>
+      </div>
+    </section>
+  );
+}
+
 // ─── Reject Dialog ──────────────────────────────────────────────────
 
 const REJECT_REASON_TEMPLATES = [
@@ -374,6 +883,164 @@ const REJECT_REASON_TEMPLATES = [
     text: "",
   },
 ] as const;
+
+// ─── Moderators leaderboard ──────────────────────────────────────────
+
+interface ModeratorStats {
+  actor_id: number;
+  username: string | null;
+  approvals: number;
+  rejections: number;
+  delists: number;
+  total_actions: number;
+  last_action_at: string | null;
+}
+
+type ModeratorSortKey = "username" | "approvals" | "rejections" | "delists" | "total_actions" | "last_action_at";
+type ModeratorPeriod = "7d" | "30d" | "all";
+
+const MODERATOR_PERIODS: { value: ModeratorPeriod; label: string; days: number | null }[] = [
+  { value: "7d", label: "7 days", days: 7 },
+  { value: "30d", label: "30 days", days: 30 },
+  { value: "all", label: "All time", days: null },
+];
+
+const MODERATOR_COLUMNS: { key: ModeratorSortKey; label: string; numeric: boolean }[] = [
+  { key: "username", label: "Moderator", numeric: false },
+  { key: "approvals", label: "Approvals", numeric: true },
+  { key: "rejections", label: "Rejections", numeric: true },
+  { key: "delists", label: "Delists", numeric: true },
+  { key: "total_actions", label: "Total", numeric: true },
+  { key: "last_action_at", label: "Last action", numeric: false },
+];
+
+function ModeratorsTab({ token }: { token: string | null }) {
+  const [period, setPeriod] = useState<ModeratorPeriod>("30d");
+  const [sortKey, setSortKey] = useState<ModeratorSortKey>("total_actions");
+  const [sortDesc, setSortDesc] = useState(true);
+
+  const statsQuery = useQuery<ModeratorStats[]>({
+    queryKey: ["admin-moderator-stats", period],
+    queryFn: async () => {
+      const days = MODERATOR_PERIODS.find((p) => p.value === period)?.days ?? null;
+      const params = new URLSearchParams();
+      if (days !== null) {
+        params.set("since", new Date(Date.now() - days * 86_400_000).toISOString());
+      }
+      const res = await fetch(`/api/admin/maintainer-stats?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load moderator stats");
+      return data.stats || [];
+    },
+    enabled: !!token,
+  });
+
+  const rows = useMemo(() => {
+    const sorted = [...(statsQuery.data ?? [])];
+    sorted.sort((a, b) => {
+      const av = a[sortKey] ?? "";
+      const bv = b[sortKey] ?? "";
+      const cmp = typeof av === "number" && typeof bv === "number"
+        ? av - bv
+        : String(av).localeCompare(String(bv));
+      return sortDesc ? -cmp : cmp;
+    });
+    return sorted;
+  }, [statsQuery.data, sortKey, sortDesc]);
+
+  const toggleSort = (key: ModeratorSortKey) => {
+    if (key === sortKey) {
+      setSortDesc((d) => !d);
+    } else {
+      setSortKey(key);
+      setSortDesc(key !== "username");
+    }
+  };
+
+  return (
+    <section className="space-y-5">
+      <div className="glass rounded-2xl p-5 sm:p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-starlight">Moderator activity</h2>
+          <p className="mt-1 text-sm text-ash">Ranked by moderation actions from the audit log.</p>
+        </div>
+        <div className="flex gap-1 rounded-xl bg-stardust/40 p-1" role="group" aria-label="Time period">
+          {MODERATOR_PERIODS.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => setPeriod(p.value)}
+              aria-pressed={period === p.value}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                period === p.value ? "bg-nova/20 text-nova-bright" : "text-ash hover:text-moonlight"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass overflow-hidden rounded-2xl">
+        {statsQuery.isLoading ? (
+          <div className="p-6"><Skeletons count={3} /></div>
+        ) : statsQuery.isError ? (
+          <div className="px-6 py-12 text-center">
+            <p role="alert" className="text-sm text-supernova">{statsQuery.error.message}</p>
+            <button type="button" onClick={() => statsQuery.refetch()} className="btn-ghost mt-4 text-sm">
+              Try again
+            </button>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <p className="font-medium text-moonlight">No moderation activity yet</p>
+            <p className="mt-1 text-sm text-ash">Approvals, rejections and delists will show up here.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[40rem] text-left">
+              <thead className="border-b border-dust/25 bg-stardust/35">
+                <tr className="text-[11px] uppercase tracking-[0.16em] text-ash">
+                  <th scope="col" className="px-4 py-3 font-medium">#</th>
+                  {MODERATOR_COLUMNS.map((col) => (
+                    <th
+                      key={col.key}
+                      scope="col"
+                      aria-sort={sortKey === col.key ? (sortDesc ? "descending" : "ascending") : "none"}
+                      className={`px-4 py-3 font-medium ${col.numeric ? "text-right" : ""}`}
+                    >
+                      <button type="button" onClick={() => toggleSort(col.key)} className="uppercase tracking-[0.16em] hover:text-moonlight">
+                        {col.label}
+                        {sortKey === col.key ? (sortDesc ? " ↓" : " ↑") : ""}
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-dust/15">
+                {rows.map((row, idx) => (
+                  <tr key={row.actor_id} className="transition-colors hover:bg-stardust/25">
+                    <td className="px-4 py-3 text-sm text-ash">{idx + 1}</td>
+                    <td className="px-4 py-3 font-medium text-moonlight">{row.username ?? `User #${row.actor_id}`}</td>
+                    <td className="px-4 py-3 text-right text-sm text-moonlight">{row.approvals}</td>
+                    <td className="px-4 py-3 text-right text-sm text-moonlight">{row.rejections}</td>
+                    <td className="px-4 py-3 text-right text-sm text-moonlight">{row.delists}</td>
+                    <td className="px-4 py-3 text-right text-sm font-semibold text-starlight">{row.total_actions}</td>
+                    <td className="px-4 py-3 text-sm text-ash">
+                      {row.last_action_at ? new Date(row.last_action_at).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function RejectDialog({
   project,
@@ -603,9 +1270,11 @@ function StatusBadge({ status, featured }: { status: string; featured?: number }
 function PendingCard({
   project,
   action,
+  isAdmin,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  isAdmin?: boolean;
 }) {
   const isLoading = action.isPending;
 
@@ -688,19 +1357,21 @@ function PendingCard({
           >
             Approve
           </button>
-          <button
-            disabled={isLoading}
-            onClick={() =>
-              action.mutate({
-                projectId: project.id,
-                action: "approve",
-                body: { featured: true },
-              })
-            }
-            className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
-          >
-            Feature
-          </button>
+          {isAdmin && (
+            <button
+              disabled={isLoading}
+              onClick={() =>
+                action.mutate({
+                  projectId: project.id,
+                  action: "approve",
+                  body: { featured: true },
+                })
+              }
+              className="bg-solar/15 hover:bg-solar/25 text-solar-bright border border-solar/20 font-medium text-sm px-4 py-2 rounded-xl transition-all disabled:opacity-50"
+            >
+              Feature
+            </button>
+          )}
           <RejectDialog
             project={project}
             isPending={isLoading}
@@ -723,9 +1394,11 @@ function PendingCard({
 function ProjectRow({
   project,
   action,
+  isAdmin,
 }: {
   project: Project;
   action: ReturnType<typeof useProjectAction>;
+  isAdmin?: boolean;
 }) {
   const isLoading = action.isPending;
 
@@ -761,7 +1434,7 @@ function ProjectRow({
       </div>
 
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
-        {(project.status === "approved" || project.status === "featured") && (
+        {isAdmin && (project.status === "approved" || project.status === "featured") && (
           <DelistDialog
             project={project}
             isPending={isLoading}
@@ -789,7 +1462,8 @@ function ProjectRow({
             Re-approve
           </button>
         )}
-        {project.status !== "featured" &&
+        {isAdmin &&
+          project.status !== "featured" &&
           (project.status === "approved" || project.status === "featured") && (
           <button
             disabled={isLoading}
@@ -805,7 +1479,7 @@ function ProjectRow({
             Feature
           </button>
         )}
-        {project.featured === 1 && (
+        {isAdmin && project.featured === 1 && (
           <button
             disabled={isLoading}
             onClick={() =>
@@ -820,13 +1494,15 @@ function ProjectRow({
             Unfeature
           </button>
         )}
-        <DeleteDialog
-          project={project}
-          isPending={isLoading}
-          onConfirm={() =>
-            action.mutate({ projectId: project.id, action: "delete" })
-          }
-        />
+        {isAdmin && (
+          <DeleteDialog
+            project={project}
+            isPending={isLoading}
+            onConfirm={() =>
+              action.mutate({ projectId: project.id, action: "delete" })
+            }
+          />
+        )}
       </div>
     </div>
   );
@@ -881,7 +1557,243 @@ function usdcToStroops(usdc: string): bigint {
   return BigInt(Math.round(n * 1_000_000));
 }
 
-function ContractPanel({ adminAddress }: { adminAddress: string }) {
+interface TreasuryHistoryDay {
+  date: string;
+  balance_stroops: string | null;
+  fees_stroops: string | null;
+}
+
+interface TreasuryHistoryResponse {
+  days: TreasuryHistoryDay[];
+  complete: boolean;
+  history_available_from: string;
+  updated_at: string;
+}
+
+function stroopsToUsdc(stroops: string | null): number | null {
+  return stroops === null ? null : Number(BigInt(stroops)) / 1_000_000;
+}
+
+function TreasuryHistoryChart({ token }: { token: string | null }) {
+  const historyQuery = useQuery<TreasuryHistoryResponse>({
+    queryKey: ["admin", "treasury-history"],
+    enabled: !!token,
+    queryFn: async () => {
+      const response = await fetch("/api/admin/treasury-history", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load treasury history.");
+      }
+      return data as TreasuryHistoryResponse;
+    },
+  });
+
+  const history = historyQuery.data;
+  const loading = historyQuery.isLoading || historyQuery.isFetching;
+  const error = historyQuery.error instanceof Error
+    ? historyQuery.error.message
+    : historyQuery.error
+      ? "Failed to load treasury history."
+      : null;
+  const points = history?.days ?? [];
+  const balances = points
+    .map((point) => stroopsToUsdc(point.balance_stroops))
+    .filter((value): value is number => value !== null);
+  const fees = points
+    .map((point) => stroopsToUsdc(point.fees_stroops))
+    .filter((value): value is number => value !== null);
+  const currentBalance = balances.at(-1) ?? null;
+  const totalFees = fees.reduce((total, value) => total + value, 0);
+  const maxFee = Math.max(...fees, 0);
+  const minBalance = Math.min(...balances, 0);
+  const maxBalance = Math.max(...balances, 0);
+  const balanceRange = Math.max(maxBalance - minBalance, 0.000001);
+  const chart = { width: 900, height: 300, left: 58, right: 18, top: 18, bottom: 40 };
+  const plotWidth = chart.width - chart.left - chart.right;
+  const plotHeight = chart.height - chart.top - chart.bottom;
+  const x = (index: number) =>
+    chart.left + (index / Math.max(points.length - 1, 1)) * plotWidth;
+  const balanceY = (value: number) =>
+    chart.top + ((maxBalance - value) / balanceRange) * plotHeight;
+  const feeHeight = (value: number) =>
+    maxFee > 0 ? (value / maxFee) * plotHeight * 0.35 : 0;
+  const balancePath = points
+    .map((point, index) => {
+      const value = stroopsToUsdc(point.balance_stroops);
+      return value === null ? "" : `${index === 0 || !points[index - 1]?.balance_stroops ? "M" : "L"} ${x(index)} ${balanceY(value)}`;
+    })
+    .filter(Boolean)
+    .join(" ");
+  const formatUsdc = (value: number | null) =>
+    value === null
+      ? "—"
+      : `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDC`;
+
+  return (
+    <section className="glass rounded-2xl p-5 sm:p-6" aria-labelledby="treasury-history-title">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-ash mb-1">
+            On-chain · Last 90 days
+          </p>
+          <h3 id="treasury-history-title" className="font-semibold text-starlight">
+            Treasury history
+          </h3>
+        </div>
+        <button
+          type="button"
+          onClick={() => historyQuery.refetch()}
+          disabled={loading}
+          className="btn-ghost text-xs !py-1.5 !px-3 disabled:opacity-50"
+        >
+          {loading ? "Refreshing…" : "Refresh history"}
+        </button>
+      </div>
+
+      {error ? (
+        <div className="rounded-xl border border-supernova/20 bg-supernova/10 px-4 py-3 text-sm text-supernova" role="alert">
+          {error}
+        </div>
+      ) : loading && !history ? (
+        <div className="skeleton h-64 rounded-xl" aria-label="Loading treasury history" />
+      ) : history ? (
+        <>
+          <div className="flex flex-wrap gap-x-8 gap-y-3 mb-5">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-ash">Current balance</p>
+              <p className="font-mono text-lg font-semibold text-starlight">
+                {formatUsdc(currentBalance)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-ash">Fees in period</p>
+              <p className="font-mono text-lg font-semibold text-aurora-bright">
+                {formatUsdc(totalFees)}
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-ash sm:ml-auto">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-0.5 w-4 bg-plasma-bright" />
+                Balance
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-sm bg-aurora/70" />
+                Fees / day
+              </span>
+            </div>
+          </div>
+
+          {!history.complete && (
+            <p className="text-xs text-solar-bright mb-3" role="status">
+              RPC history is available from {new Date(history.history_available_from).toLocaleDateString()}.
+              Earlier dates are omitted; configure an archival Soroban RPC to see the full 90 days.
+            </p>
+          )}
+
+          <div className="overflow-x-auto">
+            <svg
+              className="w-full min-w-[640px]"
+              viewBox={`0 0 ${chart.width} ${chart.height}`}
+              role="img"
+              aria-label="Treasury balance and daily fees collected over the last 90 days"
+            >
+              {[0, 0.5, 1].map((fraction) => {
+                const y = chart.top + fraction * plotHeight;
+                const value = maxBalance - fraction * balanceRange;
+                return (
+                  <g key={fraction}>
+                    <line
+                      x1={chart.left}
+                      y1={y}
+                      x2={chart.width - chart.right}
+                      y2={y}
+                      stroke="rgba(148,163,184,0.14)"
+                      strokeDasharray="3 6"
+                    />
+                    <text x={chart.left - 10} y={y + 4} textAnchor="end" fill="#8994a8" fontSize="10">
+                      {value.toLocaleString("en-US", { maximumFractionDigits: 1 })}
+                    </text>
+                  </g>
+                );
+              })}
+              {points.map((point, index) => {
+                const fee = stroopsToUsdc(point.fees_stroops);
+                if (fee === null || fee === 0) return null;
+                const barWidth = Math.max(2, (plotWidth / points.length) * 0.58);
+                const height = feeHeight(fee);
+                return (
+                  <rect
+                    key={`fee-${point.date}`}
+                    x={x(index) - barWidth / 2}
+                    y={chart.top + plotHeight - height}
+                    width={barWidth}
+                    height={height}
+                    rx="2"
+                    fill="rgba(75,220,166,0.58)"
+                  >
+                    <title>{`${point.date}: ${formatUsdc(fee)} fees`}</title>
+                  </rect>
+                );
+              })}
+              <path
+                d={balancePath}
+                fill="none"
+                stroke="#b69aff"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              {points.map((point, index) => {
+                const balance = stroopsToUsdc(point.balance_stroops);
+                if (balance === null || index % 7 !== 0) return null;
+                return (
+                  <circle
+                    key={`balance-${point.date}`}
+                    cx={x(index)}
+                    cy={balanceY(balance)}
+                    r="3"
+                    fill="#d5c4ff"
+                    stroke="#171326"
+                    strokeWidth="1.5"
+                  >
+                    <title>{`${point.date}: ${formatUsdc(balance)} balance`}</title>
+                  </circle>
+                );
+              })}
+              {points.map((point, index) => {
+                if (index % 15 !== 0 && index !== points.length - 1) return null;
+                return (
+                  <text
+                    key={`date-${point.date}`}
+                    x={x(index)}
+                    y={chart.height - 12}
+                    textAnchor={index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}
+                    fill="#8994a8"
+                    fontSize="10"
+                  >
+                    {new Date(`${point.date}T00:00:00Z`).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      timeZone: "UTC",
+                    })}
+                  </text>
+                );
+              })}
+            </svg>
+          </div>
+          <p className="text-[10px] text-ash/70 mt-2">
+            Balance measured at day end. Fees show successful USDC transfers into the contract.
+          </p>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function ContractPanel({ adminAddress, token }: { adminAddress: string; token: string | null }) {
   const [info, setInfo] = useState<ContractInfo>({
     version: null, wasmVersion: null, admin: null,
     ratingFee: null, registrationFee: null, treasuryBalance: null,
@@ -926,7 +1838,9 @@ function ContractPanel({ adminAddress }: { adminAddress: string }) {
   }, []);
 
   useEffect(() => {
-    if (ON_CHAIN_ENABLED) fetchInfo();
+    if (!ON_CHAIN_ENABLED) return;
+    const timer = window.setTimeout(() => void fetchInfo(), 0);
+    return () => window.clearTimeout(timer);
   }, [fetchInfo]);
 
   async function run(label: string, fn: () => Promise<string>) {
@@ -1020,6 +1934,8 @@ function ContractPanel({ adminAddress }: { adminAddress: string }) {
           </div>
         )}
       </div>
+
+      <TreasuryHistoryChart token={token} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Set Rating Fee */}
@@ -1208,17 +2124,20 @@ export default function AdminPage() {
   const action = useProjectAction(token);
   const [search, setSearch] = useState("");
 
+  const isAdmin = !!user && hasMinRole(user.role, "admin");
+
   const { data: pending = [], isLoading: pendingLoading } = usePendingProjects(token);
-  const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token);
-  const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token);
-  const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token);
+  const { data: approved = [], isLoading: approvedLoading } = useAdminProjects("approved", token, isAdmin);
+  const { data: featured = [], isLoading: featuredLoading } = useAdminProjects("featured", token, isAdmin);
+  const { data: all = [], isLoading: allLoading } = useAdminProjects(null, token, isAdmin);
+  const { data: maintainerApplications = [], isLoading: maintainerAppsLoading, refetch: refetchMaintainerApps } = useMaintainerApplications(token, isAdmin);
 
   const filteredPending = filterProjects(pending, search);
   const filteredApproved = filterProjects(approved, search);
   const filteredFeatured = filterProjects(featured, search);
   const filteredAll = filterProjects(all, search);
 
-  if (!user || !hasMinRole(user.role, "admin")) {
+  if (!user || !hasMinRole(user.role, "maintainer")) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-12 text-center max-w-md">
@@ -1227,8 +2146,8 @@ export default function AdminPage() {
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </div>
-          <h2 className="font-semibold text-xl text-starlight mb-2">Admin access required</h2>
-          <p className="text-ash mb-6">You need admin privileges to view this page</p>
+          <h2 className="font-semibold text-xl text-starlight mb-2">Maintainer access required</h2>
+          <p className="text-ash mb-6">You need maintainer or admin privileges to view this page</p>
           <Link href="/explore" className="btn-ghost inline-flex">Back to Explore</Link>
         </div>
       </div>
@@ -1250,19 +2169,23 @@ export default function AdminPage() {
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <h1 className="font-display font-bold text-3xl text-starlight">Admin Dashboard</h1>
+            <h1 className="font-display font-bold text-3xl text-starlight">
+              {isAdmin ? "Admin Dashboard" : "Moderation Dashboard"}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href="/admin/revenue"
-              className="btn-nova text-sm !py-2 !px-3 inline-flex items-center gap-1.5"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="1" x2="12" y2="23" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-              Revenue Dashboard
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin/revenue"
+                className="btn-nova text-sm !py-2 !px-3 inline-flex items-center gap-1.5"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                Revenue Dashboard
+              </Link>
+            )}
             <a
               href="https://github.com/samieazubike/stellar-wave-hub/blob/main/docs/MAINTAINERS.md"
               target="_blank"
@@ -1273,7 +2196,9 @@ export default function AdminPage() {
             </a>
           </div>
         </div>
-        <p className="text-ash ml-[52px]">Manage project submissions, approvals, and listings</p>
+        <p className="text-ash ml-[52px]">
+          {isAdmin ? "Manage project submissions, approvals, and listings" : "Review and moderate pending project submissions"}
+        </p>
       </div>
 
       {/* Search */}
@@ -1313,23 +2238,27 @@ export default function AdminPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 animate-in animate-in-delay-2">
+      <div className={`grid ${isAdmin ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"} gap-3 mb-8 animate-in animate-in-delay-2`}>
         <div className="glass rounded-2xl p-5">
           <p className="text-2xl font-bold text-solar-bright">{pending.length}</p>
           <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Pending</p>
         </div>
-        <div className="glass rounded-2xl p-5">
-          <p className="text-2xl font-bold text-aurora-bright">{approved.length}</p>
-          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Approved</p>
-        </div>
-        <div className="glass rounded-2xl p-5">
-          <p className="text-2xl font-bold text-nova-bright">{featured.length}</p>
-          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Featured</p>
-        </div>
-        <div className="glass rounded-2xl p-5">
-          <p className="text-2xl font-bold text-plasma-bright">{all.length}</p>
-          <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Total</p>
-        </div>
+        {isAdmin && (
+          <>
+            <div className="glass rounded-2xl p-5">
+              <p className="text-2xl font-bold text-aurora-bright">{approved.length}</p>
+              <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Approved</p>
+            </div>
+            <div className="glass rounded-2xl p-5">
+              <p className="text-2xl font-bold text-nova-bright">{featured.length}</p>
+              <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Featured</p>
+            </div>
+            <div className="glass rounded-2xl p-5">
+              <p className="text-2xl font-bold text-plasma-bright">{all.length}</p>
+              <p className="text-xs text-ash mt-0.5 uppercase tracking-wider">Total</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Mutation feedback */}
@@ -1351,26 +2280,43 @@ export default function AdminPage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="approved">Approved</TabsTrigger>
-            <TabsTrigger value="featured">Featured</TabsTrigger>
-            <TabsTrigger value="rejected">
-              Rejected / Delisted
-              {rejectedCount > 0 && (
-                <span className="ml-2 bg-supernova/15 text-supernova/80 text-xs px-2 py-0.5 rounded-md">
-                  {rejectedCount}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="all">All Projects</TabsTrigger>
-            <TabsTrigger value="contract">
-              Contract
-              {ON_CHAIN_ENABLED && (
-                <span className="ml-2 bg-plasma/15 text-plasma-bright text-xs px-2 py-0.5 rounded-md">
-                  on-chain
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="promos">Promo Codes</TabsTrigger>
+            {isAdmin && <TabsTrigger value="approved">Approved</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="featured">Featured</TabsTrigger>}
+            {isAdmin && (
+              <TabsTrigger value="rejected">
+                Rejected / Delisted
+                {rejectedCount > 0 && (
+                  <span className="ml-2 bg-supernova/15 text-supernova/80 text-xs px-2 py-0.5 rounded-md">
+                    {rejectedCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {isAdmin && <TabsTrigger value="all">All Projects</TabsTrigger>}
+            {isAdmin && (
+              <TabsTrigger value="contract">
+                Contract
+                {ON_CHAIN_ENABLED && (
+                  <span className="ml-2 bg-plasma/15 text-plasma-bright text-xs px-2 py-0.5 rounded-md">
+                    on-chain
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="maintainers">
+                Maintainer Apps
+                {maintainerApplications.length > 0 && (
+                  <span className="ml-2 bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-md">
+                    {maintainerApplications.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
+            {isAdmin && <TabsTrigger value="promos">Promo Codes</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="moderators">Moderators</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="reports">Reports</TabsTrigger>}
           </TabsList>
 
           {/* ── Pending tab ── */}
@@ -1380,7 +2326,7 @@ export default function AdminPage() {
             ) : filteredPending.length > 0 ? (
               <div className="space-y-4">
                 {filteredPending.map((p) => (
-                  <PendingCard key={p.id} project={p} action={action} />
+                  <PendingCard key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -1396,14 +2342,16 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
-          {/* ── Approved tab ── */}
-          <TabsContent value="approved">
+          {isAdmin && (
+            <>
+              {/* ── Approved tab ── */}
+              <TabsContent value="approved">
             {approvedLoading ? (
               <Skeletons />
             ) : filteredApproved.length > 0 ? (
               <div className="space-y-2">
                 {filteredApproved.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -1428,7 +2376,7 @@ export default function AdminPage() {
             ) : filteredFeatured.length > 0 ? (
               <div className="space-y-2">
                 {filteredFeatured.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -1453,7 +2401,7 @@ export default function AdminPage() {
                 {filteredAll
                   .filter((p) => p.status === "rejected" || p.status === "delisted")
                   .map((p) => (
-                    <ProjectRow key={p.id} project={p} action={action} />
+                    <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                   ))}
               </div>
             ) : (
@@ -1471,6 +2419,78 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
+          {/* ── Maintainer Applications tab ── */}
+          <TabsContent value="maintainers">
+            {maintainerAppsLoading ? (
+              <Skeletons />
+            ) : maintainerApplications.length > 0 ? (
+              <div className="space-y-4">
+                {maintainerApplications.map((app) => (
+                  <div key={app.id} className="glass rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-dust/30">
+                    <div>
+                      <h3 className="font-semibold text-lg text-starlight">{app.user?.username || "Unknown User"}</h3>
+                      <p className="text-sm text-ash">{app.user?.email}</p>
+                      {app.user?.github_url && (
+                        <a href={app.user.github_url} target="_blank" rel="noopener noreferrer" className="text-xs text-nova hover:underline">
+                          GitHub Profile
+                        </a>
+                      )}
+                      <div className="mt-4 p-4 rounded-xl bg-dust/10 border border-dust/20 text-sm text-moonlight whitespace-pre-wrap">
+                        {app.reason}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={async () => {
+                          const res = await fetch(`/api/admin/maintainer-applications/${app.id}/review`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ status: "approved" })
+                          });
+                          if(res.ok) refetchMaintainerApps();
+                        }}
+                        className="btn-nova !py-2 !px-4 text-sm"
+                      >
+                        Approve
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          const res = await fetch(`/api/admin/maintainer-applications/${app.id}/review`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ status: "rejected" })
+                          });
+                          if(res.ok) refetchMaintainerApps();
+                        }}
+                        className="bg-supernova/10 hover:bg-supernova/20 text-supernova border border-supernova/20 font-medium text-sm px-4 py-2 rounded-xl transition-all"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <polyline points="16 11 18 13 22 9" />
+                  </svg>
+                }
+                title="No pending applications"
+                subtitle="When users apply to be maintainers, they will appear here"
+              />
+            )}
+          </TabsContent>
+
           {/* ── All projects tab ── */}
           <TabsContent value="all">
             {allLoading ? (
@@ -1478,7 +2498,7 @@ export default function AdminPage() {
             ) : filteredAll.length > 0 ? (
               <div className="space-y-2">
                 {filteredAll.map((p) => (
-                  <ProjectRow key={p.id} project={p} action={action} />
+                  <ProjectRow key={p.id} project={p} action={action} isAdmin={isAdmin} />
                 ))}
               </div>
             ) : (
@@ -1499,7 +2519,7 @@ export default function AdminPage() {
           {/* ── Contract tab ── */}
           <TabsContent value="contract">
             {user?.stellar_address ? (
-              <ContractPanel adminAddress={user.stellar_address} />
+              <ContractPanel adminAddress={user.stellar_address} token={token} />
             ) : (
               <div className="glass rounded-2xl p-12 text-center">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-solar/10 flex items-center justify-center">
@@ -1519,6 +2539,20 @@ export default function AdminPage() {
           <TabsContent value="promos">
             <PromoCodesTab token={token} />
           </TabsContent>
+
+          <TabsContent value="users">
+            <UsersTab token={token} currentUserId={user.id} />
+          </TabsContent>
+
+          <TabsContent value="moderators">
+            <ModeratorsTab token={token} />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <ReportsTab token={token} />
+          </TabsContent>
+            </>
+          )}
         </Tabs>
       </div>
     </div>

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import VerifyOwnership from "@/components/VerifyOwnership";
 import {
   Form,
   FormField,
@@ -81,6 +82,8 @@ interface Project {
   logo_url?: string;
   research_images?: string[];
   user_id: number;
+  owner_verified_at?: string | null;
+  owner_verified_address?: string | null;
 }
 
 export default function EditProjectPage() {
@@ -121,6 +124,8 @@ export default function EditProjectPage() {
       logo_url: "",
     },
   });
+
+  const currentAccount = useWatch({ control: form.control, name: "stellar_account_id" });
 
   // Fetch project data
   useEffect(() => {
@@ -266,6 +271,7 @@ export default function EditProjectPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setProject(data.project);
       setSuccess("Project updated successfully!");
       setNewFiles([]);
       setNewPreviews([]);
@@ -303,7 +309,7 @@ export default function EditProjectPage() {
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-12 text-center max-w-md">
           <h2 className="font-semibold text-xl text-starlight mb-2">Project not found</h2>
-          <p className="text-ash mb-6">The project you're looking for doesn't exist</p>
+          <p className="text-ash mb-6">The project you&apos;re looking for doesn&apos;t exist</p>
           <Link href="/my-projects" className="btn-nova inline-flex">
             My Projects
           </Link>
@@ -330,6 +336,21 @@ export default function EditProjectPage() {
         </div>
         <p className="text-ash ml-8">Update your project details</p>
       </div>
+
+      {user.id === project.user_id && token && (
+        <div className="mb-6">
+          <VerifyOwnership
+            projectId={project.id}
+            account={project.stellar_account_id || ""}
+            token={token}
+            disabled={form.formState.isSubmitting || currentAccount !== (project.stellar_account_id || "")}
+            verified={Boolean(project.owner_verified_at && project.owner_verified_address === project.stellar_account_id)}
+            onVerified={(verified) => setProject((current) =>
+              current?.stellar_account_id === verified.owner_verified_address
+                ? { ...current, ...verified } : current)}
+          />
+        </div>
+      )}
 
       <Form {...form}>
         <form

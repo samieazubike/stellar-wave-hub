@@ -43,9 +43,12 @@ create table if not exists public.projects (
   user_id bigint not null,
   featured integer not null default 0,
   featured_tx_hash text,
+  featured_until timestamptz,
   featured_amount numeric default 100,
   featured_expires_at timestamptz,
   promo_code text,
+  owner_verified_at timestamptz,
+  owner_verified_address text,
   rejection_reason text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -60,6 +63,9 @@ create index if not exists projects_status_idx on public.projects (status);
 create index if not exists projects_category_idx on public.projects (category);
 create index if not exists projects_created_at_idx on public.projects (created_at desc);
 create index if not exists projects_user_id_idx on public.projects (user_id);
+create unique index if not exists projects_featured_tx_hash_unique_idx
+  on public.projects (featured_tx_hash)
+  where featured_tx_hash is not null;
 
 -- Maintainer category assignments
 -- Associates maintainers with the categories they can moderate
@@ -88,6 +94,8 @@ create table if not exists public.ratings (
   usability_score integer,
   review_text text,
   tx_hash text,
+  owner_reply text,
+  owner_reply_at timestamptz,
   created_at timestamptz not null default now(),
   constraint ratings_project_id_fkey
     foreign key (project_id)
@@ -137,6 +145,32 @@ create table if not exists public.financial_snapshots (
 create index if not exists financial_snapshots_project_id_idx on public.financial_snapshots (project_id);
 create index if not exists financial_snapshots_created_at_idx on public.financial_snapshots (created_at desc);
 
+create table if not exists public.project_updates (
+  id bigint primary key,
+  project_id bigint not null,
+  author_id bigint not null,
+  title text not null check (char_length(title) between 1 and 120),
+  body text not null check (char_length(body) between 1 and 5000),
+  created_at timestamptz not null default now(),
+  constraint project_updates_project_id_fkey
+    foreign key (project_id)
+    references public.projects ("numericId")
+    on delete cascade,
+  constraint project_updates_author_id_fkey
+    foreign key (author_id)
+    references public.users ("numericId")
+    on delete cascade
+);
+
+create index if not exists project_updates_project_created_at_idx
+  on public.project_updates (project_id, created_at desc);
+
+create table if not exists public.treasury_snapshots (
+  snapshot_date date primary key,
+  balance numeric(39, 0) not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.promo_codes (
   id bigserial primary key,
   code text not null,
@@ -149,12 +183,73 @@ create table if not exists public.promo_codes (
 
 create unique index if not exists promo_codes_code_key on public.promo_codes (upper(code));
 
+create table if not exists public.reports (
+  id bigserial primary key,
+  "numericId" bigint unique,
+  reporter_id bigint not null,
+  target_type text not null check (target_type in ('project', 'rating')),
+  target_id bigint not null,
+  reason text not null,
+  note text,
+  details text,
+  status text not null default 'open'
+    check (status in ('open', 'resolved', 'dismissed')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  resolved_at timestamptz,
+  resolved_by bigint,
+  constraint reports_reporter_id_fkey
+    foreign key (reporter_id)
+    references public.users ("numericId")
+    on delete cascade,
+  constraint reports_resolved_by_fkey
+    foreign key (resolved_by)
+    references public.users ("numericId")
+    on delete set null
+);
+
+create unique index if not exists reports_unique_open_user_target_idx
+  on public.reports (target_type, target_id, reporter_id)
+  where status = 'open';
+create index if not exists reports_status_created_at_idx
+  on public.reports (status, created_at desc);
+create index if not exists reports_target_idx
+  on public.reports (target_type, target_id);
+
 -- Seed counters used by nextId()
 insert into public.counters (name, value)
 values
   ('users', 0),
   ('projects', 0),
-  ('ratings', 0)
+  ('ratings', 0),
+  ('rating_votes', 0),
+  ('reports', 0),
+  ('project_updates', 0)
 on conflict (name) do nothing;
 
+create table if not exists public.rating_votes (
+  "numericId" bigint primary key,
+  rating_id bigint not null,
+  user_id bigint not null,
+  created_at timestamptz not null default now(),
+  constraint rating_votes_rating_id_fkey
+    foreign key (rating_id)
+    references public.ratings ("numericId")
+    on delete cascade,
+  constraint rating_votes_user_id_fkey
+    foreign key (user_id)
+    references public.users ("numericId")
+    on delete cascade
+);
+
+create unique index if not exists rating_votes_rating_user_unique_idx on public.rating_votes (rating_id, user_id);
+create index if not exists rating_votes_rating_id_idx on public.rating_votes (rating_id);
+create index if not exists rating_votes_user_id_idx on public.rating_votes (user_id);
+create index if not exists rating_votes_created_at_idx on public.rating_votes (created_at desc);
+
+alter table public.reports enable row level security;
+
+alter table public.project_updates enable row level security;
+
 commit;
+

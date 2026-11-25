@@ -23,6 +23,7 @@ export const updateProfileSchema = z
     discord_username: z.string().nullable().optional(),
     telegram_url: z.string().nullable().optional(),
     website_url: z.string().nullable().optional(),
+    avatar_url: z.string().url().nullable().optional(),
   })
   .refine(
     (body) =>

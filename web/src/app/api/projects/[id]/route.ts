@@ -1,11 +1,18 @@
-import { projectsCol, usersCol, ratingsCol } from "@/lib/db";
+import { projectsCol, usersCol, ratingsCol, ratingVotesCol } from "@/lib/db";
+import { getAuthUser } from "@/lib/auth";
+import { publicProjectCacheHeaders } from "@/lib/public-project-cache";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const auth = getAuthUser(request);
+  const currentUserId = auth?.userId ?? null;
+
+  const url = new URL(request.url);
+  const sort = url.searchParams.get("sort") || "helpful";
 
   // Lookup by numeric ID or slug
   const isNumeric = /^\d+$/.test(id);
@@ -39,20 +46,68 @@ export async function GET(
   // Fetch ratings
   const rSnap = await ratingsCol.ref
     .where("project_id", "==", projectData.id)
-    .orderBy("created_at", "desc")
     .get();
 
-  const ratings: Record<string, unknown>[] = await Promise.all(
+  let ratings: Record<string, unknown>[] = await Promise.all(
     rSnap.docs.map(async (d) => {
       const r = d.data();
+      const ratingId = Number(r.numericId ?? d.id);
       let username = "unknown";
       if (r.user_id) {
         const u = await usersCol.ref.doc(String(r.user_id)).get();
         if (u.exists) username = u.data()!.username;
       }
-      return { ...r, id: r.numericId ?? d.id, username };
+
+      // Fetch votes for this rating
+      const votesSnap = await ratingVotesCol.ref
+        .where("rating_id", "==", ratingId)
+        .get();
+
+      const helpful_count = votesSnap.docs.length;
+      const has_voted = currentUserId
+        ? votesSnap.docs.some((doc) => doc.data().user_id === currentUserId)
+        : false;
+
+      return {
+        ...r,
+        id: ratingId,
+        username,
+        helpful_count,
+        has_voted,
+      };
     })
   );
+
+  // Sorting
+  ratings = ratings.sort((a, b) => {
+    const countA = Number(a.helpful_count || 0);
+    const countB = Number(b.helpful_count || 0);
+    const timeA = new Date(String(a.created_at)).getTime();
+    const timeB = new Date(String(b.created_at)).getTime();
+    const scoreA = Number(a.score || 0);
+    const scoreB = Number(b.score || 0);
+
+    if (sort === "helpful") {
+      const diff = countB - countA;
+      if (diff !== 0) return diff;
+      return timeB - timeA;
+    }
+    if (sort === "recent") {
+      return timeB - timeA;
+    }
+    if (sort === "highest") {
+      const diff = scoreB - scoreA;
+      if (diff !== 0) return diff;
+      return countB - countA;
+    }
+    if (sort === "lowest") {
+      const diff = scoreA - scoreB;
+      if (diff !== 0) return diff;
+      return countB - countA;
+    }
+    return 0;
+  });
+
 
   // Compute averages
   const scores = ratings.map((r) => r.score as number);
@@ -69,5 +124,13 @@ export async function GET(
     total: ratings.length,
   };
 
-  return Response.json({ project: projectData, ratings, averages });
+  return Response.json(
+    { project: projectData, ratings, averages },
+    {
+      // has_voted is per-user, so signed-in responses must not hit a shared cache.
+      headers: currentUserId
+        ? { "Cache-Control": "private, no-store" }
+        : publicProjectCacheHeaders,
+    }
+  );
 }

@@ -1,5 +1,8 @@
-import { notificationsCol, projectsCol } from "@/lib/db";
+import { notificationsCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validation/parse-body";
+import { markNotificationsReadSchema } from "@/lib/validation/schemas/notifications";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -12,10 +15,13 @@ export async function GET(request: Request) {
       .orderBy("created_at", "desc")
       .get();
 
-    const notifications = snap.docs.map((d) => ({
-      id: d.data().numericId ?? d.id,
-      ...d.data(),
-    }));
+    const notifications = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: data.numericId ?? data.id ?? d.id,
+        ...data,
+      };
+    });
 
     return Response.json({ notifications });
   } catch (err) {
@@ -29,12 +35,9 @@ export async function POST(request: Request) {
   if (!auth) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const body = await request.json();
-    const { ids } = body as { ids: string[] };
-
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return Response.json({ error: "Invalid request" }, { status: 400 });
-    }
+    const parsed = await parseJsonBody(request, markNotificationsReadSchema);
+    if (!parsed.success) return parsed.response;
+    const { ids } = parsed.data;
 
     const promises = ids.map(async (id) => {
       const doc = notificationsCol.ref.doc(id);
