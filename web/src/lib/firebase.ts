@@ -15,6 +15,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	auth_challenges: "auth_challenges",
 	counters: "counters",
 	submission_notes: "submission_notes",
+	api_keys: "api_keys",
 	maintainer_applications: "maintainer_applications",
 	notifications: "notifications",
 	project_updates: "project_updates",
