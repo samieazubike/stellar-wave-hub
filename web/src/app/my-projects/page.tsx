@@ -30,6 +30,7 @@ interface Project {
 	rating_count?: number;
 	created_at: string;
 	rejection_reason?: string;
+	priority_until?: string | null;
 }
 
 interface ProConfig {
@@ -58,6 +59,11 @@ const statusStyles: Record<string, string> = {
 	featured: "tag-aurora",
 	rejected: "tag-supernova",
 };
+
+function isPriorityActive(priorityUntil?: string | null): boolean {
+	if (!priorityUntil) return false;
+	return new Date(priorityUntil) > new Date();
+}
 
 /** Days purchased per spotlight activation (server default: 30). */
 const SPOTLIGHT_DAYS = 30;
@@ -416,6 +422,9 @@ export default function MyProjectsPage() {
 	const [activatingId, setActivatingId] = useState<number | null>(null);
 	const [spotlightReceipt, setSpotlightReceipt] = useState<Record<number, string>>({});
 	const [spotlightErrors, setSpotlightErrors] = useState<Record<number, string>>({});
+	const [fastTrackingId, setFastTrackingId] = useState<number | null>(null);
+	const [fastTrackError, setFastTrackError] = useState<string | null>(null);
+	const [fastTrackSuccess, setFastTrackSuccess] = useState<number | null>(null);
 
 	useEffect(() => {
 		if (!token) return;
@@ -430,6 +439,41 @@ export default function MyProjectsPage() {
 		}, 0);
 		return () => window.clearTimeout(timer);
 	}, [token]);
+
+	async function handleFastTrack(projectId: number) {
+		if (!token) return;
+		setFastTrackingId(projectId);
+		setFastTrackError(null);
+		setFastTrackSuccess(null);
+		try {
+			const res = await fetch(`/api/projects/${projectId}/priority`, {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({duration_days: 7}),
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				setFastTrackError(data.error || "Failed to fast-track project");
+			} else {
+				setFastTrackSuccess(projectId);
+				// Update local state so the button reflects the new priority
+				setProjects((prev) =>
+					prev.map((p) =>
+						p.id === projectId
+							? {...p, priority_until: data.priority_until}
+							: p,
+					),
+				);
+			}
+		} catch {
+			setFastTrackError("An unexpected error occurred");
+		} finally {
+			setFastTrackingId(null);
+		}
+	}
 
 	/**
 	 * Activate (or extend) the project's featured spotlight. The server adds
@@ -527,6 +571,12 @@ export default function MyProjectsPage() {
 				</Link>
 			</div>
 
+			{fastTrackError && (
+				<div className="mb-4 glass rounded-xl p-4 border border-supernova/30 text-supernova text-sm animate-in">
+					{fastTrackError}
+				</div>
+			)}
+
 			{loading ? (
 				<div className="space-y-4">
 					{[...Array(3)].map((_, i) => (
@@ -557,7 +607,9 @@ export default function MyProjectsPage() {
 					{projects.map((project) => (
 						<div
 							key={project.id}
-							className="glass glass-hover rounded-2xl p-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-4"
+							className={`glass glass-hover rounded-2xl p-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-4 ${
+								isPriorityActive(project.priority_until) ? "border-l-2 border-l-nova/60" : ""
+							}`}
 						>
 							<div className="flex-1 min-w-0">
 								<div className="flex items-center gap-3 mb-1">
@@ -582,6 +634,14 @@ export default function MyProjectsPage() {
 										</span>
 									)}
 									<ProBadge project={project} size="sm" />
+									{isPriorityActive(project.priority_until) && (
+										<span className="tag text-xs inline-flex items-center gap-1 bg-nova/15 text-nova-bright border border-nova/30 font-semibold">
+											<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+												<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+											</svg>
+											Priority
+										</span>
+									)}
 								</div>
 								<p className="text-sm text-ash line-clamp-1">
 									{project.description}
@@ -631,6 +691,22 @@ export default function MyProjectsPage() {
 											: isSpotlightActive(project)
 												? "Extend"
 												: "Feature"}
+									</button>
+								)}
+								{project.status === "submitted" && !isPriorityActive(project.priority_until) && (
+									<button
+										onClick={() => handleFastTrack(project.id)}
+										disabled={fastTrackingId === project.id}
+										className="btn-ghost text-sm !py-1.5 !px-3 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-nova-bright border-nova/30 hover:border-nova/60"
+									>
+										<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+											<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+										</svg>
+										{fastTrackingId === project.id
+											? "Processing…"
+											: fastTrackSuccess === project.id
+												? "Fast-tracked!"
+												: "Fast-track review"}
 									</button>
 								)}
 								<Link

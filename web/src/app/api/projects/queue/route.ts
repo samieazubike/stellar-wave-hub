@@ -49,6 +49,7 @@ export async function GET() {
       .where("status", "==", "submitted")
       .get();
 
+  const now = new Date().toISOString();
   const userCache = new Map<number, string>();
   const getUsername = async (userId?: number | null): Promise<string | null> => {
     if (!userId) return null;
@@ -71,6 +72,7 @@ export async function GET() {
       const claimActive = isClaimActive(p);
       const claimedBy = claimActive ? Number(p.claimed_by) : null;
       const claimerUsername = claimedBy ? await getUsername(claimedBy) : null;
+      const priorityUntil = (p.priority_until as string) || null;
         return {
           id: p.numericId,
           name: p.name,
@@ -86,10 +88,22 @@ export async function GET() {
           claimed_by: claimedBy,
           claimed_by_username: claimerUsername,
           claimed_at: claimActive ? p.claimed_at : null,
+          priority_until: priorityUntil,
+          // Convenience flag: true when the priority window is still active
+          is_priority: priorityUntil != null && priorityUntil > now,
         };
       }),
     );
 
+    // Sort: active priority items first (newest priority_until first among them),
+    // then the rest sorted by created_at descending.
+    projects.sort((a, b) => {
+      const aPriority = a.is_priority ? 1 : 0;
+      const bPriority = b.is_priority ? 1 : 0;
+      if (bPriority !== aPriority) return bPriority - aPriority;
+      // Within the same tier sort by created_at descending
+      return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
+    });
     const paid = await listFastTrackProjects();
     const paidById = new Map<number, { priority: number; order_index: number }>();
     for (const row of paid) {
@@ -150,6 +164,8 @@ export async function GET() {
         claimed_by: null,
         claimed_by_username: null,
         claimed_at: null,
+        priority_until: null,
+        is_priority: false,
       });
     }
     const ordered = merged.map((m) => {
