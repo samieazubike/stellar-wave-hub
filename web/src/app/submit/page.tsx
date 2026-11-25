@@ -5,8 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch, isApiFetchError } from "@/lib/api-fetch";
+import { useRetryCountdown } from "@/lib/use-retry-countdown";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  PRO_RESEARCH_IMAGE_LIMIT,
+  getResearchImageLimit,
+} from "@/lib/pro";
 import {
   Form,
   FormField,
@@ -76,6 +82,11 @@ export default function SubmitPage() {
   const { user, token } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
+  const {
+    remainingSeconds,
+    start: startRetryCountdown,
+    clear: clearRetryCountdown,
+  } = useRetryCountdown();
   const [researchFiles, setResearchFiles] = useState<File[]>([]);
   const [researchPreviews, setResearchPreviews] = useState<string[]>([]);
   const [researchError, setResearchError] = useState("");
@@ -84,6 +95,9 @@ export default function SubmitPage() {
   ]);
   const [reposError, setReposError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const maxImages = getResearchImageLimit(null);
+  const remainingImages = Math.max(0, maxImages - researchFiles.length);
+  const atFreeImageCap = researchFiles.length >= maxImages;
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -92,8 +106,10 @@ export default function SubmitPage() {
       setResearchError("Only image files are allowed");
       return;
     }
-    if (researchFiles.length + imageFiles.length > 10) {
-      setResearchError("Maximum 10 images allowed");
+    if (researchFiles.length + imageFiles.length > maxImages) {
+      setResearchError(
+        `Maximum ${maxImages} images allowed. Upgrade to Pro for more (up to ${PRO_RESEARCH_IMAGE_LIMIT} images).`,
+      );
       return;
     }
     setResearchError("");
@@ -109,7 +125,7 @@ export default function SubmitPage() {
     });
 
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [researchFiles]);
+  }, [researchFiles, maxImages]);
 
   const removeImage = useCallback((index: number) => {
     setResearchFiles((prev) => prev.filter((_, i) => i !== index));
@@ -133,6 +149,7 @@ export default function SubmitPage() {
 
   const onSubmit = async (values: SubmitValues) => {
     setError("");
+    clearRetryCountdown();
     setResearchError("");
     setReposError("");
 
@@ -160,13 +177,12 @@ export default function SubmitPage() {
       const formData = new FormData();
       researchFiles.forEach((file) => formData.append("files", file));
 
-      const uploadRes = await fetch("/api/upload", {
+      const uploadData = await apiFetch<{ urls: string[] }>("/api/upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData.error || "Image upload failed");
+      if (!uploadData) throw new Error("Image upload failed");
 
       // 2. Submit project with image URLs + repos
       const payload = {
@@ -174,7 +190,7 @@ export default function SubmitPage() {
         github_repos: validRepos.map((r) => ({ label: r.label.trim(), url: r.url.trim() })),
         research_images: uploadData.urls,
       };
-      const res = await fetch("/api/projects", {
+      await apiFetch("/api/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,11 +198,13 @@ export default function SubmitPage() {
         },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
       router.push("/my-projects");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Submission failed");
+      if (isApiFetchError(err) && err.status === 429) {
+        startRetryCountdown(err.retryAfterSeconds ?? 1);
+      } else {
+        setError(err instanceof Error ? err.message : "Submission failed");
+      }
     }
   };
 
@@ -223,6 +241,14 @@ export default function SubmitPage() {
           {error && (
             <div className="bg-supernova/10 border border-supernova/20 text-supernova rounded-xl px-4 py-3 text-sm">
               {error}
+            </div>
+          )}
+          {remainingSeconds > 0 && (
+            <div
+              role="status"
+              className="rounded-xl border border-solar/20 bg-solar/10 px-4 py-3 text-sm text-solar-bright"
+            >
+              Too many attempts. Try again in {remainingSeconds}s.
             </div>
           )}
 
@@ -449,8 +475,14 @@ export default function SubmitPage() {
               </label>
 
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="input-field flex flex-col items-center justify-center gap-2 py-8 cursor-pointer border-dashed hover:border-nova/40 transition-colors"
+                onClick={() => {
+                  if (remainingImages > 0) fileInputRef.current?.click();
+                }}
+                className={`input-field flex flex-col items-center justify-center gap-2 py-8 border-dashed transition-colors ${
+                  remainingImages > 0
+                    ? "cursor-pointer hover:border-nova/40"
+                    : "opacity-60 cursor-not-allowed"
+                }`}
               >
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -458,20 +490,29 @@ export default function SubmitPage() {
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
                 <span className="text-sm text-ash">
-                  Click to upload images
+                  {remainingImages > 0
+                    ? "Click to upload images"
+                    : `Image limit reached (${researchFiles.length}/${maxImages})`}
                 </span>
                 <span className="text-xs text-ash/60">
-                  PNG, JPG, WEBP — max 10 images
+                  PNG, JPG, WEBP — max {maxImages} images ({researchFiles.length}/{maxImages})
                 </span>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   multiple
+                  disabled={remainingImages === 0}
                   onChange={handleFileSelect}
                   className="hidden"
                 />
               </div>
+
+              {atFreeImageCap && (
+                <div className="rounded-xl border border-nova/30 bg-nova/10 px-4 py-3 text-sm text-starlight">
+                  You&apos;ve reached the {maxImages}-image limit for free projects. Upgrade to Pro for more (up to {PRO_RESEARCH_IMAGE_LIMIT} images).
+                </div>
+              )}
 
               {researchPreviews.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-3">
@@ -507,7 +548,7 @@ export default function SubmitPage() {
           <div className="flex items-center gap-4 pt-4 border-t border-dust/20">
             <button
               type="submit"
-              disabled={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting || remainingSeconds > 0}
               className="btn-nova !py-3 !px-8 disabled:opacity-50"
             >
               {form.formState.isSubmitting ? "Uploading & Submitting..." : "Submit Project"}

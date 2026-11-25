@@ -3,6 +3,8 @@
 import Link from "next/link";
 import {useEffect, useState} from "react";
 import ProjectCard from "@/components/ProjectCard";
+import FeaturedCarousel from "@/components/FeaturedCarousel";
+import CountUp from "@/components/CountUp";
 
 interface Project {
 	id: number;
@@ -16,16 +18,60 @@ interface Project {
 	avg_rating?: number;
 	rating_count?: number;
 	username?: string;
+	rating_velocity?: number;
+	created_at?: string;
+}
+
+interface Stats {
+	projects: number;
+	reviews: number;
+	contributors: number;
 }
 
 export default function Home() {
+	const [spotlights, setSpotlights] = useState<Project[]>([]);
+	const [trending, setTrending] = useState<Project[]>([]);
+	const [trendingFallback, setTrendingFallback] = useState(false);
+	const [newThisWeek, setNewThisWeek] = useState<Project[]>([]);
 	const [featured, setFeatured] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [stats, setStats] = useState<Stats>({
+		projects: 0,
+		reviews: 0,
+		contributors: 0,
+	});
 
 	useEffect(() => {
-		fetch("/api/projects?limit=6&sort=top-rated")
-			.then((r) => r.json())
-			.then((data) => setFeatured(data.projects || []))
+		Promise.allSettled([
+			// Active (paid, unexpired) spotlights only.
+			fetch("/api/spotlights").then((r) => r.json()),
+			fetch("/api/projects/trending?limit=6").then((r) => r.json()),
+			fetch("/api/projects?limit=6&sort=new-this-week").then((r) => r.json()),
+			fetch("/api/projects?limit=6&sort=top-rated").then((r) => r.json()),
+			fetch("/api/stats").then((r) => r.json()),
+		])
+			.then(([spotlightRes, trendingRes, newRes, topRes, statsRes]) => {
+				if (spotlightRes.status === "fulfilled") {
+					setSpotlights(spotlightRes.value.spotlights || []);
+				}
+				if (trendingRes.status === "fulfilled") {
+					setTrending(trendingRes.value.projects || []);
+					setTrendingFallback(Boolean(trendingRes.value.meta?.fallback));
+				}
+				if (newRes.status === "fulfilled") {
+					setNewThisWeek(newRes.value.projects || []);
+				}
+				if (topRes.status === "fulfilled") {
+					setFeatured(topRes.value.projects || []);
+				}
+				if (statsRes.status === "fulfilled") {
+					setStats({
+						projects: statsRes.value.projects || 0,
+						reviews: statsRes.value.reviews || 0,
+						contributors: statsRes.value.contributors || 0,
+					});
+				}
+			})
 			.catch(() => {})
 			.finally(() => setLoading(false));
 	}, []);
@@ -100,21 +146,27 @@ export default function Home() {
 				</div>
 			</section>
 
+			{/* Featured spotlights carousel */}
+			<FeaturedCarousel projects={spotlights} loading={loading} />
+
 			{/* Stats */}
 			<section className="px-4 sm:px-6 lg:px-8 pb-20">
 				<div className="max-w-4xl mx-auto grid grid-cols-3 gap-6">
 					{[
 						{
-							label: "Wave Projects",
+							label: "Projects",
+							value: stats.projects,
 							icon: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
 						},
 						{
-							label: "Community Ratings",
+							label: "Reviews",
+							value: stats.reviews,
 							icon: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z",
 						},
 						{
-							label: "On-Chain Tracking",
-							icon: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+							label: "Contributors",
+							value: stats.contributors,
+							icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
 						},
 					].map((item, i) => (
 						<div
@@ -135,6 +187,13 @@ export default function Home() {
 									<path d={item.icon} />
 								</svg>
 							</div>
+							<div className="text-3xl font-bold text-starlight mb-1">
+								{loading ? (
+									<span className="text-moonlight/50">—</span>
+								) : (
+									<CountUp end={item.value} duration={2000} />
+								)}
+							</div>
 							<p className="text-sm font-semibold text-moonlight">
 								{item.label}
 							</p>
@@ -143,20 +202,184 @@ export default function Home() {
 				</div>
 			</section>
 
-			{/* Featured Projects */}
+			{/* Trending Section */}
+			<section className="px-4 sm:px-6 lg:px-8 pb-20">
+				<div className="max-w-7xl mx-auto">
+					<div className="flex items-center justify-between mb-8">
+						<div>
+							<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-solar/10 border border-solar/30 text-solar-bright text-xs font-semibold uppercase tracking-wider mb-2">
+								<svg
+									width="12"
+									height="12"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2.5"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								>
+									<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+								</svg>
+								Rating Velocity
+							</div>
+							<h2 className="font-display font-bold text-2xl sm:text-3xl text-starlight">
+								Trending
+							</h2>
+							<p className="text-ash mt-1">
+								{trendingFallback
+									? "No ratings in the last 7 days — showing the highest rated projects instead"
+									: "Projects with the most community ratings in the last 7 days"}
+							</p>
+						</div>
+						<Link
+							href="/explore?sort=trending"
+							className="btn-ghost text-sm hidden sm:inline-flex items-center gap-1"
+						>
+							View All Trending
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<path d="m9 18 6-6-6-6" />
+							</svg>
+						</Link>
+					</div>
+
+					{loading ? (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							{[...Array(6)].map((_, i) => (
+								<div
+									key={i}
+									className="skeleton h-56 rounded-2xl"
+								/>
+							))}
+						</div>
+					) : trending.length > 0 ? (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							{trending.map((project, i) => (
+								<ProjectCard
+									key={project.id}
+									project={project}
+									index={i}
+									badge={{
+										label: trendingFallback ? "Top Rated" : "Trending",
+										variant: "solar",
+									}}
+								/>
+							))}
+						</div>
+					) : (
+						<div className="glass rounded-2xl p-12 text-center text-ash">
+							No projects to show yet. Rate a project to put it on the trending list!
+						</div>
+					)}
+				</div>
+			</section>
+
+			{/* New This Week Section */}
+			{(loading || newThisWeek.length > 0) && (
+				<section className="px-4 sm:px-6 lg:px-8 pb-20">
+					<div className="max-w-7xl mx-auto">
+						<div className="flex items-center justify-between mb-8">
+							<div>
+								<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-aurora/10 border border-aurora/30 text-aurora-bright text-xs font-semibold uppercase tracking-wider mb-2">
+									<svg
+										width="12"
+										height="12"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2.5"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									>
+										<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+									</svg>
+									From Created At
+								</div>
+								<h2 className="font-display font-bold text-2xl sm:text-3xl text-starlight">
+									New this week
+								</h2>
+								<p className="text-ash mt-1">
+									The latest projects submitted and cataloged in the Stellar Wave ecosystem
+								</p>
+							</div>
+							<Link
+								href="/explore?sort=new-this-week"
+								className="btn-ghost text-sm hidden sm:inline-flex items-center gap-1"
+							>
+								View All New
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								>
+									<path d="m9 18 6-6-6-6" />
+								</svg>
+							</Link>
+						</div>
+
+						{loading ? (
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+								{[...Array(6)].map((_, i) => (
+									<div
+										key={i}
+										className="skeleton h-56 rounded-2xl"
+									/>
+								))}
+							</div>
+						) : (
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+								{newThisWeek.map((project, i) => (
+									<ProjectCard
+										key={project.id}
+										project={project}
+										index={i}
+										badge={{label: "New", variant: "aurora"}}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+				</section>
+			)}
+
+			{/* Top Projects (All-Time Highest Rated) */}
 			<section className="px-4 sm:px-6 lg:px-8 pb-24">
 				<div className="max-w-7xl mx-auto">
 					<div className="flex items-center justify-between mb-8">
 						<div>
+							<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-nova/10 border border-nova/30 text-nova-bright text-xs font-semibold uppercase tracking-wider mb-2">
+								<svg
+									width="12"
+									height="12"
+									viewBox="0 0 24 24"
+									fill="currentColor"
+								>
+									<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+								</svg>
+								Top Rated
+							</div>
 							<h2 className="font-display font-bold text-2xl sm:text-3xl text-starlight">
 								Top Projects
 							</h2>
 							<p className="text-ash mt-1">
-								Highest rated projects in the Wave ecosystem
+								Featured projects and top-rated picks in the Wave ecosystem
 							</p>
 						</div>
 						<Link
-							href="/explore"
+							href="/explore?sort=top-rated"
 							className="btn-ghost text-sm hidden sm:inline-flex items-center gap-1"
 						>
 							View All
@@ -207,7 +430,7 @@ export default function Home() {
 									strokeLinecap="round"
 									strokeLinejoin="round"
 								>
-									<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+									<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
 								</svg>
 							</div>
 							<h3 className="font-semibold text-lg text-moonlight mb-2">

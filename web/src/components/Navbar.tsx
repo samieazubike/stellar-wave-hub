@@ -5,6 +5,10 @@ import Image from "next/image";
 import {useAuth} from "@/context/AuthContext";
 import {hasMinRole} from "@/lib/roles";
 import {useState} from "react";
+import Avatar from "@/components/Avatar";
+import RoleBadge from "@/components/RoleBadge";
+import NotificationsMenu from "@/components/NotificationsMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Navbar() {
 	const {user, logout, loading} = useAuth();
@@ -49,6 +53,18 @@ export default function Navbar() {
 						>
 							Blog
 						</Link>
+						<Link
+							href="/jobs"
+							className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+						>
+							Jobs
+						</Link>
+						<Link
+							href="/pricing"
+							className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+						>
+							Pricing
+						</Link>
 						{user && (
 							<>
 								<Link
@@ -63,10 +79,30 @@ export default function Navbar() {
 								>
 									My Projects
 								</Link>
+								<Link
+									href="/payments"
+									className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+								>
+									My Payments
+								</Link>
+								<Link
+									href="/saved"
+									className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+								>
+									Saved
+								</Link>
+								{hasMinRole(user.role, "maintainer") && (
+									<Link
+										href="/maintainer"
+										className="px-4 py-2 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10 transition-all"
+									>
+										Maintainer
+									</Link>
+								)}
 								{hasMinRole(user.role, "admin") && (
 									<Link
 										href="/admin"
-										className="px-4 py-2 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10 transition-all"
+										className="px-4 py-2 rounded-lg text-sm font-medium text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-all"
 									>
 										Admin
 									</Link>
@@ -77,6 +113,7 @@ export default function Navbar() {
 
 					{/* Auth section */}
 					<div className="hidden md:flex items-center gap-3">
+						<ThemeToggle />
 						{loading ? (
 							<div className="w-20 h-8 skeleton" />
 						) : user ? (
@@ -85,13 +122,15 @@ export default function Navbar() {
 								href="/profile"
 								className="flex items-center gap-2 hover:opacity-80 transition-opacity"
 							>
-								<div className="w-8 h-8 rounded-full bg-gradient-to-br from-nova to-comet flex items-center justify-center text-xs font-bold text-white">
-									{user.username[0].toUpperCase()}
+								<Avatar username={user.username} avatarUrl={user.avatar_url} />
+								<div className="flex flex-col">
+									<span className="text-sm font-medium text-moonlight">
+										{user.username}
+									</span>
+									<RoleBadge role={user.role as "contributor" | "maintainer" | "admin"} />
 								</div>
-								<span className="text-sm font-medium text-moonlight">
-									{user.username}
-								</span>
 							</Link>
+							<NotificationsMenu />
 								<button
 									onClick={logout}
 									className="btn-ghost text-sm !py-1.5 !px-3"
@@ -118,6 +157,7 @@ export default function Navbar() {
 					</div>
 
 					{/* Mobile hamburger */}
+					<ThemeToggle className="md:hidden" />
 					<button
 						className="md:hidden p-2 rounded-lg hover:bg-stardust/50 transition-colors"
 						onClick={() => setMobileOpen(!mobileOpen)}
@@ -172,8 +212,31 @@ export default function Navbar() {
 					>
 						Blog
 					</Link>
+					<Link
+						href="/jobs"
+						className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+						onClick={() => setMobileOpen(false)}
+					>
+						Jobs
+					</Link>
+					<Link
+						href="/pricing"
+						className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+						onClick={() => setMobileOpen(false)}
+					>
+						Pricing
+					</Link>
 					{user ? (
 						<>
+							<div className="px-4 py-2.5">
+								<div className="flex items-center gap-3 mb-2">
+									<Avatar username={user.username} avatarUrl={user.avatar_url} className="w-10 h-10" />
+									<div>
+										<div className="text-sm font-medium text-starlight">{user.username}</div>
+										<RoleBadge role={user.role as "contributor" | "maintainer" | "admin"} />
+									</div>
+								</div>
+							</div>
 							<Link
 								href="/profile"
 								className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
@@ -195,10 +258,33 @@ export default function Navbar() {
 							>
 								My Projects
 							</Link>
+							<Link
+								href="/payments"
+								className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+								onClick={() => setMobileOpen(false)}
+							>
+								My Payments
+							</Link>
+							<Link
+								href="/saved"
+								className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+								onClick={() => setMobileOpen(false)}
+							>
+								Saved
+							</Link>
+							{hasMinRole(user.role, "maintainer") && (
+								<Link
+									href="/maintainer"
+									className="block px-4 py-2.5 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10"
+									onClick={() => setMobileOpen(false)}
+								>
+									Maintainer
+								</Link>
+							)}
 							{hasMinRole(user.role, "admin") && (
 								<Link
 									href="/admin"
-									className="block px-4 py-2.5 rounded-lg text-sm font-medium text-solar hover:text-solar-bright hover:bg-solar/10"
+									className="block px-4 py-2.5 rounded-lg text-sm font-medium text-amber-400 hover:text-amber-300 hover:bg-amber-400/10"
 									onClick={() => setMobileOpen(false)}
 								>
 									Admin

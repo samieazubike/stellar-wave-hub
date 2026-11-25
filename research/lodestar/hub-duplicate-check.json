@@ -1,0 +1,449 @@
+{
+  "checkedAt": "2026-10-24T00:15:21.007218+00:00",
+  "url": "https://usestellarwavehub.vercel.app/api/projects?limit=50&page=1",
+  "totalChecked": 36,
+  "pages": [
+    {
+      "projects": [
+        {
+          "id": 123,
+          "name": "OverSync",
+          "website_url": "https://oversync.vercel.app",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/karagozemin/OverSync",
+              "label": "Core repository"
+            }
+          ]
+        },
+        {
+          "id": 122,
+          "name": "AgentPay",
+          "website_url": "https://agent-pay-lilac.vercel.app",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/ysfadm/AgentPay",
+              "label": "Core repository"
+            }
+          ]
+        },
+        {
+          "id": 120,
+          "name": "Sanctifier",
+          "website_url": "https://github.com/HyperSafeD/Sanctifier",
+          "github_url": "https://github.com/HyperSafeD/Sanctifier",
+          "github_repos": [
+            {
+              "url": "https://github.com/HyperSafeD/Sanctifier",
+              "label": "Sanctifier Core Repository"
+            }
+          ]
+        },
+        {
+          "id": 119,
+          "name": "SafeTrust",
+          "website_url": null,
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/safetrustcr/frontend-SafeTrust",
+              "label": "Frontend (Next.js 15)"
+            },
+            {
+              "url": "https://github.com/safetrustcr/backend-SafeTrust",
+              "label": "Backend (Hasura + webhook + Rust crates)"
+            },
+            {
+              "url": "https://github.com/safetrustcr/dApp-SafeTrust",
+              "label": "MVP monorepo"
+            },
+            {
+              "url": "https://github.com/safetrustcr/landing-SafeTrust",
+              "label": "Landing page (Astro)"
+            }
+          ]
+        },
+        {
+          "id": 113,
+          "name": "MERCATO",
+          "website_url": "https://mercato-dapp.vercel.app",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/mercato-supply-chain/mercato-dapp",
+              "label": "MERCATO dApp"
+            }
+          ]
+        },
+        {
+          "id": 111,
+          "name": "Lancepay",
+          "website_url": "https://lance-pay.vercel.app/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/davedumto/LancePay",
+              "label": "mono"
+            }
+          ]
+        },
+        {
+          "id": 110,
+          "name": "Linkora-social",
+          "website_url": "https://t.me/+13csp8G4ccRhY2Zk",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Epta-Node/Linkora-social",
+              "label": "mono"
+            }
+          ]
+        },
+        {
+          "id": 109,
+          "name": "PromptHash",
+          "website_url": "https://prompt-hash-stellar.vercel.app/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Obiajulu-gif/Prompt-Hash-Stellar",
+              "label": "main"
+            }
+          ]
+        },
+        {
+          "id": 107,
+          "name": "Akkuea",
+          "website_url": null,
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/akkuea/akkuea",
+              "label": "Full-Stack"
+            }
+          ]
+        },
+        {
+          "id": 103,
+          "name": "Lance",
+          "website_url": "https://lance-online.vercel.app/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/DXmakers/lance",
+              "label": "main"
+            }
+          ]
+        },
+        {
+          "id": 97,
+          "name": "StellarMicroPay",
+          "website_url": "https://stellar-micro-pay.vercel.app",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Emmy123222/Stellar-MicroPay",
+              "label": "Mono"
+            }
+          ]
+        },
+        {
+          "id": 96,
+          "name": "StellarKit",
+          "website_url": "https://stellarkit.xyz/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/0xVida/stellar-suite.git",
+              "label": "Core IDE Workspace"
+            }
+          ]
+        },
+        {
+          "id": 95,
+          "name": "Stellar Portfolio Rebalancer",
+          "website_url": "https://stellar-portfolio-rebalancer.vercel.app/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/ritik4ever/stellar-portfolio-rebalancer",
+              "label": "DEFI"
+            }
+          ]
+        },
+        {
+          "id": 94,
+          "name": "CarbonChain",
+          "website_url": null,
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/legend-esc/carbonchain",
+              "label": "Complete"
+            }
+          ]
+        },
+        {
+          "id": 93,
+          "name": "RouteDock ",
+          "website_url": "https://www.routedock.xyz/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/winsznx/routedock",
+              "label": "Rwa"
+            }
+          ]
+        },
+        {
+          "id": 92,
+          "name": " Lumenpulse",
+          "website_url": "https://starkpulse.vercel.app/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Pulsefy/Lumenpulse.git",
+              "label": "Monorepo Workspace"
+            }
+          ]
+        },
+        {
+          "id": 90,
+          "name": "Stellopay",
+          "website_url": "https://stellopay-frontend-gamma.vercel.app/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Stellopay/stellopay-core",
+              "label": "backend"
+            },
+            {
+              "url": "https://github.com/Stellopay",
+              "label": "Organization"
+            },
+            {
+              "url": "https://github.com/Stellopay/stellopay-frontend",
+              "label": "Frontend"
+            }
+          ]
+        },
+        {
+          "id": 88,
+          "name": "Wraith",
+          "website_url": null,
+          "github_url": "https://github.com/Miracle656/wraith",
+          "github_repos": [
+            {
+              "url": "https://github.com/Miracle656/wraith",
+              "label": "Core indexer"
+            }
+          ]
+        },
+        {
+          "id": 85,
+          "name": "Facil-Pay",
+          "website_url": "https://www.facilpay.io/",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Facil-Pay/facilpay-frontend",
+              "label": "Frontend"
+            },
+            {
+              "url": "https://github.com/Facil-Pay/facilpay-api",
+              "label": "Backend"
+            },
+            {
+              "url": "https://github.com/Facil-Pay/facilpay-sdk",
+              "label": "SDK"
+            },
+            {
+              "url": "https://github.com/Facil-Pay/facilpay-contracts",
+              "label": "Contract"
+            }
+          ]
+        },
+        {
+          "id": 84,
+          "name": "Stellar Tipjar",
+          "website_url": null,
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Bonizozo/stellar-tipjar-frontend",
+              "label": "frontend"
+            },
+            {
+              "url": "https://github.com/Bonizozo/stellar-tipjar-backend",
+              "label": "backend"
+            },
+            {
+              "url": "https://github.com/Bonizozo/stellar-tipjar-contracts",
+              "label": "contract"
+            }
+          ]
+        },
+        {
+          "id": 82,
+          "name": "NEKO ",
+          "website_url": "http://nekoprotocol.xyz",
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/Neko-Protocol",
+              "label": "Neko Main"
+            },
+            {
+              "url": "https://github.com/Neko-Protocol/Neko-DApp",
+              "label": "Neko DApp"
+            }
+          ]
+        },
+        {
+          "id": 81,
+          "name": "ACTA",
+          "website_url": "https://acta.build",
+          "github_url": "https://github.com/ACTA-Team",
+          "github_repos": [
+            {
+              "url": "https://github.com/ACTA-Team/contracts-acta",
+              "label": "Contracts"
+            },
+            {
+              "url": "https://github.com/ACTA-Team/sdk",
+              "label": "SDK"
+            },
+            {
+              "url": "https://github.com/ACTA-Team/dApp-ACTA",
+              "label": "dApp"
+            }
+          ]
+        },
+        {
+          "id": 79,
+          "name": "CurrentDao",
+          "website_url": null,
+          "github_url": null,
+          "github_repos": [
+            {
+              "url": "https://github.com/CurrentDao-org/CurrentDao-frontend",
+              "label": "Frontend"
+            },
+            {
+              "url": "https://github.com/CurrentDao-org/CurrentDao-contracts",
+              "label": "Smart Contract"
+            }
+          ]
+        },
+        {
+          "id": 72,
+          "name": "Stellar Wave Hub",
+          "website_url": null,
+          "github_url": "https://github.com/samieazubike/stellar-wave-hub",
+          "github_repos": []
+        },
+        {
+          "id": 71,
+          "name": "Anchor-Kit",
+          "website_url": null,
+          "github_url": "https://github.com/0xNgoo/anchor-kit",
+          "github_repos": []
+        },
+        {
+          "id": 70,
+          "name": "PetAd",
+          "website_url": null,
+          "github_url": "https://github.com/amina69/PetAd-Frontend",
+          "github_repos": []
+        },
+        {
+          "id": 67,
+          "name": " Soroban-ZK-Std",
+          "website_url": null,
+          "github_url": "https://github.com/georgegoldman/Soroban-ZK-Std",
+          "github_repos": []
+        },
+        {
+          "id": 66,
+          "name": "KindFi",
+          "website_url": "https://kindfi.org",
+          "github_url": "https://github.com/kindfi-org/kindfi",
+          "github_repos": []
+        },
+        {
+          "id": 65,
+          "name": "PetChain",
+          "website_url": "https://petchain.vercel.app/",
+          "github_url": "https://github.com/DogStark/PetChain-MobileApp",
+          "github_repos": []
+        },
+        {
+          "id": 64,
+          "name": "SoroSusu",
+          "website_url": null,
+          "github_url": "https://github.com/SoroSusu-Protocol/sorosusu-contracts",
+          "github_repos": []
+        },
+        {
+          "id": 63,
+          "name": "BeEnergy",
+          "website_url": "https://be-energy-six.vercel.app",
+          "github_url": "https://github.com/BuenDia-Builders/be-energy",
+          "github_repos": []
+        },
+        {
+          "id": 61,
+          "name": "Nevo",
+          "website_url": "https://www.web3novas.com",
+          "github_url": "https://github.com/Web3Novalabs/Nevo",
+          "github_repos": []
+        },
+        {
+          "id": 15,
+          "name": "Tansu",
+          "website_url": "https://tansu.dev",
+          "github_url": "https://github.com/Consulting-Manao/tansu",
+          "github_repos": []
+        },
+        {
+          "id": 13,
+          "name": "OFFER-HUB",
+          "website_url": "https://www.offer-hub.org",
+          "github_url": "https://github.com/OFFER-HUB/offer-hub-monorepo",
+          "github_repos": []
+        },
+        {
+          "id": 5,
+          "name": "Neko Protocol",
+          "website_url": "https://nekoprotocol.xyz",
+          "github_url": "https://github.com/Neko-Protocol/neko-contracts",
+          "github_repos": []
+        },
+        {
+          "id": 2,
+          "name": "Trustless Work Smart Escrow",
+          "website_url": "https://www.trustlesswork.com",
+          "github_url": "https://github.com/Trustless-Work/Trustless-Work-Smart-Escrow",
+          "github_repos": []
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 50,
+        "total": 36,
+        "pages": 1
+      },
+      "canonicalResponseSha256": "3c24895eccb89e18d3f5c0e69531c5582fb5b5febac5c4ad824241c76c61ffa9"
+    }
+  ],
+  "matches": [],
+  "matchFields": [
+    "name",
+    "website_url",
+    "github_url",
+    "github_repos.url"
+  ],
+  "pendingSubmissions": "Not exposed by the public catalog"
+}

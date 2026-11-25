@@ -1,6 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import VerifiedBadge from "./VerifiedBadge";
+import ProBadge from "./ProBadge";
+import BookmarkButton from "./BookmarkButton";
+import { useCompare } from "@/context/CompareContext";
 
 interface ProjectCardProps {
   project: {
@@ -17,8 +22,20 @@ interface ProjectCardProps {
     username?: string;
     logo_url?: string;
     stellar_contract_id?: string;
+    rating_velocity?: number;
+    created_at?: string;
+    owner_verified_at?: string | null;
+    stellar_account_id?: string | null;
+    is_pro?: boolean | number | null;
+    pro_until?: string | null;
+    plan?: string | null;
   };
   index?: number;
+  variant?: "grid" | "list";
+  badge?: {
+    label: string;
+    variant?: "solar" | "aurora" | "nova" | "plasma";
+  };
 }
 
 const categoryColors: Record<string, string> = {
@@ -34,18 +51,33 @@ const categoryColors: Record<string, string> = {
   other: "tag-nova",
 };
 
-export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
+export default function ProjectCard({
+  project,
+  index = 0,
+  variant = "grid",
+  badge,
+}: ProjectCardProps) {
+  const { isSelected, toggleProject, projects } = useCompare();
   const colorClass = categoryColors[project.category?.toLowerCase()] || "tag-nova";
   const tags = project.tags ? project.tags.split(",").slice(0, 3) : [];
+  const selected = isSelected(project.id);
+  const compareLimitReached = projects.length >= 3 && !selected;
 
   return (
-    <Link
-      href={`/projects/${project.slug}`}
-      className={`group relative glass glass-hover rounded-2xl p-6 flex flex-col gap-4 transition-all duration-300 animate-in animate-in-delay-${Math.min(index + 1, 5)}`}
+    <article
+      className={`group relative glass glass-hover rounded-2xl transition-all duration-300 animate-in animate-in-delay-${Math.min(index + 1, 5)} ${
+        variant === "list"
+          ? "flex flex-row items-center gap-3 p-3 sm:gap-4 sm:p-4"
+          : "flex flex-col p-6"
+      }`}
     >
-      {/* Featured badge */}
-      {project.featured === 1 && (
-        <div className="absolute -top-2 -right-2 featured-badge bg-solar/20 text-solar-bright text-xs font-bold px-2.5 py-1 rounded-full border border-solar/30 flex items-center gap-1">
+      {/* Featured badge or section badge */}
+      {project.featured === 1 ? (
+        <div
+          className={`featured-badge bg-solar/20 text-solar-bright text-xs font-bold px-2.5 py-1 rounded-full border border-solar/30 flex items-center gap-1 ${
+            variant === "list" ? "shrink-0" : "absolute -top-2 -right-2"
+          }`}
+        >
           <svg
             width="12"
             height="12"
@@ -56,16 +88,92 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
           </svg>
           Featured
         </div>
-      )}
+      ) : badge ? (
+        <div
+          className={`text-xs font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
+            variant === "list" ? "shrink-0" : "absolute -top-2 -right-2"
+          } ${
+            badge.variant === "aurora"
+              ? "bg-aurora/20 text-aurora-bright border-aurora/30"
+              : badge.variant === "solar"
+              ? "bg-solar/20 text-solar-bright border-solar/30"
+              : badge.variant === "plasma"
+              ? "bg-plasma/20 text-plasma-bright border-plasma/30"
+              : "bg-nova/20 text-nova-bright border-nova/30"
+          }`}
+        >
+          {badge.variant === "solar" ? (
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+            </svg>
+          ) : badge.variant === "aurora" ? (
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+            </svg>
+          ) : null}
+          {badge.label}
+        </div>
+      ) : null}
 
       {/* Header */}
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-lg font-bold text-nova-bright group-hover:from-nova/40 group-hover:to-plasma/40 transition-all">
-          {project.name[0]}
+      <Link
+        href={`/projects/${project.slug}`}
+        className={`flex min-w-0 flex-1 ${
+          variant === "list"
+            ? "flex-row items-center gap-3 sm:gap-4"
+            : "flex-col gap-4"
+        }`}
+      >
+      <div
+        className={`flex min-w-0 ${
+          variant === "list"
+            ? "w-28 shrink-0 items-center gap-2 sm:w-44 sm:gap-3"
+            : "items-start gap-3"
+        }`}
+      >
+        <div
+          className={`rounded-xl bg-gradient-to-br from-nova/30 to-plasma/30 border border-nova/20 flex items-center justify-center shrink-0 text-lg font-bold text-nova-bright group-hover:from-nova/40 group-hover:to-plasma/40 transition-all overflow-hidden ${
+            variant === "list" ? "h-9 w-9" : "w-11 h-11"
+          }`}
+        >
+          {project.logo_url ? (
+            <Image
+              src={project.logo_url}
+              alt={`${project.name} logo`}
+              width={variant === "list" ? 36 : 44}
+              height={variant === "list" ? 36 : 44}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            project.name[0]
+          )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-starlight group-hover:text-nova-bright transition-colors truncate">
-            {project.name}
+          <h3 className="font-semibold text-starlight group-hover:text-nova-bright transition-colors truncate flex items-center gap-1.5">
+            <span className="truncate">{project.name}</span>
+            <ProBadge project={project} size="sm" />
+            <VerifiedBadge
+              verifiedAt={project.owner_verified_at}
+              account={project.stellar_account_id}
+            />
           </h3>
           {project.username && (
             <p className="text-xs text-ash mt-0.5">by {project.username}</p>
@@ -74,12 +182,18 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
       </div>
 
       {/* Description */}
-      <p className="text-sm text-moonlight/80 leading-relaxed line-clamp-2 flex-1">
+      <p
+        className={`text-sm text-moonlight/80 leading-relaxed ${
+          variant === "list"
+            ? "min-w-0 flex-1 line-clamp-1"
+            : "line-clamp-2 flex-1"
+        }`}
+      >
         {project.description}
       </p>
 
       {/* Tags */}
-      {tags.length > 0 && (
+      {tags.length > 0 && variant === "grid" && (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((tag) => (
             <span
@@ -93,7 +207,13 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-dust/20">
+      <div
+        className={`flex items-center justify-between ${
+          variant === "list"
+            ? "shrink-0 gap-2 border-t-0 pt-0 sm:gap-3"
+            : "pt-2 border-t border-dust/20"
+        }`}
+      >
         <div className="flex items-center gap-1.5">
           <span className={`tag ${colorClass}`}>{project.category}</span>
           {project.stellar_contract_id && (
@@ -141,6 +261,40 @@ export default function ProjectCard({ project, index = 0 }: ProjectCardProps) {
           )}
         </div>
       </div>
-    </Link>
+      </Link>
+      <div className={variant === "list" ? "shrink-0 flex items-center gap-2" : "mt-4 flex gap-2"}>
+        <BookmarkButton projectId={project.id} projectName={project.name} />
+        <button
+          type="button"
+          onClick={() =>
+            toggleProject({
+              id: project.id,
+              name: project.name,
+              slug: project.slug,
+            })
+          }
+          disabled={compareLimitReached}
+          aria-pressed={selected}
+          aria-label={
+            selected
+              ? `Remove ${project.name} from comparison`
+              : compareLimitReached
+                ? `Comparison limit reached; ${project.name} cannot be added`
+                : `Add ${project.name} to comparison`
+          }
+          title={compareLimitReached ? "Choose up to 3 projects" : undefined}
+          className={`${variant === "list" ? "shrink-0 rounded-lg p-2 text-xs" : "min-w-0 flex-1 gap-2 rounded-xl px-4 py-2.5 text-sm"} flex items-center justify-center border font-semibold transition-colors ${
+            selected
+              ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
+              : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
+          } disabled:cursor-not-allowed disabled:opacity-45`}
+        >
+          <span aria-hidden="true">{selected ? "✓" : "+"}</span>
+          <span className={variant === "list" ? "sr-only" : undefined}>
+            {selected ? "Added to compare" : "Add to compare"}
+          </span>
+        </button>
+      </div>
+    </article>
   );
 }

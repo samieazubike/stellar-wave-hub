@@ -1,18 +1,38 @@
 import {createClient, type SupabaseClient} from "@supabase/supabase-js";
 
-type Row = Record<string, unknown>;
+// This compatibility layer mirrors Firestore's open-ended document data API.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Row = Record<string, any>;
 type FilterOp = "==" | "in";
 
 const TABLE_BY_COLLECTION: Record<string, string> = {
 	users: "users",
 	projects: "projects",
 	ratings: "ratings",
+	rating_votes: "rating_votes",
 	financial_snapshots: "financial_snapshots",
+	treasury_snapshots: "treasury_snapshots",
 	auth_challenges: "auth_challenges",
 	counters: "counters",
 	submission_notes: "submission_notes",
 	api_keys: "api_keys",
+	maintainer_applications: "maintainer_applications",
+	notifications: "notifications",
+	project_updates: "project_updates",
+	promo_codes: "promo_codes",
+	reports: "reports",
+	hero_sponsors: "hero_sponsors",
+	bookmarks: "bookmarks",
+	maintainer_stats: "maintainer_stats",
+	referrals: "referrals",
+	notifications_read: "notifications_read",
+	notifications_read_status: "notifications_read",
+	payments: "payments",
+	jobs: "jobs",
 };
+
+export const BOOKMARKS_TABLE: string = TABLE_BY_COLLECTION.bookmarks ?? "bookmarks";
+
 
 function resolveTable(collection: string): string {
 	return TABLE_BY_COLLECTION[collection] ?? collection;
@@ -22,12 +42,15 @@ function keyField(collection: string): string {
 	if (
 		collection === "users" ||
 		collection === "projects" ||
-		collection === "ratings"
+		collection === "ratings" ||
+		collection === "rating_votes" ||
+		collection === "reports"
 	) {
 		return "numericId";
 	}
 	if (collection === "counters") return "name";
 	if (collection === "auth_challenges") return "publicKey";
+	if (collection === "maintainer_stats") return "id";
 	return "id";
 }
 
@@ -35,7 +58,9 @@ function normalizeDocId(collection: string, id: string): string | number {
 	if (
 		collection === "users" ||
 		collection === "projects" ||
-		collection === "ratings"
+		collection === "ratings" ||
+		collection === "rating_votes" ||
+		collection === "reports"
 	) {
 		const numeric = Number(id);
 		return Number.isNaN(numeric) ? id : numeric;
@@ -136,7 +161,7 @@ class DocRef {
 class QueryDocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any>,
+		private readonly row: Row,
 	) {}
 
 	get id(): string {
@@ -144,7 +169,7 @@ class QueryDocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> {
+	data(): Row {
 		return this.row;
 	}
 }
@@ -152,7 +177,7 @@ class QueryDocumentSnapshot {
 class DocumentSnapshot {
 	constructor(
 		public readonly ref: DocRef,
-		private readonly row: Record<string, any> | null,
+		private readonly row: Row | null,
 	) {}
 
 	get exists(): boolean {
@@ -165,7 +190,7 @@ class DocumentSnapshot {
 		return String(this.row[idField] ?? this.ref.id);
 	}
 
-	data(): Record<string, any> | undefined {
+	data(): Row | undefined {
 		return this.row ?? undefined;
 	}
 }
@@ -175,6 +200,10 @@ class QuerySnapshot {
 
 	get empty(): boolean {
 		return this.docs.length === 0;
+	}
+
+	get size(): number {
+		return this.docs.length;
 	}
 }
 
