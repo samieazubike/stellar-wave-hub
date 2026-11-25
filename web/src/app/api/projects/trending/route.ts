@@ -1,5 +1,6 @@
 import {usersCol, ratingsCol} from "@/lib/db";
 import {getSupabase} from "@/lib/firebase";
+import {getActiveJobsByProject} from "@/lib/active-jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -166,8 +167,19 @@ export async function GET(request: Request) {
 			project.username = userCache.get(uid) ?? null;
 		}
 
+		const jobsByProject = await getActiveJobsByProject(
+			selected.map((project) => project.id),
+		);
+		const projectsWithJobs = selected.map((project) => ({
+			...project,
+			...(jobsByProject.get(project.id) ?? {
+				has_active_jobs: false,
+				active_job_url: null,
+			}),
+		}));
+
 		return Response.json({
-			projects: selected,
+			projects: projectsWithJobs,
 			meta: {
 				window_days: TRENDING_WINDOW_DAYS,
 				limit,

@@ -1,6 +1,7 @@
 import { projectsCol, usersCol, ratingsCol, ratingVotesCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { publicProjectCacheHeaders } from "@/lib/public-project-cache";
+import { getActiveJobsByProject } from "@/lib/active-jobs";
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -32,6 +33,16 @@ export async function GET(
   if (!projectData) {
     return Response.json({ error: "Project not found" }, { status: 404 });
   }
+
+  const projectId = Number(projectData.id);
+  const jobsByProject = await getActiveJobsByProject([projectId]);
+  Object.assign(
+    projectData,
+    jobsByProject.get(projectId) ?? {
+      has_active_jobs: false,
+      active_job_url: null,
+    },
+  );
 
   // Fetch user info
   const uid = projectData.user_id as number;

@@ -104,6 +104,8 @@ interface Project {
 	stellar_contract_id?: string;
 	rating_velocity?: number;
 	created_at?: string;
+	has_active_jobs?: boolean;
+	active_job_url?: string | null;
 	/** Internal flag – not from API */
 	_isSponsored?: boolean;
 }
