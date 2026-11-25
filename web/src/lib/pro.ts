@@ -18,11 +18,9 @@ export function isPro(
 ): boolean {
   if (!project) return false;
 
-  if (project.pro_until) {
+  if (project.pro_until !== undefined && project.pro_until !== null) {
     const expiresAt = Date.parse(project.pro_until);
-    if (!Number.isNaN(expiresAt)) {
-      return expiresAt > now;
-    }
+    return !Number.isNaN(expiresAt) && expiresAt > now;
   }
 
   if (project.is_pro === true || project.is_pro === 1) {
