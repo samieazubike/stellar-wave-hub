@@ -6,6 +6,7 @@ import { hasMinRole } from "@/lib/roles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { RevenueTab } from "@/components/admin/RevenueTab";
 import {
   ON_CHAIN_ENABLED,
   explorerTxUrl,
@@ -2415,6 +2416,7 @@ export default function AdminPage() {
                 )}
               </TabsTrigger>
             )}
+            {isAdmin && <TabsTrigger value="revenue">Revenue</TabsTrigger>}
             {isAdmin && <TabsTrigger value="promos">Promo Codes</TabsTrigger>}
             {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
             {isAdmin && <TabsTrigger value="moderators">Moderators</TabsTrigger>}
@@ -2652,6 +2654,10 @@ export default function AdminPage() {
 
           <TabsContent value="reports">
             <ReportsTab token={token} />
+          </TabsContent>
+
+          <TabsContent value="revenue">
+            <RevenueTab token={token} />
           </TabsContent>
             </>
           )}

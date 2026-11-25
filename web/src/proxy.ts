@@ -4,7 +4,11 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const protectedApiRoutes = ["/api/projects/pending", "/api/projects/my"];
+  const protectedApiRoutes = [
+    "/api/projects/pending",
+    "/api/projects/my",
+    "/api/payments/me",
+  ];
 
   const isProtectedApi = protectedApiRoutes.some((route) =>
     pathname.startsWith(route)
