@@ -25,4 +25,5 @@ describe("claimExpiryCutoff", () => {
   it("returns the timestamp one TTL ago", () => {
     expect(claimExpiryCutoff(30, now)).toBe(minutesAgo(30));
   });
+  
 });
