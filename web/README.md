@@ -51,6 +51,12 @@ A project counts as **substantial** when it meets both of:
 
 This is computed by the `public.project_is_substantial(...)` Postgres function and stored in an indexed generated column (`projects.is_substantial`), so `GET /api/projects?substantial=true` filters at the database level. To retune the rule, edit the function with `create or replace function` and then force existing rows to recompute with `update public.projects set "numericId" = "numericId";` (a function change alone doesn't retroactively update already-stored rows).
 
+## Supporter Badge
+
+Users whose total donated XLM reaches `SUPPORTER_MIN_XLM` (default `10`) get a **Supporter** badge on `/profile`, on public `/u/[username]` profiles, and next to review authors on project pages. Donations are the `tip` payments recorded by `/api/tips`; sponsorships and Pro purchases do not count.
+
+The threshold is read server-side from `SUPPORTER_MIN_XLM` in `web/.env.example`. `src/lib/supporters.ts` sums tips per user and exposes `getSupporterStatus` / `getSupporterStatuses`; the private `/api/supporters/me` endpoint feeds the client profile. An invalid threshold fails loudly instead of falling back silently.
+
 ## Getting Started
 
 First, run the development server:

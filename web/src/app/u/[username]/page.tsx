@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { usersCol, projectsCol, ratingsCol } from "@/lib/db";
+import { getSupporterStatus } from "@/lib/supporters";
+import SupporterBadge from "@/components/SupporterBadge";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,7 @@ export default async function UserProfilePage({
 
 	const user = userSnap.docs[0].data();
 	const userId = user.numericId;
+	const supporter = await getSupporterStatus(userId);
 
 	// Fetch projects
 	const projectsSnap = await projectsCol.ref
@@ -78,8 +81,12 @@ export default async function UserProfilePage({
 							{user.username}
 						</h1>
 						<div className="flex items-center gap-3 text-sm text-ash mt-0.5">
-							{user.role && <span className="tag tag-nova text-xs">{user.role}</span>}
-							{user.created_at && (
+						{user.role && <span className="tag tag-nova text-xs">{user.role}</span>}
+						<SupporterBadge
+							isSupporter={supporter.is_supporter}
+							totalXlm={supporter.total_xlm}
+						/>
+						{user.created_at && (
 								<span>Joined {new Date(user.created_at as string).toLocaleDateString()}</span>
 							)}
 						</div>
