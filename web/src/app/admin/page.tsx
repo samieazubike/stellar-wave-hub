@@ -2123,6 +2123,43 @@ export default function AdminPage() {
   const { user, token } = useAuth();
   const action = useProjectAction(token);
   const [search, setSearch] = useState("");
+  const [paymentFrom, setPaymentFrom] = useState("");
+  const [paymentTo, setPaymentTo] = useState("");
+  const [paymentProduct, setPaymentProduct] = useState("all");
+  const [paymentExporting, setPaymentExporting] = useState(false);
+  const [paymentExportError, setPaymentExportError] = useState("");
+
+  const downloadPaymentsCsv = useCallback(async () => {
+    if (!token) return;
+    setPaymentExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (paymentFrom) params.set("from", paymentFrom);
+      if (paymentTo) params.set("to", paymentTo);
+      if (paymentProduct !== "all") params.set("product", paymentProduct);
+
+      const res = await fetch(`/api/admin/payments-csv?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to download payments CSV");
+
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "payments.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      setPaymentExportError(
+        error instanceof Error ? error.message : "Failed to download payments CSV",
+      );
+    } finally {
+      setPaymentExporting(false);
+    }
+  }, [paymentFrom, paymentTo, paymentProduct, token]);
 
   const isAdmin = !!user && hasMinRole(user.role, "admin");
 
@@ -2200,6 +2237,71 @@ export default function AdminPage() {
           {isAdmin ? "Manage project submissions, approvals, and listings" : "Review and moderate pending project submissions"}
         </p>
       </div>
+
+      {isAdmin && (
+        <div className="glass rounded-xl p-4 mb-6 animate-in animate-in-delay-1">
+          <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+              <label className="text-xs font-medium text-ash">
+                From
+                <input
+                  type="date"
+                  value={paymentFrom}
+                  onChange={(event) => {
+                    setPaymentFrom(event.target.value);
+                    setPaymentExportError("");
+                  }}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-starlight"
+                />
+              </label>
+              <label className="text-xs font-medium text-ash">
+                To
+                <input
+                  type="date"
+                  value={paymentTo}
+                  onChange={(event) => {
+                    setPaymentTo(event.target.value);
+                    setPaymentExportError("");
+                  }}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-starlight"
+                />
+              </label>
+              <label className="text-xs font-medium text-ash">
+                Product
+                <select
+                  value={paymentProduct}
+                  onChange={(event) => {
+                    setPaymentProduct(event.target.value);
+                    setPaymentExportError("");
+                  }}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#121426] px-3 py-2 text-sm text-starlight"
+                >
+                  <option value="all">All products</option>
+                  <option value="spotlight">Spotlight</option>
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              onClick={downloadPaymentsCsv}
+              disabled={paymentExporting}
+              className="btn-ghost text-sm !py-2.5 !px-4 inline-flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 3v12" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M5 21h14" />
+              </svg>
+              {paymentExporting ? "Preparing..." : "Download Payments CSV"}
+            </button>
+          </div>
+          {paymentExportError && (
+            <p className="mt-3 text-sm text-supernova" role="alert">
+              {paymentExportError}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-6 animate-in animate-in-delay-1">
