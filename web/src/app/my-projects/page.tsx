@@ -3,6 +3,14 @@
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import {FeatureButton} from "@/components/FeatureButton";
+import {PayFallback} from "@/components/PayFallback";
+import ProBadge from "@/components/ProBadge";
+import {payWithFreighter} from "@/lib/payments-client";
+import {
+	FREE_RESEARCH_IMAGE_LIMIT,
+	PRO_RESEARCH_IMAGE_LIMIT,
+	isPro,
+} from "@/lib/pro";
 import Link from "next/link";
 
 interface Project {
@@ -15,11 +23,34 @@ interface Project {
 	featured: number;
 	featured_expires_at?: string;
 	featured_expires_at?: string | null;
+	is_pro?: boolean | number | null;
+	pro_until?: string | null;
+	plan?: string | null;
 	avg_rating?: number;
 	rating_count?: number;
 	created_at: string;
 	rejection_reason?: string;
 }
+
+interface ProConfig {
+	priceXlm: number;
+	durationDays: number;
+	destination: string | null;
+	network: "mainnet" | "testnet";
+	horizonUrl: string;
+}
+
+const DEFAULT_PRO_PRICE_XLM =
+	Number(process.env.NEXT_PUBLIC_PRO_PRICE_XLM) > 0
+		? Number(process.env.NEXT_PUBLIC_PRO_PRICE_XLM)
+		: 25;
+const DEFAULT_PRO_DURATION_DAYS = 30;
+
+const PRO_BENEFITS = [
+	"Pro badge displayed on project cards and detail pages",
+	`Upload up to ${PRO_RESEARCH_IMAGE_LIMIT} research images per project (up from ${FREE_RESEARCH_IMAGE_LIMIT})`,
+	"Stand out across Stellar Wave Hub discovery",
+];
 
 const statusStyles: Record<string, string> = {
 	submitted: "tag-solar",
@@ -84,6 +115,297 @@ function SpotlightRenewalBanner({
 				Renew
 			</Link>
 		</div>
+	);
+}
+
+function UpgradeToProCard({
+	projects,
+	token,
+	onUpgraded,
+}: {
+	projects: Project[];
+	token: string | null;
+	onUpgraded: (projectId: number, proUntil?: string | null) => void;
+}) {
+	const eligibleProjects = projects.filter((p) => !isPro(p));
+	const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+		() => eligibleProjects[0]?.id ?? null,
+	);
+	const [config, setConfig] = useState<ProConfig | null>(null);
+	const [busy, setBusy] = useState(false);
+	const [error, setError] = useState("");
+	const [message, setMessage] = useState("");
+
+	const activeProjectId =
+		eligibleProjects.some((p) => p.id === selectedProjectId)
+			? selectedProjectId
+			: (eligibleProjects[0]?.id ?? null);
+
+	useEffect(() => {
+		let cancelled = false;
+		async function loadConfig() {
+			try {
+				const res = await fetch("/api/pro/config");
+				if (res.ok) {
+					const data = await res.json();
+					if (!cancelled) {
+						setConfig({
+							priceXlm: Number(data.priceXlm ?? data.price_xlm) || DEFAULT_PRO_PRICE_XLM,
+							durationDays: Number(data.durationDays ?? data.duration_days) || DEFAULT_PRO_DURATION_DAYS,
+							destination: data.destination ?? null,
+							network: data.network === "mainnet" ? "mainnet" : "testnet",
+							horizonUrl:
+								data.horizonUrl ||
+								(data.network === "mainnet"
+									? "https://horizon.stellar.org"
+									: "https://horizon-testnet.stellar.org"),
+						});
+					}
+					return;
+				}
+			} catch {
+				// Fall through to shared payment config.
+			}
+
+			try {
+				const fallbackRes = await fetch("/api/featured/config");
+				if (!fallbackRes.ok) throw new Error("Could not load Pro payment configuration.");
+				const fallbackData = await fallbackRes.json();
+				if (!cancelled) {
+					setConfig({
+						priceXlm: DEFAULT_PRO_PRICE_XLM,
+						durationDays: DEFAULT_PRO_DURATION_DAYS,
+						destination: fallbackData.destination ?? null,
+						network: fallbackData.network === "mainnet" ? "mainnet" : "testnet",
+						horizonUrl:
+							fallbackData.horizonUrl ||
+							(fallbackData.network === "mainnet"
+								? "https://horizon.stellar.org"
+								: "https://horizon-testnet.stellar.org"),
+					});
+				}
+			} catch (reason: unknown) {
+				if (!cancelled) {
+					setError(
+						reason instanceof Error
+							? reason.message
+							: "Could not load Pro payment configuration.",
+					);
+				}
+			}
+		}
+
+		loadConfig();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	if (eligibleProjects.length === 0) return null;
+
+	async function verifyAndActivatePro(txHash: string) {
+		if (!token || !activeProjectId) return;
+
+		setBusy(true);
+		setError("");
+		setMessage("");
+
+		try {
+			const response = await fetch("/api/pro/activate", {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					project_id: activeProjectId,
+					tx_hash: txHash,
+				}),
+			});
+			const data = await response.json();
+			if (!response.ok) {
+				throw new Error(
+					data.error || "Payment was sent but Pro could not be activated.",
+				);
+			}
+			const proUntil = data.pro_until ?? data.expires_at ?? null;
+			onUpgraded(activeProjectId, proUntil);
+			setMessage("Pro activated! Your project badge is now live.");
+		} catch (reason: unknown) {
+			setError(
+				`${reason instanceof Error ? reason.message : "Pro activation failed."} Payment transaction: ${txHash}.`,
+			);
+		} finally {
+			setBusy(false);
+		}
+	}
+
+	async function handlePay() {
+		if (!token || !config || !activeProjectId) return;
+		if (!config.destination) {
+			setError("Pro payments are not configured yet.");
+			return;
+		}
+
+		setBusy(true);
+		setError("");
+		setMessage("");
+
+		let txHash: string;
+		try {
+			txHash = await payWithFreighter({
+				amountXlm: config.priceXlm,
+				destination: config.destination,
+				network: config.network,
+				horizonUrl: config.horizonUrl,
+				memo: "pro",
+			});
+		} catch (reason: unknown) {
+			setError(
+				reason instanceof Error
+					? reason.message
+					: "Could not send Pro payment.",
+			);
+			setBusy(false);
+			return;
+		}
+
+		await verifyAndActivatePro(txHash);
+	}
+
+	const priceLabel = config
+		? `${config.priceXlm} XLM / ${config.durationDays} days`
+		: `${DEFAULT_PRO_PRICE_XLM} XLM / ${DEFAULT_PRO_DURATION_DAYS} days`;
+
+	return (
+		<section
+			aria-labelledby="upgrade-to-pro-heading"
+			className="glass rounded-2xl border border-plasma/30 bg-gradient-to-br from-plasma/10 via-space/80 to-nova/10 p-6 mb-8 animate-in"
+		>
+			<div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+				<div className="flex-1 min-w-0">
+					<div className="flex items-center gap-2.5 mb-2">
+						<span className="inline-flex items-center gap-1 rounded-full border border-plasma/40 bg-plasma/20 px-2.5 py-0.5 text-xs font-bold tracking-wide text-plasma-bright">
+							<svg
+								width="12"
+								height="12"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+								aria-hidden="true"
+							>
+								<path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
+							</svg>
+							Pro
+						</span>
+						<span className="text-xs font-medium text-plasma-bright">
+							{priceLabel}
+						</span>
+					</div>
+					<h2
+						id="upgrade-to-pro-heading"
+						className="font-display font-bold text-xl text-starlight mb-1"
+					>
+						Upgrade to Pro
+					</h2>
+					<p className="text-sm text-ash mb-4">
+						Unlock Pro features and a verified Pro badge for your project.
+					</p>
+					<ul className="space-y-2 text-sm text-moonlight">
+						{PRO_BENEFITS.map((benefit) => (
+							<li key={benefit} className="flex items-start gap-2.5">
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="var(--aurora-bright)"
+									strokeWidth="2.5"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									className="mt-0.5 shrink-0"
+									aria-hidden="true"
+								>
+									<polyline points="20 6 9 17 4 12" />
+								</svg>
+								<span>{benefit}</span>
+							</li>
+						))}
+					</ul>
+				</div>
+
+				<div className="w-full lg:w-80 shrink-0 rounded-xl border border-dust/25 bg-space/80 p-4">
+					{eligibleProjects.length > 1 ? (
+						<div className="mb-3">
+							<label
+								htmlFor="pro-project-select"
+								className="block text-xs font-medium text-ash mb-1.5"
+							>
+								Project to upgrade
+							</label>
+							<select
+								id="pro-project-select"
+								value={activeProjectId ?? ""}
+								onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+								disabled={busy}
+								className="w-full rounded-lg border border-dust/30 bg-void/80 px-3 py-2 text-sm text-starlight focus:border-plasma/60 focus:outline-none disabled:opacity-50"
+							>
+								{eligibleProjects.map((project) => (
+									<option key={project.id} value={project.id}>
+										{project.name}
+									</option>
+								))}
+							</select>
+						</div>
+					) : (
+						<p className="text-xs text-ash mb-3">
+							Upgrading{" "}
+							<span className="font-medium text-starlight">
+								{eligibleProjects[0].name}
+							</span>
+						</p>
+					)}
+
+					{config && !config.destination && (
+						<p className="mb-3 text-xs text-supernova">
+							Pro payments are not configured yet.
+						</p>
+					)}
+					{error && (
+						<p role="alert" className="mb-3 break-words text-xs text-supernova">
+							{error}
+						</p>
+					)}
+					{message && (
+						<p role="status" className="mb-3 text-xs text-aurora-bright">
+							{message}
+						</p>
+					)}
+
+					<button
+						type="button"
+						onClick={handlePay}
+						disabled={busy || !config?.destination || !token || !activeProjectId}
+						className="btn-nova w-full justify-center text-sm disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						{busy
+							? "Confirming payment..."
+							: config
+								? `Pay ${config.priceXlm} XLM`
+								: "Loading price..."}
+					</button>
+
+					{config?.destination && (
+						<PayFallback
+							destination={config.destination}
+							amountXlm={config.priceXlm}
+							memo="pro"
+							disabled={busy || !token || !activeProjectId}
+							onVerifyTxHash={verifyAndActivatePro}
+						/>
+					)}
+				</div>
+			</div>
+		</section>
 	);
 }
 
@@ -212,6 +534,25 @@ export default function MyProjectsPage() {
 					))}
 				</div>
 			) : projects.length > 0 ? (
+				<>
+				<UpgradeToProCard
+					projects={projects}
+					token={token}
+					onUpgraded={(projectId, proUntil) =>
+						setProjects((current) =>
+							current.map((item) =>
+								item.id === projectId
+									? {
+											...item,
+											is_pro: true,
+											plan: "pro",
+											pro_until: proUntil ?? item.pro_until,
+										}
+									: item,
+							),
+						)
+					}
+				/>
 				<div className="space-y-4 animate-in animate-in-delay-1">
 					{projects.map((project) => (
 						<div
@@ -240,6 +581,7 @@ export default function MyProjectsPage() {
 												).toLocaleDateString()}`}
 										</span>
 									)}
+									<ProBadge project={project} size="sm" />
 								</div>
 								<p className="text-sm text-ash line-clamp-1">
 									{project.description}
@@ -341,6 +683,7 @@ export default function MyProjectsPage() {
 						</div>
 					))}
 				</div>
+				</>
 			) : (
 				<div className="glass rounded-2xl p-16 text-center animate-in animate-in-delay-1">
 					<div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-stardust/50 flex items-center justify-center">
