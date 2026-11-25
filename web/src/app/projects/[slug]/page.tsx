@@ -542,6 +542,48 @@ export default function ProjectDetailPage({
 	}, [project, recordRecentlyViewed]);
 
 	useEffect(() => {
+		const projectId = project?.id;
+		if (!projectId) return;
+
+		const day = new Date().toISOString().slice(0, 10);
+		const storageKey = `project-view:${projectId}:${day}`;
+		try {
+			if (window.sessionStorage.getItem(storageKey)) return;
+			window.sessionStorage.setItem(storageKey, "1");
+		} catch (error) {
+			console.warn("Unable to deduplicate project view tracking for this session:", error);
+		}
+
+		let referrerHost = "direct";
+		try {
+			if (document.referrer) {
+				referrerHost = new URL(document.referrer).hostname.toLowerCase() || "direct";
+			}
+		} catch (error) {
+			console.warn("Unable to determine project view referrer:", error);
+		}
+
+		const endpoint = `/api/projects/${projectId}/view`;
+		const body = JSON.stringify({referrerHost});
+		if (navigator.sendBeacon?.(endpoint, new Blob([body], {type: "application/json"}))) return;
+
+		void fetch(endpoint, {
+			method: "POST",
+			headers: {"Content-Type": "application/json"},
+			body,
+			keepalive: true,
+		})
+			.then((response) => {
+				if (!response.ok) {
+					console.error(`Project view tracking failed with status ${response.status}`);
+				}
+			})
+			.catch((error: unknown) => {
+				console.error("Project view tracking request failed:", error);
+			});
+	}, [project?.id]);
+
+	useEffect(() => {
 		if (activeTab !== "updates" || !project) return;
 
 		let cancelled = false;

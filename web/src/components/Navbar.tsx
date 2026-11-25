@@ -65,6 +65,12 @@ export default function Navbar() {
 						>
 							Pricing
 						</Link>
+						<Link
+							href="/developers"
+							className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+						>
+							Developers
+						</Link>
 						{user && (
 							<>
 								<Link
@@ -225,6 +231,13 @@ export default function Navbar() {
 						onClick={() => setMobileOpen(false)}
 					>
 						Pricing
+					</Link>
+					<Link
+						href="/developers"
+						className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+						onClick={() => setMobileOpen(false)}
+					>
+						Developers
 					</Link>
 					{user ? (
 						<>

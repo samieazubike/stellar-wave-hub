@@ -66,6 +66,12 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!canManage(auth, found.projectOwnerId)) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (parsed.data.status === "active" && found.job.status !== "active") {
+      return Response.json(
+        { error: "Jobs can only be activated after a verified payment" },
+        { status: 400 },
+      );
+    }
     if (parsed.data.featured_until !== undefined && !hasMinRole(auth.role, "admin")) {
       return Response.json({ error: "Only admins can change featured status" }, { status: 403 });
     }
