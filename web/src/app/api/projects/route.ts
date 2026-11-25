@@ -4,6 +4,11 @@ import {parseJsonBody} from "@/lib/validation/parse-body";
 import {createProjectSchema} from "@/lib/validation/schemas/projects";
 import {publicProjectCacheHeaders} from "@/lib/public-project-cache";
 import {notifyMaintainersOfSubmission} from "@/lib/notifications";
+import {
+	FREE_RESEARCH_IMAGE_LIMIT,
+	PRO_RESEARCH_IMAGE_LIMIT,
+	isPro,
+} from "@/lib/pro";
 import slugify from "slugify";
 import {getSupabase} from "@/lib/firebase";
 import {checkRateLimit, getClientIp, rateLimitExceededResponse} from "@/lib/rate-limit";
@@ -226,6 +231,19 @@ export async function POST(request: Request) {
 		logo_url,
 		research_images,
 	} = parsed.data;
+
+	const projectIsPro = isPro(null);
+	const maxResearchImages = projectIsPro
+		? PRO_RESEARCH_IMAGE_LIMIT
+		: FREE_RESEARCH_IMAGE_LIMIT;
+	if (Array.isArray(research_images) && research_images.length > maxResearchImages) {
+		return Response.json(
+			{
+				error: `Maximum ${maxResearchImages} research images allowed for free projects. Upgrade to Pro for up to ${PRO_RESEARCH_IMAGE_LIMIT} images.`,
+			},
+			{status: 400},
+		);
+	}
 
 	try {
 

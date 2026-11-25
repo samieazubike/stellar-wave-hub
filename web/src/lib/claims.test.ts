@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { claimExpiryCutoff, isClaimActive } from "./claims";
+import { claimExpiryCutoff, isClaimActive, parseClaimTtlMinutes } from "./claims";
 
 const now = Date.parse("2026-10-22T12:00:00Z");
 const minutesAgo = (m: number) => new Date(now - m * 60_000).toISOString();
+
+describe("parseClaimTtlMinutes", () => {
+  it("uses the default for negative, non-numeric, and non-finite values", () => {
+    expect(parseClaimTtlMinutes("-5")).toBe(30);
+    expect(parseClaimTtlMinutes("not-a-number")).toBe(30);
+    expect(parseClaimTtlMinutes("Infinity")).toBe(30);
+  });
+});
 
 describe("isClaimActive", () => {
   it("is active within the TTL", () => {
@@ -25,4 +33,5 @@ describe("claimExpiryCutoff", () => {
   it("returns the timestamp one TTL ago", () => {
     expect(claimExpiryCutoff(30, now)).toBe(minutesAgo(30));
   });
+  
 });

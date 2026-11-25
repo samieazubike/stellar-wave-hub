@@ -304,8 +304,99 @@ describe("PUT /api/projects/[id]/edit - Role Access & Project Owner Edit", () =>
       const res = await PUT(req, params);
       expect(res.status).toBe(403);
       const body = await res.json();
-      expect(body.error).toBe("Forbidden");
+      expect(body.error).toBe("Maintainers can only change category and tags");
       expect(mockQueryBuilder.update).not.toHaveBeenCalled();
+    });
+
+    it("strips disallowed fields from a mixed maintainer payload and applies category/tags", async () => {
+      currentProject = { ...mockInitialProject, status: "submitted" };
+      mockSupabaseUpdatedResult = { ...currentProject, category: "payments", tags: "payments" };
+
+      const req = new Request("http://localhost/api/projects/10/edit", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${maintainerToken}`,
+        },
+        body: JSON.stringify({
+          name: "Maintainer Renamed",
+          description: "Rewritten",
+          website_url: "https://evil.example",
+          github_url: "https://github.com/evil/repo",
+          stellar_account_id: "GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBWHF",
+          category: "payments",
+          tags: "payments",
+        }),
+      });
+      const res = await PUT(req, params);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.ignored_fields).toEqual([
+        "name",
+        "description",
+        "stellar_account_id",
+        "website_url",
+        "github_url",
+      ]);
+
+      const updates = lastSupabaseUpdates!;
+      expect(updates.category).toBe("payments");
+      expect(updates.tags).toBe("payments");
+      for (const key of ["name", "description", "website_url", "github_url", "stellar_account_id", "owner_verified_at", "owner_verified_address"]) {
+        expect(updates).not.toHaveProperty(key);
+      }
+    });
+
+    it("lets a maintainer clear tags with null", async () => {
+      currentProject = { ...mockInitialProject, status: "submitted" };
+      mockSupabaseUpdatedResult = { ...currentProject, tags: null };
+
+      const req = new Request("http://localhost/api/projects/10/edit", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${maintainerToken}`,
+        },
+        body: JSON.stringify({ tags: null }),
+      });
+      const res = await PUT(req, params);
+      expect(res.status).toBe(200);
+      expect(lastSupabaseUpdates).toMatchObject({ tags: null });
+      expect((await res.json()).ignored_fields).toBeUndefined();
+    });
+
+    it("ignores a status field sent by a maintainer (status is not editable here)", async () => {
+      currentProject = { ...mockInitialProject, status: "submitted" };
+
+      const req = new Request("http://localhost/api/projects/10/edit", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${maintainerToken}`,
+        },
+        body: JSON.stringify({ status: "approved", category: "payments" }),
+      });
+      const res = await PUT(req, params);
+      expect(res.status).toBe(200);
+      expect(lastSupabaseUpdates).not.toHaveProperty("status");
+      expect(lastSupabaseUpdates).toMatchObject({ category: "payments" });
+    });
+
+    it("gives a maintainer who owns the project full edit rights", async () => {
+      currentProject = { ...mockInitialProject, user_id: 3, status: "approved" };
+      mockSupabaseUpdatedResult = { ...currentProject, name: "Own Project Renamed" };
+
+      const req = new Request("http://localhost/api/projects/10/edit", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${maintainerToken}`,
+        },
+        body: JSON.stringify({ name: "Own Project Renamed" }),
+      });
+      const res = await PUT(req, params);
+      expect(res.status).toBe(200);
+      expect(lastSupabaseUpdates).toMatchObject({ name: "Own Project Renamed" });
     });
 
     it("denies maintainer from editing even category/tags when status is not submitted", async () => {

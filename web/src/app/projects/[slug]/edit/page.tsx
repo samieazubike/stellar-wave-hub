@@ -10,6 +10,11 @@ import Link from "next/link";
 import Image from "next/image";
 import VerifyOwnership from "@/components/VerifyOwnership";
 import {
+  PRO_RESEARCH_IMAGE_LIMIT,
+  getResearchImageLimit,
+  isPro,
+} from "@/lib/pro";
+import {
   Form,
   FormField,
   FormItem,
@@ -88,6 +93,9 @@ interface Project {
   user_id: number;
   owner_verified_at?: string | null;
   owner_verified_address?: string | null;
+  is_pro?: boolean | number | null;
+  pro_until?: string | null;
+  plan?: string | null;
 }
 
 export default function EditProjectPage() {
@@ -174,6 +182,12 @@ export default function EditProjectPage() {
       .finally(() => setLoading(false));
   }, [token, slug, form]);
 
+  const projectIsPro = isPro(project);
+  const maxImages = getResearchImageLimit(project);
+  const totalImagesCount = existingImages.length + newFiles.length;
+  const remainingImages = Math.max(0, maxImages - totalImagesCount);
+  const atFreeImageCap = !projectIsPro && totalImagesCount >= maxImages;
+
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
@@ -183,8 +197,12 @@ export default function EditProjectPage() {
         return;
       }
       const totalCount = existingImages.length + newFiles.length + imageFiles.length;
-      if (totalCount > 10) {
-        setResearchError("Maximum 10 images allowed total");
+      if (totalCount > maxImages) {
+        setResearchError(
+          projectIsPro
+            ? `Maximum ${maxImages} images allowed total`
+            : `Maximum ${maxImages} images allowed total. Upgrade to Pro for more (up to ${PRO_RESEARCH_IMAGE_LIMIT} images).`,
+        );
         return;
       }
       setResearchError("");
@@ -200,7 +218,7 @@ export default function EditProjectPage() {
 
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
-    [existingImages, newFiles],
+    [existingImages, newFiles, maxImages, projectIsPro],
   );
 
   const removeExistingImage = useCallback((index: number) => {
@@ -733,27 +751,46 @@ export default function EditProjectPage() {
 
               {/* Upload new */}
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="input-field flex flex-col items-center justify-center gap-2 py-8 cursor-pointer border-dashed hover:border-nova/40 transition-colors"
+                onClick={() => {
+                  if (remainingImages > 0) fileInputRef.current?.click();
+                }}
+                className={`input-field flex flex-col items-center justify-center gap-2 py-8 border-dashed transition-colors ${
+                  remainingImages > 0
+                    ? "cursor-pointer hover:border-nova/40"
+                    : "opacity-60 cursor-not-allowed"
+                }`}
               >
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                <span className="text-sm text-ash">Click to upload more images</span>
+                <span className="text-sm text-ash">
+                  {remainingImages > 0
+                    ? "Click to upload more images"
+                    : `Image limit reached (${totalImagesCount}/${maxImages})`}
+                </span>
                 <span className="text-xs text-ash/60">
-                  PNG, JPG, WEBP — max {10 - existingImages.length} more
+                  PNG, JPG, WEBP — max {remainingImages} more ({totalImagesCount}/{maxImages})
                 </span>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   multiple
+                  disabled={remainingImages === 0}
                   onChange={handleFileSelect}
                   className="hidden"
                 />
               </div>
+
+              {atFreeImageCap && (
+                <div className="rounded-xl border border-nova/30 bg-nova/10 px-4 py-3 text-sm text-starlight flex items-center justify-between gap-3">
+                  <span>
+                    You&apos;ve reached the {maxImages}-image limit for free projects. Upgrade to Pro for more (up to {PRO_RESEARCH_IMAGE_LIMIT} images).
+                  </span>
+                </div>
+              )}
 
               {/* New image previews */}
               {newPreviews.length > 0 && (

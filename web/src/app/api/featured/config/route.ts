@@ -1,4 +1,4 @@
-import { getFeaturedTiers } from "@/lib/featured-pricing";
+import { getSpotlightTiers } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +7,7 @@ export async function GET() {
     const network =
       process.env.NEXT_PUBLIC_CONTRACT_NETWORK === "mainnet" ? "mainnet" : "testnet";
     return Response.json({
-      tiers: getFeaturedTiers(),
+      tiers: getSpotlightTiers(),
       destination: process.env.STELLAR_PAYMENT_ADDRESS || null,
       network,
       horizonUrl:
