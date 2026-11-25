@@ -68,6 +68,15 @@ const editSchema = z.object({
   tags: z.string(),
   website_url: z.string().url("Please enter a valid URL").or(z.literal("")),
   logo_url: z.string().url("Please enter a valid URL").or(z.literal("")),
+  funding_goal_xlm: z
+    .string()
+    .refine(
+      (val) => val.trim() === "" || (Number.isFinite(Number(val)) && Number(val) > 0),
+      "Funding goal must be a positive number",
+    ),
+  funding_goal_label: z
+    .string()
+    .max(120, "Funding goal label must be under 120 characters"),
 });
 
 type EditValues = z.infer<typeof editSchema>;
@@ -96,6 +105,8 @@ interface Project {
   is_pro?: boolean | number | null;
   pro_until?: string | null;
   plan?: string | null;
+  funding_goal_xlm?: number | null;
+  funding_goal_label?: string | null;
 }
 
 export default function EditProjectPage() {
@@ -137,6 +148,8 @@ export default function EditProjectPage() {
       tags: "",
       website_url: "",
       logo_url: "",
+      funding_goal_xlm: "",
+      funding_goal_label: "",
     },
   });
 
@@ -168,6 +181,11 @@ export default function EditProjectPage() {
           tags: p.tags || "",
           website_url: p.website_url || "",
           logo_url: p.logo_url || "",
+          funding_goal_xlm:
+            p.funding_goal_xlm != null && Number(p.funding_goal_xlm) > 0
+              ? String(p.funding_goal_xlm)
+              : "",
+          funding_goal_label: p.funding_goal_label || "",
         });
 
         if (p.github_repos && p.github_repos.length > 0) {
@@ -296,8 +314,15 @@ export default function EditProjectPage() {
 
       const allImages = [...existingImages, ...uploadedUrls];
 
+      const parsedGoal = values.funding_goal_xlm.trim()
+        ? Number(values.funding_goal_xlm.trim())
+        : null;
+      const trimmedGoalLabel = values.funding_goal_label.trim() || null;
+
       const payload = {
         ...values,
+        funding_goal_xlm: parsedGoal,
+        funding_goal_label: trimmedGoalLabel,
         github_repos: validRepos.map((r) => ({
           label: r.label.trim(),
           url: r.url.trim(),
@@ -633,6 +658,54 @@ export default function EditProjectPage() {
                 </FormItem>
               )}
             />
+
+            {/* Funding Goal */}
+            <div className="md:col-span-2 space-y-4 rounded-xl border border-dust/30 bg-void/30 p-5">
+              <div>
+                <h2 className="text-sm font-semibold text-moonlight">Funding Goal (Optional)</h2>
+                <p className="mt-1 text-xs text-ash">
+                  Set an XLM funding target to display a progress bar filled by verified tips on your project page.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="funding_goal_xlm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Goal Amount (XLM)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="any"
+                          placeholder="e.g. 5000"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="funding_goal_label"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Goal Label</FormLabel>
+                      <FormControl>
+                        <Input
+                          maxLength={120}
+                          placeholder="e.g. Security audit, Mainnet launch"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <div className="md:col-span-2 space-y-3 rounded-xl border border-dust/30 bg-void/30 p-5">
               <div>

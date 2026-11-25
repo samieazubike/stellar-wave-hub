@@ -75,6 +75,9 @@ interface Project {
 	created_at: string;
 	has_active_jobs?: boolean;
 	active_job_url?: string | null;
+	funding_goal_xlm?: number | null;
+	funding_goal_label?: string | null;
+	tips_received_xlm?: number;
 }
 
 interface Rating {
@@ -1316,6 +1319,82 @@ export default function ProjectDetailPage({
 				</div>
 			</div>
 
+			{/* Funding Goal Progress Bar (hidden when no goal is set) */}
+			{project.funding_goal_xlm != null && Number(project.funding_goal_xlm) > 0 && (() => {
+				const goalXlm = Number(project.funding_goal_xlm);
+				const tipsReceived = Number(project.tips_received_xlm ?? 0);
+				const rawPct = goalXlm > 0 ? (tipsReceived / goalXlm) * 100 : 0;
+				const barPct = Math.min(100, Math.max(0, rawPct));
+				const displayPct = Math.round(rawPct);
+				return (
+					<div className="mb-8 glass rounded-2xl p-6 animate-in animate-in-delay-1">
+						<div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+							<div>
+								<p className="text-xs font-medium uppercase tracking-wider text-ash">
+									Funding Goal
+								</p>
+								<h2 className="font-semibold text-base text-starlight mt-0.5">
+									{project.funding_goal_label || "Community Tip Goal"}
+								</h2>
+							</div>
+							<div className="flex items-center gap-3">
+								<div className="text-right">
+									<p className="text-sm font-semibold text-starlight tabular-nums">
+										{tipsReceived.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
+										<span className="text-ash font-normal">
+											/ {goalXlm.toLocaleString(undefined, { maximumFractionDigits: 2 })} XLM
+										</span>
+									</p>
+									<p className="text-xs text-aurora-bright font-medium tabular-nums">
+										{displayPct}% funded
+									</p>
+								</div>
+								{project.stellar_account_id && user && user.id !== project.user_id && (
+									<button
+										type="button"
+										onClick={() => setTipOpen(true)}
+										className="btn-nova text-sm !py-1.5 inline-flex items-center gap-1.5 shrink-0"
+										aria-label={`Tip ${project.name} towards funding goal`}
+									>
+										<svg
+											width="14"
+											height="14"
+											viewBox="0 0 24 24"
+											fill="currentColor"
+											stroke="none"
+										>
+											<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+										</svg>
+										Tip XLM
+									</button>
+								)}
+								{project.stellar_account_id && !user && (
+									<Link
+										href="/login"
+										className="btn-nova text-sm !py-1.5 inline-flex items-center gap-1.5 shrink-0"
+									>
+										Sign in to tip
+									</Link>
+								)}
+							</div>
+						</div>
+						<div
+							role="progressbar"
+							aria-label={project.funding_goal_label || "Funding goal progress"}
+							aria-valuenow={Math.round(tipsReceived * 100) / 100}
+							aria-valuemin={0}
+							aria-valuemax={goalXlm}
+							className="w-full h-3 rounded-full bg-stardust/60 overflow-hidden border border-dust/20"
+						>
+							<div
+								className="h-full rounded-full bg-gradient-to-r from-nova to-aurora transition-all duration-500"
+								style={{ width: `${barPct}%` }}
+							/>
+						</div>
+					</div>
+				);
+			})()}
+
 			{/* Website Preview */}
 			{project.website_url && (
 				<div className="mb-8 animate-in animate-in-delay-1">
@@ -2505,6 +2584,17 @@ export default function ProjectDetailPage({
 					}}
 					token={token}
 					senderAddress={user?.stellar_address ?? ""}
+					onTipSuccess={(amountXlm) => {
+						setProject((prev) =>
+							prev
+								? {
+										...prev,
+										tips_received_xlm: Number(prev.tips_received_xlm ?? 0) + amountXlm,
+									}
+								: prev,
+						);
+						setReloadKey((k) => k + 1);
+					}}
 				/>
 			)}
 		</div>
