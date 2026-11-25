@@ -27,6 +27,7 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	notifications_read: "notifications_read",
 	notifications_read_status: "notifications_read",
 	payments: "payments",
+	jobs: "jobs",
 };
 
 export const BOOKMARKS_TABLE: string = TABLE_BY_COLLECTION.bookmarks ?? "bookmarks";

@@ -71,6 +71,11 @@ export const paymentsCol = {
 		return col("payments");
 	},
 };
+export const jobsCol = {
+	get ref() {
+		return col("jobs");
+	},
+};
 
 export type ModerationAction = "approve" | "reject" | "feature" | "delist" | "delete";
 
