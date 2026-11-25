@@ -1,6 +1,6 @@
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 import { getSupabase } from "@/lib/firebase";
-import { getFeaturedTiers } from "@/lib/featured-pricing";
+import { getSpotlightTiers } from "@/lib/pricing";
 import { verifyStellarPayment } from "@/lib/payments";
 
 export const dynamic = "force-dynamic";
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const tier = getFeaturedTiers().find((candidate) => candidate.days === days);
+    const tier = getSpotlightTiers().find((candidate) => candidate.days === days);
     if (!tier) {
       return Response.json({ error: "Unsupported spotlight duration" }, { status: 400 });
     }
