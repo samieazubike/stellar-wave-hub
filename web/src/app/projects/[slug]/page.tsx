@@ -9,6 +9,7 @@ import EmbedSnippet from "@/components/EmbedSnippet";
 import Avatar from "@/components/Avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import CopyButton from "@/components/CopyButton";
+import ShareButtons from "@/components/ShareButtons";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -1186,8 +1187,13 @@ export default function ProjectDetailPage({
 					)}
 				</div>
 
-				{/* QR code for event booths and slides */}
-				<div className="mt-6">
+				{/* Share buttons and QR code */}
+				<div className="mt-6 flex flex-wrap items-center gap-3">
+					<ShareButtons
+						url={new URL(`/projects/${project.slug}`, process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).toString()}
+						title={project.name}
+						description={project.description}
+					/>
 					<ProjectQr
 						url={new URL(`/projects/${project.slug}`, process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).toString()}
 						name={project.name}
