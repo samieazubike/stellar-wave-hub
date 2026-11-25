@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import {apiFetch, isApiFetchError} from "@/lib/api-fetch";
 import {useRetryCountdown} from "@/lib/use-retry-countdown";
+import {useRecentlyViewed} from "@/lib/useRecentlyViewed";
 import {notFound} from "next/navigation";
 import Image from "next/image";
 import {MAX_REVIEW_TEXT_LENGTH} from "@/lib/validation/constants";
@@ -377,6 +378,7 @@ export default function ProjectDetailPage({
 }) {
 	const {slug} = use(params);
 	const {user, token} = useAuth();
+	const {record: recordRecentlyViewed} = useRecentlyViewed();
 	const [project, setProject] = useState<Project | null>(null);
 	const [ratings, setRatings] = useState<Rating[]>([]);
 	const [averages, setAverages] = useState<Averages | null>(null);
@@ -517,6 +519,17 @@ export default function ProjectDetailPage({
 			cancelled = true;
 		};
 	}, [slug, token, reloadKey]);
+
+	useEffect(() => {
+		if (!project) return;
+		recordRecentlyViewed({
+			id: project.id,
+			slug: project.slug,
+			name: project.name,
+			logo_url: project.logo_url ?? null,
+			category: project.category,
+		});
+	}, [project, recordRecentlyViewed]);
 
 	useEffect(() => {
 		if (activeTab !== "updates" || !project) return;
