@@ -1,37 +1,64 @@
-import { createHash, randomBytes } from "node:crypto";
-import { getSupabase } from "@/lib/firebase";
+import { createHash } from "node:crypto";
+import { getSupabase } from "./firebase";
 
-const KEY_PATTERN = /^swh_[a-f0-9]{64}$/;
+export type VerifiedApiKey = {
+  id: string;
+  userId: number;
+  tier: string;
+};
 
-export function createApiKey(): { key: string; keyHash: string; prefix: string } {
-  const key = `swh_${randomBytes(32).toString("hex")}`;
-  return { key, keyHash: hashApiKey(key), prefix: key.slice(0, 12) };
+function getApiKey(request: Request): string | null {
+  const headerKey = request.headers.get("x-api-key")?.trim();
+  if (headerKey) return headerKey;
+
+  const authorization = request.headers.get("authorization")?.trim();
+  if (!authorization) return null;
+
+  if (authorization.startsWith("ApiKey ")) {
+    return authorization.slice("ApiKey ".length).trim() || null;
+  }
+  if (authorization.startsWith("Bearer ")) {
+    return authorization.slice("Bearer ".length).trim() || null;
+  }
+
+  return null;
 }
 
-export function hashApiKey(key: string): string {
-  return createHash("sha256").update(key).digest("hex");
-}
+/** Validate an API key without ever storing or returning its plaintext value. */
+export async function verifyApiKey(request: Request): Promise<VerifiedApiKey | null> {
+  const apiKey = getApiKey(request);
+  if (!apiKey || !/^swh_live_[A-Za-z0-9_-]{43}$/.test(apiKey)) return null;
 
-export async function verifyApiKey(request: Request): Promise<boolean> {
-  const authorization = request.headers.get("authorization");
-  const key = request.headers.get("x-api-key") ||
-    (authorization?.startsWith("Bearer ") ? authorization.slice(7) : null);
-  if (!key || !KEY_PATTERN.test(key)) return false;
+  const keyHash = createHash("sha256").update(apiKey).digest("hex");
 
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("api_keys")
-    .select("id")
-    .eq("key_hash", hashApiKey(key))
-    .is("revoked_at", null)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return false;
+  try {
+    const supabase = getSupabase();
+    const { data: key, error } = await supabase
+      .from("api_keys")
+      .select("id, user_id, tier")
+      .eq("key_hash", keyHash)
+      .is("revoked_at", null)
+      .maybeSingle();
 
-  const { error: usageError } = await supabase
-    .from("api_keys")
-    .update({ last_used_at: new Date().toISOString() })
-    .eq("id", data.id);
-  if (usageError) console.error("Failed to update API key usage:", usageError);
-  return true;
+    if (error || !key) return null;
+
+    // The active-key predicate makes verification fail if a concurrent request revoked it.
+    const { data: updated, error: updateError } = await supabase
+      .from("api_keys")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("id", key.id)
+      .is("revoked_at", null)
+      .select("id")
+      .maybeSingle();
+
+    if (updateError || !updated) return null;
+
+    return {
+      id: String(key.id),
+      userId: Number(key.user_id),
+      tier: String(key.tier),
+    };
+  } catch {
+    return null;
+  }
 }

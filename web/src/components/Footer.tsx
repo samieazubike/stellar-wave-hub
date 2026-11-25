@@ -49,10 +49,10 @@ export default function Footer() {
 								Blog
 							</Link>
 							<Link
-								href="/support"
+								href="/pricing"
 								className="block text-sm text-ash hover:text-starlight transition-colors"
 							>
-								Support the Hub
+								Pricing
 							</Link>
 							<Link
 								href="/register"

@@ -16,6 +16,7 @@ alter table public.maintainer_categories enable row level security;
 alter table public.auth_challenges enable row level security;
 alter table public.counters enable row level security;
 alter table public.financial_snapshots enable row level security;
+alter table public.api_keys enable row level security;
 alter table public.reports enable row level security;
 alter table public.project_updates enable row level security;
 alter table public.treasury_snapshots enable row level security;

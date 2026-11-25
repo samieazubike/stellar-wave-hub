@@ -1,5 +1,7 @@
 import { Horizon } from "@stellar/stellar-sdk";
 import { xlmToStroops } from "@/lib/featured-pricing";
+import { getSupabase } from "@/lib/firebase";
+import { notifyPurchase } from "@/lib/notify";
 
 export interface VerifiedStellarPayment {
   txHash: string;
@@ -9,10 +11,23 @@ export interface VerifiedStellarPayment {
   network: "mainnet" | "testnet";
 }
 
+export interface PaymentRecordInput {
+  tx_hash: string;
+  product: string;
+  user_id: number;
+  project_id: number;
+  amount: string | number;
+  duration_days?: number;
+  source_address: string;
+  destination_address: string;
+  network: "mainnet" | "testnet";
+  created_at?: string;
+}
+
 export async function verifyStellarPayment(
   txHash: string,
-  expectedAmountXlm?: number,
-  expectedDestination?: string,
+  expectedAmountXlm: number,
+  expectedMemo?: string,
 ): Promise<VerifiedStellarPayment> {
   if (!/^[a-f0-9]{64}$/i.test(txHash)) {
     throw new Error("Invalid Stellar transaction hash");
@@ -36,6 +51,9 @@ export async function verifyStellarPayment(
   const transaction = await server.transactions().transaction(normalizedHash).call();
   if (!transaction.successful) {
     throw new Error("Stellar transaction was not successful");
+  }
+  if (expectedMemo !== undefined && transaction.memo !== expectedMemo) {
+    throw new Error("Stellar transaction does not contain the required memo");
   }
 
   const operations = await server
@@ -67,4 +85,38 @@ export async function verifyStellarPayment(
     destinationAddress,
     network,
   };
+}
+
+export async function recordPayment(
+  payment: PaymentRecordInput,
+  options?: { projectName?: string | null },
+): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase.from("payments").insert({
+    tx_hash: payment.tx_hash,
+    product: payment.product,
+    user_id: payment.user_id,
+    project_id: payment.project_id,
+    amount: payment.amount,
+    duration_days: payment.duration_days,
+    source_address: payment.source_address,
+    destination_address: payment.destination_address,
+    network: payment.network,
+    created_at: payment.created_at ?? new Date().toISOString(),
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  void notifyPurchase({
+    product: payment.product,
+    amount: payment.amount,
+    project_id: payment.project_id,
+    project_name: options?.projectName,
+    network: payment.network,
+    tx_hash: payment.tx_hash,
+  }).catch((err) => {
+    console.error("Unhandled purchase notification error:", err);
+  });
 }

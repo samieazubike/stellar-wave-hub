@@ -10,6 +10,10 @@ import { useRetryCountdown } from "@/lib/use-retry-countdown";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  PRO_RESEARCH_IMAGE_LIMIT,
+  getResearchImageLimit,
+} from "@/lib/pro";
+import {
   Form,
   FormField,
   FormItem,
@@ -91,6 +95,9 @@ export default function SubmitPage() {
   ]);
   const [reposError, setReposError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const maxImages = getResearchImageLimit(null);
+  const remainingImages = Math.max(0, maxImages - researchFiles.length);
+  const atFreeImageCap = researchFiles.length >= maxImages;
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -99,8 +106,10 @@ export default function SubmitPage() {
       setResearchError("Only image files are allowed");
       return;
     }
-    if (researchFiles.length + imageFiles.length > 10) {
-      setResearchError("Maximum 10 images allowed");
+    if (researchFiles.length + imageFiles.length > maxImages) {
+      setResearchError(
+        `Maximum ${maxImages} images allowed. Upgrade to Pro for more (up to ${PRO_RESEARCH_IMAGE_LIMIT} images).`,
+      );
       return;
     }
     setResearchError("");
@@ -116,7 +125,7 @@ export default function SubmitPage() {
     });
 
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [researchFiles]);
+  }, [researchFiles, maxImages]);
 
   const removeImage = useCallback((index: number) => {
     setResearchFiles((prev) => prev.filter((_, i) => i !== index));
@@ -466,8 +475,14 @@ export default function SubmitPage() {
               </label>
 
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="input-field flex flex-col items-center justify-center gap-2 py-8 cursor-pointer border-dashed hover:border-nova/40 transition-colors"
+                onClick={() => {
+                  if (remainingImages > 0) fileInputRef.current?.click();
+                }}
+                className={`input-field flex flex-col items-center justify-center gap-2 py-8 border-dashed transition-colors ${
+                  remainingImages > 0
+                    ? "cursor-pointer hover:border-nova/40"
+                    : "opacity-60 cursor-not-allowed"
+                }`}
               >
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -475,20 +490,29 @@ export default function SubmitPage() {
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
                 <span className="text-sm text-ash">
-                  Click to upload images
+                  {remainingImages > 0
+                    ? "Click to upload images"
+                    : `Image limit reached (${researchFiles.length}/${maxImages})`}
                 </span>
                 <span className="text-xs text-ash/60">
-                  PNG, JPG, WEBP — max 10 images
+                  PNG, JPG, WEBP — max {maxImages} images ({researchFiles.length}/{maxImages})
                 </span>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   multiple
+                  disabled={remainingImages === 0}
                   onChange={handleFileSelect}
                   className="hidden"
                 />
               </div>
+
+              {atFreeImageCap && (
+                <div className="rounded-xl border border-nova/30 bg-nova/10 px-4 py-3 text-sm text-starlight">
+                  You&apos;ve reached the {maxImages}-image limit for free projects. Upgrade to Pro for more (up to {PRO_RESEARCH_IMAGE_LIMIT} images).
+                </div>
+              )}
 
               {researchPreviews.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-3">

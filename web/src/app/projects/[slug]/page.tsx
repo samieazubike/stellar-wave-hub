@@ -8,7 +8,11 @@ import VerifiedOnChainBadge from "@/components/VerifiedOnChainBadge";
 import EmbedSnippet from "@/components/EmbedSnippet";
 import Avatar from "@/components/Avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import ProBadge from "@/components/ProBadge";
+import BookmarkButton from "@/components/BookmarkButton";
 import CopyButton from "@/components/CopyButton";
+import ShareButtons from "@/components/ShareButtons";
+import ProjectCard from "@/components/ProjectCard";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -19,9 +23,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import TipDialog from "@/components/TipDialog";
 import Link from "next/link";
 import {apiFetch, isApiFetchError} from "@/lib/api-fetch";
 import {useRetryCountdown} from "@/lib/use-retry-countdown";
+import {useRecentlyViewed} from "@/lib/useRecentlyViewed";
 import {notFound} from "next/navigation";
 import Image from "next/image";
 import {MAX_REVIEW_TEXT_LENGTH} from "@/lib/validation/constants";
@@ -61,7 +67,11 @@ interface Project {
 	user_id: number;
 	username?: string;
 	logo_url?: string;
+	banner_url?: string | null;
 	owner_verified_at?: string | null;
+	is_pro?: boolean | number | null;
+	pro_until?: string | null;
+	plan?: string | null;
 	created_at: string;
 }
 
@@ -144,6 +154,25 @@ interface GithubStats {
 	openIssues: number;
 	lastCommit: string | null;
 	license: string | null;
+}
+
+interface SimilarProject {
+	id: number;
+	name: string;
+	slug: string;
+	description: string;
+	category: string;
+	status: string;
+	featured: number;
+	tags?: string;
+	avg_rating?: number;
+	rating_count?: number;
+	username?: string;
+	logo_url?: string;
+	stellar_contract_id?: string;
+	created_at?: string;
+	owner_verified_at?: string | null;
+	stellar_account_id?: string | null;
 }
 
 
@@ -356,11 +385,13 @@ export default function ProjectDetailPage({
 }) {
 	const {slug} = use(params);
 	const {user, token} = useAuth();
+	const {record: recordRecentlyViewed} = useRecentlyViewed();
 	const [project, setProject] = useState<Project | null>(null);
 	const [ratings, setRatings] = useState<Rating[]>([]);
 	const [averages, setAverages] = useState<Averages | null>(null);
 	const [financials, setFinancials] = useState<FinancialSummary | null>(null);
 	const [githubStats, setGithubStats] = useState<GithubStats | null>(null);
+	const [similarProjects, setSimilarProjects] = useState<SimilarProject[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [missing, setMissing] = useState(false);
 	const [activeTab, setActiveTab] = useState<
@@ -375,6 +406,9 @@ export default function ProjectDetailPage({
 	const [updatePreview, setUpdatePreview] = useState(false);
 	const [updateSubmitting, setUpdateSubmitting] = useState(false);
 	const [updateSubmitError, setUpdateSubmitError] = useState<string | null>(null);
+
+	// Tip dialog
+	const [tipOpen, setTipOpen] = useState(false);
 
 	// On-chain state
 	const [contractRatingFee, setContractRatingFee] = useState<bigint | null>(null);
@@ -495,6 +529,17 @@ export default function ProjectDetailPage({
 			cancelled = true;
 		};
 	}, [slug, token, reloadKey]);
+
+	useEffect(() => {
+		if (!project) return;
+		recordRecentlyViewed({
+			id: project.id,
+			slug: project.slug,
+			name: project.name,
+			logo_url: project.logo_url ?? null,
+			category: project.category,
+		});
+	}, [project, recordRecentlyViewed]);
 
 	useEffect(() => {
 		if (activeTab !== "updates" || !project) return;
@@ -645,6 +690,25 @@ export default function ProjectDetailPage({
 			})
 			.catch(() => {});
 	}, [project]);
+
+	// Fetch similar projects (hidden when none)
+	useEffect(() => {
+		if (!project?.id) return;
+		let cancelled = false;
+		fetch(`/api/projects/${project.id}/similar`)
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (!cancelled) {
+					setSimilarProjects(Array.isArray(data?.projects) ? data.projects : []);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) setSimilarProjects([]);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [project?.id]);
 
 	// Fetch registration status, rating fee, and on-chain aggregate
 	useEffect(() => {
@@ -963,6 +1027,19 @@ export default function ProjectDetailPage({
 
 	return (
 		<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+			{project.banner_url && (
+				<div className="relative mb-8 aspect-[3/1] overflow-hidden rounded-2xl border border-dust/30 bg-void/40">
+					<Image
+						src={project.banner_url}
+						alt={`${project.name} banner`}
+						fill
+						unoptimized
+						sizes="(max-width: 1024px) 100vw, 1024px"
+						className="object-cover"
+						priority
+					/>
+				</div>
+			)}
 			{/* Header */}
 			<div className="mb-8 animate-in">
 				<div className="flex items-start gap-4 mb-4">
@@ -989,6 +1066,7 @@ export default function ProjectDetailPage({
 									Featured
 								</span>
 							)}
+							<ProBadge project={project} />
 							{isOnChainProject && process.env.NEXT_PUBLIC_CONTRACT_ID && (
 								<a
 									href={explorerContractUrl(process.env.NEXT_PUBLIC_CONTRACT_ID, process.env.NEXT_PUBLIC_CONTRACT_NETWORK)}
@@ -1148,6 +1226,12 @@ export default function ProjectDetailPage({
 						)}
 					</div>
 
+					<BookmarkButton
+						projectId={project.id}
+						projectName={project.name}
+						size="detail"
+					/>
+
 					{/* Project Report Button */}
 					{(!user || user.id !== project.user_id) && (
 						<div className="flex items-center">
@@ -1184,10 +1268,35 @@ export default function ProjectDetailPage({
 							)}
 						</div>
 					)}
+					{/* Tip button — only shown when the project has a Stellar account
+					    and the viewer is a logged-in user who does not own the project */}
+					{project.stellar_account_id && user && user.id !== project.user_id && (
+						<button
+							onClick={() => setTipOpen(true)}
+							className="btn-nova text-sm !py-1.5 inline-flex items-center gap-1.5"
+							aria-label={`Tip ${project.name} with XLM`}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+								stroke="none"
+							>
+								<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+							</svg>
+							Tip
+						</button>
+					)}
 				</div>
 
-				{/* QR code for event booths and slides */}
-				<div className="mt-6">
+				{/* Share buttons and QR code */}
+				<div className="mt-6 flex flex-wrap items-center gap-3">
+					<ShareButtons
+						url={new URL(`/projects/${project.slug}`, process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).toString()}
+						title={project.name}
+						description={project.description}
+					/>
 					<ProjectQr
 						url={new URL(`/projects/${project.slug}`, process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).toString()}
 						name={project.name}
@@ -2201,6 +2310,39 @@ export default function ProjectDetailPage({
 				)}
 			</div>
 
+			{/* Similar Projects */}
+			{similarProjects.length > 0 && (
+				<section
+					aria-labelledby="similar-projects-heading"
+					className="mt-12 pt-8 border-t border-dust/20"
+				>
+					<div className="flex items-center justify-between gap-4 mb-6">
+						<div>
+							<h2
+								id="similar-projects-heading"
+								className="text-xl font-bold text-starlight"
+							>
+								Similar Projects
+							</h2>
+							<p className="text-sm text-ash mt-1">
+								Related projects in {project.category} or with overlapping tags
+							</p>
+						</div>
+						<Link
+							href={`/explore?category=${encodeURIComponent(project.category)}`}
+							className="text-xs font-medium text-nova-bright hover:underline shrink-0"
+						>
+							Explore {project.category} &rarr;
+						</Link>
+					</div>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+						{similarProjects.map((similar, index) => (
+							<ProjectCard key={similar.id} project={similar} index={index} />
+						))}
+					</div>
+				</section>
+			)}
+
 			{/* Project Report Dialog */}
 			<AlertDialog open={projectReportOpen} onOpenChange={setProjectReportOpen}>
 				<AlertDialogContent className="max-w-md">
@@ -2338,6 +2480,21 @@ export default function ProjectDetailPage({
 					)}
 				</AlertDialogContent>
 			</AlertDialog>
+			{/* Tip Dialog — mounted outside the tab content so it doesn't remount */}
+			{project.stellar_account_id && token && (
+				<TipDialog
+					open={tipOpen}
+					onOpenChange={setTipOpen}
+					project={{
+						id: project.id,
+						name: project.name,
+						slug: project.slug,
+						stellar_account_id: project.stellar_account_id,
+					}}
+					token={token}
+					senderAddress={user?.stellar_address ?? ""}
+				/>
+			)}
 		</div>
 	);
 }

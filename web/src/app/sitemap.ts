@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { getAllBlogs } from "@/lib/blogs";
+import { CATEGORY_LANDING_PAGES } from "@/lib/categories";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://stellarwavehub.com";
@@ -10,9 +11,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/explore`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/queue`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
     { url: `${siteUrl}/blogs`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
+    { url: `${siteUrl}/jobs`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
     { url: `${siteUrl}/submit`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${siteUrl}/login`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
     { url: `${siteUrl}/register`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
+    ...CATEGORY_LANDING_PAGES.map(({ slug }) => ({
+      url: `${siteUrl}/category/${slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
   ];
 
   const blogPages: MetadataRoute.Sitemap = getAllBlogs().map((post) => ({

@@ -26,8 +26,10 @@ export async function GET(
       if (r.user_id) {
         const u = await usersCol.ref.doc(String(r.user_id)).get();
         if (u.exists) {
-          username = u.data()!.username;
-          avatar_url = u.data()!.avatar_url ?? null;
+          username = String(u.data()!.username ?? "unknown");
+          avatar_url = typeof u.data()!.avatar_url === "string"
+            ? u.data()!.avatar_url as string
+            : null;
         }
       }
       const votesSnap = await ratingVotesCol.ref

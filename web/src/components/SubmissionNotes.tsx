@@ -47,7 +47,7 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
         if (!r.ok) throw new Error("Failed to fetch notes");
         return r.json();
       }),
-    enabled: open, // only fetch when panel is expanded
+    enabled: open && user?.role === "admin", // only admins can fetch notes
     staleTime: 30_000,
   });
 
@@ -86,6 +86,8 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [draft]);
+
+  if (!user || user.role !== "admin") return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
