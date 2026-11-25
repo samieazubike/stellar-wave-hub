@@ -27,7 +27,7 @@ export function PromoCodeInput({ basePrice, onApply }: PromoCodeInputProps) {
     setError("");
 
     try {
-      const res = await fetch(`/api/featured/activate?promo_code=${encodeURIComponent(code)}`, {
+      const res = await fetch(`/api/featured/quote?code=${encodeURIComponent(code)}&base_price=${encodeURIComponent(basePrice)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

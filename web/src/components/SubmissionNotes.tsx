@@ -36,9 +36,6 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Only admins can access notes
-  if (!user || user.role !== "admin") return null;
-
   const queryKey = ["submission-notes", projectId];
 
   const { data, isLoading } = useQuery<{ notes: Note[] }>({
@@ -50,7 +47,7 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
         if (!r.ok) throw new Error("Failed to fetch notes");
         return r.json();
       }),
-    enabled: open, // only fetch when panel is expanded
+    enabled: open && user?.role === "admin", // only admins can fetch notes
     staleTime: 30_000,
   });
 
@@ -90,12 +87,17 @@ export default function SubmissionNotes({ projectId }: SubmissionNotesProps) {
     }
   }, [draft]);
 
+  if (!user || user.role !== "admin") return null;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = draft.trim();
     if (!trimmed) return;
     addNote(trimmed);
   };
+
+  // Only admins can access notes
+  if (!user || user.role !== "admin") return null;
 
   return (
     <div className="mt-4 border-t border-dust/20 pt-3">

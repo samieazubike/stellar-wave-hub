@@ -1,0 +1,48 @@
+{
+  "checkedAt": "2026-10-24T00:15:21.007218+00:00",
+  "repository": "https://github.com/Stellar-Ecosystem/lodestar",
+  "sourceCommit": "4841868a7caa8f13cd396eb1a482afbbd5664387",
+  "files": [
+    {
+      "path": "README.md",
+      "url": "https://github.com/Stellar-Ecosystem/lodestar/blob/4841868a7caa8f13cd396eb1a482afbbd5664387/README.md",
+      "sha256": "7551ca6a2dfd59bb9bf1e57ac7a638648f8311a1457ec761aa3be2529dc9c881",
+      "bytes": 22059
+    },
+    {
+      "path": "docs/architecture.md",
+      "url": "https://github.com/Stellar-Ecosystem/lodestar/blob/4841868a7caa8f13cd396eb1a482afbbd5664387/docs/architecture.md",
+      "sha256": "ab8c47ae7ff1e0be85d9cdfca1fca29b33cf6ecd6d0bdbf1736b72c5743883a8",
+      "bytes": 10006
+    },
+    {
+      "path": "contract/src/lib.rs",
+      "url": "https://github.com/Stellar-Ecosystem/lodestar/blob/4841868a7caa8f13cd396eb1a482afbbd5664387/contract/src/lib.rs",
+      "sha256": "c293bc823bd8222b71e695e80521c21c6d6fdb9c35532e2e23ff5c28b65cea2c",
+      "bytes": 112380
+    },
+    {
+      "path": "contract/agents/src/lib.rs",
+      "url": "https://github.com/Stellar-Ecosystem/lodestar/blob/4841868a7caa8f13cd396eb1a482afbbd5664387/contract/agents/src/lib.rs",
+      "sha256": "aca681310e71ceb16c2acdca530e92bb6672ac2df4ea31c711b422e45698f8dc",
+      "bytes": 117409
+    },
+    {
+      "path": "backend/src/routes/agents.js",
+      "url": "https://github.com/Stellar-Ecosystem/lodestar/blob/4841868a7caa8f13cd396eb1a482afbbd5664387/backend/src/routes/agents.js",
+      "sha256": "4fab3fdb1248a5d48bd958164481e650aed2ca79219e70639c9062b69cbd9c3e",
+      "bytes": 28053
+    }
+  ],
+  "waveParticipation": {
+    "applicationUrl": "https://github.com/Stellar-Ecosystem/lodestar/issues/656#issuecomment-6206714093",
+    "applicationCreatedAt": "2026-10-16T02:31:16Z",
+    "applicationBodySha256": "2f919a7e5a542a8271eb4d276aa47e75f2570210419e70c690a54860e2c51ac7",
+    "program": "Stellar Wave Program",
+    "wave": 10,
+    "acceptanceUrl": "https://github.com/Stellar-Ecosystem/lodestar/issues/656#issuecomment-6285637541",
+    "acceptanceCreatedAt": "2026-10-20T07:21:49Z",
+    "acceptanceAuthor": "drips-wave[bot]",
+    "acceptanceBodySha256": "78090387b356188537b3a7089195d40cda9f88c08200ec623434f961885795f1"
+  }
+}

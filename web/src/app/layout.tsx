@@ -4,6 +4,9 @@ import {AuthProvider} from "@/context/AuthContext";
 import {QueryProvider} from "@/components/QueryProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CompareTray from "@/components/CompareTray";
+import {CompareProvider} from "@/context/CompareContext";
+import {BookmarksProvider} from "@/context/BookmarksContext";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://stellarwavehub.com";
 
@@ -28,7 +31,7 @@ export const metadata: Metadata = {
 	],
 	metadataBase: new URL(siteUrl),
 	alternates: {
-		canonical: "/",
+		canonical: new URL("/", siteUrl).toString(),
 	},
 	openGraph: {
 		type: "website",
@@ -65,22 +68,51 @@ export const metadata: Metadata = {
 	},
 };
 
+/**
+ * Blocking script that runs before paint to set the theme attribute on <html>.
+ * Prefers a persisted theme from localStorage, otherwise falls back to the
+ * system preference. This prevents a flash of the wrong theme on load.
+ */
+const themeInitScript = `
+(function() {
+  try {
+    var stored = localStorage.getItem('theme');
+    var theme = stored;
+    if (theme !== 'light' && theme !== 'dark') {
+      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+`;
+
 export default function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="h-full antialiased">
+		<html lang="en" className="h-full antialiased" suppressHydrationWarning>
+			<head>
+				<script dangerouslySetInnerHTML={{__html: themeInitScript}} />
+			</head>
 			<body className="min-h-full flex flex-col font-display bg-cosmic noise">
 				<div className="starfield" />
 				<QueryProvider>
 					<AuthProvider>
-						<Navbar />
-						<main className="flex-1 relative z-10 pt-16">
-							{children}
-						</main>
-						<Footer />
+						<BookmarksProvider>
+							<CompareProvider>
+								<Navbar />
+								<main className="flex-1 relative z-10 pt-16">
+									{children}
+								</main>
+								<Footer />
+								<CompareTray />
+							</CompareProvider>
+						</BookmarksProvider>
 					</AuthProvider>
 				</QueryProvider>
 			</body>

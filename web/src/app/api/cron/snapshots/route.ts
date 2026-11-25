@@ -1,5 +1,6 @@
 import {projectsCol} from "@/lib/db";
 import {getSupabase} from "@/lib/firebase";
+import {getTreasuryBalance} from "@/lib/ratingContract";
 import {getAccountSummary} from "@/lib/stellarService";
 
 export const dynamic = "force-dynamic";
@@ -93,11 +94,60 @@ export async function GET(request: Request) {
 			}
 		}
 
+		let treasury: {
+			status: "created" | "skipped" | "unavailable" | "error";
+			error?: string;
+		} = {status: "unavailable"};
+		let treasuryErrorMessage = "Failed to fetch treasury balance";
+
+		try {
+			const balance = await getTreasuryBalance();
+			if (balance === null) {
+				treasury = {status: "unavailable"};
+			} else {
+				const snapshotDate = now.toISOString().slice(0, 10);
+				treasuryErrorMessage = "Failed to check today's treasury snapshot";
+				const {data: existing, error: existingError} = await supabase
+					.from("treasury_snapshots")
+					.select("snapshot_date")
+					.eq("snapshot_date", snapshotDate)
+					.maybeSingle();
+
+				if (existingError) {
+					throw existingError;
+				}
+
+				if (existing) {
+					treasury = {status: "skipped"};
+				} else {
+					treasuryErrorMessage = "Failed to save today's treasury snapshot";
+					const {error: insertError} = await supabase
+						.from("treasury_snapshots")
+						.insert({snapshot_date: snapshotDate, balance: balance.toString()});
+
+					if (insertError?.code === "23505") {
+						treasury = {status: "skipped"};
+					} else if (insertError) {
+						throw insertError;
+					} else {
+						treasury = {status: "created"};
+					}
+				}
+			}
+		} catch (error) {
+			console.error("Cron treasury snapshot failed:", error);
+			treasury = {
+				status: "error",
+				error: treasuryErrorMessage,
+			};
+		}
+
 		return Response.json({
 			total_projects: projects.length,
 			created,
 			skipped,
 			errors,
+			treasury,
 		});
 	} catch (error) {
 		console.error("Cron snapshots job failed:", error);

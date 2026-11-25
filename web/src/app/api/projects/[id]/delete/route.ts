@@ -1,4 +1,4 @@
-import { projectsCol, ratingsCol } from "@/lib/db";
+import { projectsCol, ratingsCol, logModerationAction } from "@/lib/db";
 import { getAuthUser, hasMinRole } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export async function DELETE(
   rSnap.docs.forEach((d) => batch.delete(d.ref));
   batch.delete(ref);
   await batch.commit();
+  await logModerationAction({ actor_id: auth.userId, action: "delete", project_id: Number(id) });
 
   return Response.json({ message: "Project deleted" });
 }

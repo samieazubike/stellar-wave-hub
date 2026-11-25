@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Contract,
   Networks,
@@ -27,12 +25,23 @@ const rpcUrl =
 
 export const ON_CHAIN_ENABLED = Boolean(CONTRACT_ID);
 
-export function explorerTxUrl(hash: string): string {
-  const base =
-    NETWORK === "mainnet"
-      ? "https://stellar.expert/explorer/public"
-      : "https://stellar.expert/explorer/testnet";
-  return `${base}/tx/${hash}`;
+function stellarExpertBase(network?: string): string {
+  const n = network ?? NETWORK;
+  return n === "testnet"
+    ? "https://stellar.expert/explorer/testnet"
+    : "https://stellar.expert/explorer/public";
+}
+
+export function explorerTxUrl(hash: string, network?: string): string {
+  return `${stellarExpertBase(network)}/tx/${hash}`;
+}
+
+export function explorerAccountUrl(address: string, network?: string): string {
+  return `${stellarExpertBase(network)}/account/${address}`;
+}
+
+export function explorerContractUrl(address: string, network?: string): string {
+  return `${stellarExpertBase(network)}/contract/${address}`;
 }
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
@@ -164,11 +173,31 @@ export async function getProjectsOnChain(): Promise<string[] | null> {
   return (await simulateView("get_projects")) as string[] | null;
 }
 
+// Cache the on-chain registration status per slug. Registration changes are
+// rare (admin-driven), so a short TTL keeps the project page fast without
+// hammering the Soroban RPC on every request.
+const REGISTRATION_CACHE_TTL_MS = 60_000;
+const registrationCache = new Map<
+  string,
+  { value: boolean; expiresAt: number }
+>();
+
 export async function isRegisteredOnChain(projectSlug: string): Promise<boolean> {
   if (!ON_CHAIN_ENABLED) return false;
-  return ((await simulateView("is_registered", [
-    nativeToScVal(slugToSymbol(projectSlug), { type: "symbol" }),
-  ])) as boolean) ?? false;
+  const now = Date.now();
+  const cached = registrationCache.get(projectSlug);
+  if (cached && cached.expiresAt > now) return cached.value;
+
+  const value =
+    ((await simulateView("is_registered", [
+      nativeToScVal(slugToSymbol(projectSlug), { type: "symbol" }),
+    ])) as boolean) ?? false;
+
+  registrationCache.set(projectSlug, {
+    value,
+    expiresAt: now + REGISTRATION_CACHE_TTL_MS,
+  });
+  return value;
 }
 
 export async function hasRatedOnChain(

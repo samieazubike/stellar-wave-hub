@@ -15,23 +15,23 @@ Thank you to everyone who has contributed to Stellar Wave Hub! Add yourself belo
 <div
 	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
 >
-	<a href="https://github.com/YOUR_GITHUB_USERNAME">
+	<a href="https://github.com/Sharon-dev-create">
 		<img
-			src="https://github.com/YOUR_GITHUB_USERNAME.png"
+			src="https://github.com/Sharon-dev-create.png"
 			width="80"
 			style="border-radius:50%"
-			alt="Your Name"
+			alt="TopG"
 		/>
 		<br />
-		<sub><b>Your Name</b></sub>
+		<sub><b>Sharon Emmanuel</b></sub>
 	</a>
 	<br />
-	<a href="https://github.com/YOUR_GITHUB_USERNAME"
+	<a href="https://github.com/Sharon-dev-create"
 		><img
 			src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
 			alt="GitHub"
 	/></a>
-	<a href="https://x.com/YOUR_X_HANDLE"
+	<a href="https://x.com/named_sharon"
 		><img
 			src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
 			alt="X"
@@ -51,9 +51,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 
 ## Contributors List
 
-<!-- CONTRIBUTORS-START -->
+<div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+	<a href="https://github.com/Timrossid">
+		<img
+			src="https://github.com/Timrossid.png"
+			width="80"
+			style="border-radius:50%"
+			alt="Timrossid"
+		/>
+		<br />
+		<sub><b>Timrossid</b></sub>
+	</a>
+	<br />
+	<a href="https://github.com/Timrossid"
+		><img
+			src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+			alt="GitHub"
+	/></a>
+	<br />
+	<sub>Researcher — Fundable Protocol</sub>
+</div>
 
-```html
 <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
 	<div
 		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
@@ -136,7 +156,7 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 				alt="X"
 		/></a>
 		<br />
-		<sub>Researcher — Finclusive Stellar Anchor, OFFER-HUB Identity</sub>
+		<sub>Researcher — Finclusive Stellar Anchor, OFFER-HUB Identity, Soroban Security Scanner</sub>
 	</div>
 
 	<div
@@ -354,7 +374,76 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
 		<sub>Researcher — KindFi</sub>
 	</div>
 
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/dee-john">
+			<img
+				src="https://github.com/dee-john.png"
+				width="80"
+				style="border-radius:50%"
+				alt="dee-john"
+			/>
+			<br />
+			<sub><b>dee-john</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/dee-john"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Fundable Protocol</sub>
+	</div>
+
+	<div
+		style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+	>
+		<a href="https://github.com/umohmila47-source">
+			<img
+				src="https://github.com/umohmila47-source.png"
+				width="80"
+				style="border-radius:50%"
+				alt="umohmila47-source"
+			/>
+			<br />
+			<sub><b>umohmila47-source</b></sub>
+		</a>
+		<br />
+		<a href="https://github.com/umohmila47-source"
+			><img
+				src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+				alt="GitHub"
+		/></a>
+		<br />
+		<sub>Researcher — Issue #320: Research & Upload a Stellar Wave Project</sub>
+	</div>
+
 <!-- CONTRIBUTORS-START -->
+<div
+	style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
+>
+	<a href="https://github.com/umohmila47-source">
+		<img
+			src="https://github.com/umohmila47-source.png"
+			width="80"
+			style="border-radius:50%"
+			alt="umohmila47-source"
+		/>
+		<br />
+		<sub><b>umohmila47-source</b></sub>
+	</a>
+	<br />
+	<a href="https://github.com/umohmila47-source"
+		><img
+			src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
+			alt="GitHub"
+	/></a>
+	<br />
+	<sub>Researcher — Soroban Security Scanner</sub>
+</div>
+
 <table>
   <tr>
     <td align="center">
@@ -369,33 +458,29 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <br />
       <sub>Maintainer — Project creator</sub>
     </td>
-    <div
-        style="display:inline-block;width:130px;vertical-align:top;text-align:center;margin:8px"
-    >
-        <a href="https://github.com/chiggybillionz">
-            <img
-                src="https://github.com/chiggybillionz.png"
-                width="80"
-                style="border-radius:50%"
-                alt="chiggybillionz"
-            />
-            <br />
-            <sub><b>chiggybillionz</b></sub>
-        </a>
+    <td align="center">
+      <a href="https://github.com/chiggybillionz">
+        <img src="https://github.com/chiggybillionz.png" width="80" alt="chiggybillionz" style="border-radius:50%" />
         <br />
-        <a href="https://github.com/chiggybillionz"
-            ><img
-                src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square"
-                alt="GitHub"
-        /></a>
-        <a href="https://x.com/chigoziOkorie"
-            ><img
-                src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square"
-                alt="X"
-        /></a>
+        <sub><b>chiggybillionz</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/chiggybillionz"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <a href="https://x.com/chigoziOkorie"><img src="https://img.shields.io/badge/-X-000000?logo=x&logoColor=white&style=flat-square" alt="X" /></a>
+      <br />
+      <sub>Researcher — Stellar GreenPay</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/kiro-ai">
+        <img src="https://github.com/kiro-ai.png" width="80" alt="Kiro AI" style="border-radius:50%" />
         <br />
-        <sub>Researcher — Stellar GreenPay</sub>
-    </div>
+        <sub><b>Kiro AI</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/kiro-ai"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Axelar</sub>
+    </td>
     <td align="center">
       <a href="https://github.com/OG-wura">
         <img src="https://github.com/OG-wura.png" width="80" alt="Wuraola Olaniyan" style="border-radius:50%" />
@@ -406,6 +491,50 @@ Replace `YOUR_GITHUB_USERNAME`, `Your Name`, `YOUR_X_HANDLE`, and the role/proje
       <a href="https://github.com/OG-wura"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
       <br />
       <sub>Researcher — SafeTrust</sub>
+    </td>
+<td align="center">
+      <a href="https://github.com/dee-john">
+        <img src="https://github.com/dee-john.png" width="80" alt="dee-john" style="border-radius:50%" />
+        <br />
+        <sub><b>dee-john</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/dee-john"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Fundable Protocol</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/umohmila47-source">
+        <img src="https://github.com/umohmila47-source.png" width="80" alt="umohmila47-source" style="border-radius:50%" />
+        <br />
+        <sub><b>umohmila47-source</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/umohmila47-source"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Issue #320: Research & Upload a Stellar Wave Project</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/mopxam-art">
+        <img src="https://github.com/mopxam-art.png" width="80" alt="mopxam-art" style="border-radius:50%" />
+        <br />
+        <sub><b>mopxam-art</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/mopxam-art"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Developer — JSON-LD Structured Data</sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/opulencechuks">
+        <img src="https://github.com/opulencechuks.png" width="80" alt="opulencechuks" style="border-radius:50%" />
+        <br />
+        <sub><b>opulencechuks</b></sub>
+      </a>
+      <br />
+      <a href="https://github.com/opulencechuks"><img src="https://img.shields.io/badge/-GitHub-181717?logo=github&logoColor=white&style=flat-square" alt="GitHub" /></a>
+      <br />
+      <sub>Researcher — Invoice Liquidity Network</sub>
     </td>
     <!-- Add your <td> above this line -->
   </tr>

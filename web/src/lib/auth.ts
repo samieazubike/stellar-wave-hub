@@ -2,8 +2,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { ROLES, hasMinRole } from "./roles";
 import { maintainerCategoriesCol } from "./db";
+import { getJwtSecret } from "./jwt-secret";
 
-const JWT_SECRET = process.env.JWT_SECRET || "stellar-wave-hub-dev-secret";
+const JWT_SECRET = getJwtSecret();
 
 export { ROLES, hasMinRole };
 

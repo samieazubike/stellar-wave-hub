@@ -495,7 +495,7 @@ mod tests {
     use super::*;
     use soroban_sdk::{
         symbol_short,
-        testutils::{Address as _, Ledger},
+        testutils::{Address as _, Events as _, Ledger},
         Env,
     };
 
@@ -619,11 +619,124 @@ mod tests {
         assert_eq!(agg.count, 1);
         assert_eq!(agg.sum, 5);
 
-        // Verify event emission — event exists with correct topics
+        // Verify event emission — the token contract emits its own events too,
+        // so look for the one published by this contract.
         let events = env.events().all();
-        assert_eq!(events.len(), 1);
-        let (event_contract, topics, _data) = &events[0];
-        assert_eq!(*event_contract, contract_id);
+        let (_, topics, _) = events
+            .iter()
+            .find(|(contract, _, _)| contract == &contract_id)
+            .expect("rate event not emitted");
         assert_eq!(topics.len(), 2);
+    }
+
+    #[test]
+    fn test_zero_fees() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, WaveHubRegistry);
+        let client = WaveHubRegistryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let token_addr = setup_token(&env, &admin);
+        let payer = Address::generate(&env);
+        let user = Address::generate(&env);
+
+        client.initialize(
+            &admin,
+            &token_addr,
+            &0,
+            &0,
+            &String::from_str(&env, "1.0.0"),
+        );
+
+        let pid = symbol_short!("proj");
+        client.register_project(&admin, &pid, &Address::generate(&env), &payer);
+        client.rate_project(&user, &pid, &4);
+
+        // Nothing moves when both fees are zero.
+        let token_client = token::Client::new(&env, &token_addr);
+        assert_eq!(token_client.balance(&payer), 0);
+        assert_eq!(token_client.balance(&user), 0);
+        assert_eq!(client.get_treasury_balance(), 0);
+        assert_eq!(client.get_project_rating(&pid).count, 1);
+    }
+
+    #[test]
+    fn test_fee_change_between_calls() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, WaveHubRegistry);
+        let client = WaveHubRegistryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let token_addr = setup_token(&env, &admin);
+        let payer = Address::generate(&env);
+        fund(&env, &token_addr, &payer, 100_000_000);
+
+        client.initialize(
+            &admin,
+            &token_addr,
+            &REG_FEE,
+            &0,
+            &String::from_str(&env, "1.0.0"),
+        );
+
+        client.register_project(&admin, &symbol_short!("p1"), &Address::generate(&env), &payer);
+        assert_eq!(client.get_treasury_balance(), REG_FEE);
+
+        // The new fee only applies to calls made after it is set.
+        client.set_registration_fee(&admin, &(REG_FEE * 2));
+        client.register_project(&admin, &symbol_short!("p2"), &Address::generate(&env), &payer);
+
+        assert_eq!(client.get_treasury_balance(), REG_FEE * 3);
+        let token_client = token::Client::new(&env, &token_addr);
+        assert_eq!(token_client.balance(&payer), 100_000_000 - REG_FEE * 3);
+    }
+
+    #[test]
+    fn test_withdraw_empty_treasury() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, WaveHubRegistry);
+        let client = WaveHubRegistryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let token_addr = setup_token(&env, &admin);
+
+        client.initialize(
+            &admin,
+            &token_addr,
+            &0,
+            &0,
+            &String::from_str(&env, "1.0.0"),
+        );
+        assert_eq!(client.get_treasury_balance(), 0);
+
+        let expected = soroban_sdk::Error::from_contract_error(Error::NothingToWithdraw as u32);
+        assert_eq!(client.try_withdraw_fees(&admin), Err(Ok(expected)));
+    }
+
+    #[test]
+    fn test_non_admin_withdraw() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, WaveHubRegistry);
+        let client = WaveHubRegistryClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
+        let token_addr = setup_token(&env, &admin);
+        let payer = Address::generate(&env);
+        fund(&env, &token_addr, &payer, 100_000_000);
+
+        client.initialize(
+            &admin,
+            &token_addr,
+            &REG_FEE,
+            &0,
+            &String::from_str(&env, "1.0.0"),
+        );
+        client.register_project(&admin, &symbol_short!("p1"), &Address::generate(&env), &payer);
+        assert_eq!(client.get_treasury_balance(), REG_FEE);
+
+        let non_admin = Address::generate(&env);
+        let expected = soroban_sdk::Error::from_contract_error(Error::Unauthorized as u32);
+        assert_eq!(client.try_withdraw_fees(&non_admin), Err(Ok(expected)));
+        assert_eq!(client.get_treasury_balance(), REG_FEE);
     }
 }

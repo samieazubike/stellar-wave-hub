@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import VerifyOwnership from "@/components/VerifyOwnership";
+import {
+  PRO_RESEARCH_IMAGE_LIMIT,
+  getResearchImageLimit,
+  isPro,
+} from "@/lib/pro";
 import {
   Form,
   FormField,
@@ -17,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { isPro } from "@/lib/pro";
 import {
   Select,
   SelectTrigger,
@@ -79,8 +87,15 @@ interface Project {
   github_url?: string;
   github_repos?: { label: string; url: string }[];
   logo_url?: string;
+  banner_url?: string | null;
+  pro_until?: string | null;
   research_images?: string[];
   user_id: number;
+  owner_verified_at?: string | null;
+  owner_verified_address?: string | null;
+  is_pro?: boolean | number | null;
+  pro_until?: string | null;
+  plan?: string | null;
 }
 
 export default function EditProjectPage() {
@@ -106,6 +121,9 @@ export default function EditProjectPage() {
   const [newPreviews, setNewPreviews] = useState<string[]>([]);
   const [researchError, setResearchError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bannerUrl, setBannerUrl] = useState("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState("");
 
   const form = useForm<EditValues>({
     resolver: zodResolver(editSchema),
@@ -122,6 +140,8 @@ export default function EditProjectPage() {
     },
   });
 
+  const currentAccount = useWatch({ control: form.control, name: "stellar_account_id" });
+
   // Fetch project data
   useEffect(() => {
     if (!token || !slug) return;
@@ -136,6 +156,7 @@ export default function EditProjectPage() {
         }
         const p = data.project as Project;
         setProject(p);
+        setBannerUrl(p.banner_url || "");
 
         form.reset({
           name: p.name || "",
@@ -161,6 +182,12 @@ export default function EditProjectPage() {
       .finally(() => setLoading(false));
   }, [token, slug, form]);
 
+  const projectIsPro = isPro(project);
+  const maxImages = getResearchImageLimit(project);
+  const totalImagesCount = existingImages.length + newFiles.length;
+  const remainingImages = Math.max(0, maxImages - totalImagesCount);
+  const atFreeImageCap = !projectIsPro && totalImagesCount >= maxImages;
+
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
@@ -170,8 +197,12 @@ export default function EditProjectPage() {
         return;
       }
       const totalCount = existingImages.length + newFiles.length + imageFiles.length;
-      if (totalCount > 10) {
-        setResearchError("Maximum 10 images allowed total");
+      if (totalCount > maxImages) {
+        setResearchError(
+          projectIsPro
+            ? `Maximum ${maxImages} images allowed total`
+            : `Maximum ${maxImages} images allowed total. Upgrade to Pro for more (up to ${PRO_RESEARCH_IMAGE_LIMIT} images).`,
+        );
         return;
       }
       setResearchError("");
@@ -187,7 +218,7 @@ export default function EditProjectPage() {
 
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
-    [existingImages, newFiles],
+    [existingImages, newFiles, maxImages, projectIsPro],
   );
 
   const removeExistingImage = useCallback((index: number) => {
@@ -243,6 +274,26 @@ export default function EditProjectPage() {
         uploadedUrls = uploadData.urls;
       }
 
+      let updatedBannerUrl = bannerUrl;
+      if (isPro(project) && bannerFile) {
+        const bannerData = new FormData();
+        bannerData.append("files", bannerFile);
+        const bannerUploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: bannerData,
+        });
+        const bannerUploadResult = await bannerUploadResponse.json();
+        if (!bannerUploadResponse.ok) {
+          throw new Error(bannerUploadResult.error || "Banner upload failed");
+        }
+        const uploadedBannerUrl = bannerUploadResult.urls?.[0];
+        if (typeof uploadedBannerUrl !== "string") {
+          throw new Error("Banner upload did not return an image URL");
+        }
+        updatedBannerUrl = uploadedBannerUrl;
+      }
+
       const allImages = [...existingImages, ...uploadedUrls];
 
       const payload = {
@@ -252,6 +303,7 @@ export default function EditProjectPage() {
           url: r.url.trim(),
         })),
         research_images: allImages,
+        ...(isPro(project) ? { banner_url: updatedBannerUrl || null } : {}),
       };
 
       const res = await fetch(`/api/projects/${project.id}/edit`, {
@@ -266,9 +318,13 @@ export default function EditProjectPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      setProject(data.project);
       setSuccess("Project updated successfully!");
       setNewFiles([]);
       setNewPreviews([]);
+      setBannerFile(null);
+      setBannerPreview("");
+      setBannerUrl(data.project.banner_url || "");
       setTimeout(() => router.push("/my-projects"), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed");
@@ -303,7 +359,7 @@ export default function EditProjectPage() {
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="glass rounded-2xl p-12 text-center max-w-md">
           <h2 className="font-semibold text-xl text-starlight mb-2">Project not found</h2>
-          <p className="text-ash mb-6">The project you're looking for doesn't exist</p>
+          <p className="text-ash mb-6">The project you&apos;re looking for doesn&apos;t exist</p>
           <Link href="/my-projects" className="btn-nova inline-flex">
             My Projects
           </Link>
@@ -330,6 +386,21 @@ export default function EditProjectPage() {
         </div>
         <p className="text-ash ml-8">Update your project details</p>
       </div>
+
+      {user.id === project.user_id && token && (
+        <div className="mb-6">
+          <VerifyOwnership
+            projectId={project.id}
+            account={project.stellar_account_id || ""}
+            token={token}
+            disabled={form.formState.isSubmitting || currentAccount !== (project.stellar_account_id || "")}
+            verified={Boolean(project.owner_verified_at && project.owner_verified_address === project.stellar_account_id)}
+            onVerified={(verified) => setProject((current) =>
+              current?.stellar_account_id === verified.owner_verified_address
+                ? { ...current, ...verified } : current)}
+          />
+        </div>
+      )}
 
       <Form {...form}>
         <form
@@ -563,6 +634,92 @@ export default function EditProjectPage() {
               )}
             />
 
+            <div className="md:col-span-2 space-y-3 rounded-xl border border-dust/30 bg-void/30 p-5">
+              <div>
+                <h2 className="text-sm font-semibold text-moonlight">Project page banner</h2>
+                <p className="mt-1 text-xs text-ash">
+                  A wide image displayed above your project details. Recommended ratio: 3:1.
+                </p>
+              </div>
+              {isPro(project) ? (
+                <>
+                  {(bannerPreview || bannerUrl) && (
+                    <div className="relative aspect-[3/1] overflow-hidden rounded-lg border border-dust/30">
+                      <Image
+                        src={bannerPreview || bannerUrl}
+                        alt="Project banner preview"
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="btn-ghost inline-flex cursor-pointer !py-2 !px-4 text-sm">
+                      {bannerFile || bannerUrl ? "Choose another banner" : "Upload a banner"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = "";
+                          if (!file) return;
+                          if (!file.type.startsWith("image/")) {
+                            setError("Choose a supported image file");
+                            return;
+                          }
+                          setError("");
+                          setBannerFile(file);
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (typeof reader.result === "string") {
+                              setBannerPreview(reader.result);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                    {(bannerFile || bannerUrl) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBannerFile(null);
+                          setBannerPreview("");
+                          setBannerUrl("");
+                        }}
+                        className="text-sm text-supernova hover:text-supernova/80"
+                      >
+                        Remove banner
+                      </button>
+                    )}
+                    <span className="text-xs text-ash">PNG, JPG, WEBP, or SVG · max 2 MB</span>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-lg border border-nova/20 bg-nova/5 p-4">
+                  <p className="text-sm font-medium text-starlight">
+                    Make your project stand out with a wide banner.
+                  </p>
+                  <p className="mt-1 text-sm text-ash">
+                    Project banners are available with an active Pro plan.
+                  </p>
+                  {bannerUrl && (
+                    <div className="relative mt-3 aspect-[3/1] overflow-hidden rounded-lg border border-dust/30">
+                      <Image
+                        src={bannerUrl}
+                        alt="Current project banner"
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Research Images */}
             <div className="md:col-span-2 space-y-2">
               <label className="text-sm font-medium text-moonlight">Research Images *</label>
@@ -594,27 +751,46 @@ export default function EditProjectPage() {
 
               {/* Upload new */}
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="input-field flex flex-col items-center justify-center gap-2 py-8 cursor-pointer border-dashed hover:border-nova/40 transition-colors"
+                onClick={() => {
+                  if (remainingImages > 0) fileInputRef.current?.click();
+                }}
+                className={`input-field flex flex-col items-center justify-center gap-2 py-8 border-dashed transition-colors ${
+                  remainingImages > 0
+                    ? "cursor-pointer hover:border-nova/40"
+                    : "opacity-60 cursor-not-allowed"
+                }`}
               >
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ash)" strokeWidth="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                <span className="text-sm text-ash">Click to upload more images</span>
+                <span className="text-sm text-ash">
+                  {remainingImages > 0
+                    ? "Click to upload more images"
+                    : `Image limit reached (${totalImagesCount}/${maxImages})`}
+                </span>
                 <span className="text-xs text-ash/60">
-                  PNG, JPG, WEBP — max {10 - existingImages.length} more
+                  PNG, JPG, WEBP — max {remainingImages} more ({totalImagesCount}/{maxImages})
                 </span>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   multiple
+                  disabled={remainingImages === 0}
                   onChange={handleFileSelect}
                   className="hidden"
                 />
               </div>
+
+              {atFreeImageCap && (
+                <div className="rounded-xl border border-nova/30 bg-nova/10 px-4 py-3 text-sm text-starlight flex items-center justify-between gap-3">
+                  <span>
+                    You&apos;ve reached the {maxImages}-image limit for free projects. Upgrade to Pro for more (up to {PRO_RESEARCH_IMAGE_LIMIT} images).
+                  </span>
+                </div>
+              )}
 
               {/* New image previews */}
               {newPreviews.length > 0 && (
