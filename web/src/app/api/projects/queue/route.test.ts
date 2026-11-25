@@ -76,11 +76,7 @@ describe("GET /api/projects/queue — paid priority review", () => {
       })),
     }));
     const { GET } = await import("./route");
-    const res = await GET(
-      new Request("http://localhost/api/projects/queue", {
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    const res = await GET();
     expect(res.status).toBe(200);
     const body = (await res.json()) as { projects: unknown[]; total: number };
     expect(body.projects).toEqual([]);
@@ -95,14 +91,10 @@ describe("GET /api/projects/queue — paid priority review", () => {
       })),
     }));
     const { GET } = await import("./route");
-    const res = await GET(
-      new Request("http://localhost/api/projects/queue", {
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    const res = await GET();
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      projects: Array<{ is_fast_track?: boolean }>;
+      projects: Array<{ id: number; is_fast_track?: boolean }>;
       total: number;
     };
     expect(body.total).toBe(6);

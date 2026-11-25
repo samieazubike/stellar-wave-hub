@@ -119,7 +119,7 @@ export async function GET() {
       id,
       key: row.priority === 0 ? 1 : row.priority, // simple priority weight
     }));
-    const unpaidKeys = projects.map((p) => ({ id: p.id, key: 0 }));
+    const unpaidKeys = projects.map((p) => ({ id: p.id, key: 0, paid: false }));
 
     // Sort: paid entries are pulled to the front; the ring key gives them a
     // stable per-project order. Unpaid entries keep their server-side
@@ -150,7 +150,6 @@ export async function GET() {
     for (const row of paid) {
       projectById.set(row.numeric_id, {
         id: row.numeric_id,
-        numericId: row.numeric_id,
         name: `Paid project ${row.numeric_id}`,
         slug: `paid-project-${row.numeric_id}`,
         description: `Paid priority review project #${row.numeric_id}`,

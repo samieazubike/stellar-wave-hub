@@ -128,7 +128,7 @@ export async function payWithFreighter(
   // Submit to Horizon
   const signedTx = TransactionBuilder.fromXDR(signed.signedTxXdr, networkPassphrase);
 
-  let result: Horizon.HorizonApi.TransactionResponse;
+  let result: Awaited<ReturnType<typeof server.submitTransaction>>;
   try {
     result = await server.submitTransaction(signedTx);
   } catch (err: unknown) {
