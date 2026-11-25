@@ -79,6 +79,12 @@ export default function Navbar() {
 								>
 									My Payments
 								</Link>
+								<Link
+									href="/saved"
+									className="px-4 py-2 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50 transition-all"
+								>
+									Saved
+								</Link>
 								{hasMinRole(user.role, "maintainer") && (
 									<Link
 										href="/maintainer"
@@ -245,6 +251,13 @@ export default function Navbar() {
 								onClick={() => setMobileOpen(false)}
 							>
 								My Payments
+							</Link>
+							<Link
+								href="/saved"
+								className="block px-4 py-2.5 rounded-lg text-sm font-medium text-moonlight hover:text-starlight hover:bg-stardust/50"
+								onClick={() => setMobileOpen(false)}
+							>
+								Saved
 							</Link>
 							{hasMinRole(user.role, "maintainer") && (
 								<Link

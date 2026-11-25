@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import VerifiedBadge from "./VerifiedBadge";
 import ProBadge from "./ProBadge";
+import BookmarkButton from "./BookmarkButton";
 import { useCompare } from "@/context/CompareContext";
 
 interface ProjectCardProps {
@@ -261,36 +262,39 @@ export default function ProjectCard({
         </div>
       </div>
       </Link>
-      <button
-        type="button"
-        onClick={() =>
-          toggleProject({
-            id: project.id,
-            name: project.name,
-            slug: project.slug,
-          })
-        }
-        disabled={compareLimitReached}
-        aria-pressed={selected}
-        aria-label={
-          selected
-            ? `Remove ${project.name} from comparison`
-            : compareLimitReached
-              ? `Comparison limit reached; ${project.name} cannot be added`
-              : `Add ${project.name} to comparison`
-        }
-        title={compareLimitReached ? "Choose up to 3 projects" : undefined}
-        className={`${variant === "list" ? "shrink-0 rounded-lg p-2 text-xs" : "mt-4 w-full gap-2 rounded-xl px-4 py-2.5 text-sm"} flex items-center justify-center border font-semibold transition-colors ${
-          selected
-            ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
-            : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
-        } disabled:cursor-not-allowed disabled:opacity-45`}
-      >
-        <span aria-hidden="true">{selected ? "✓" : "+"}</span>
-        <span className={variant === "list" ? "sr-only" : undefined}>
-          {selected ? "Added to compare" : "Add to compare"}
-        </span>
-      </button>
+      <div className={variant === "list" ? "shrink-0 flex items-center gap-2" : "mt-4 flex gap-2"}>
+        <BookmarkButton projectId={project.id} projectName={project.name} />
+        <button
+          type="button"
+          onClick={() =>
+            toggleProject({
+              id: project.id,
+              name: project.name,
+              slug: project.slug,
+            })
+          }
+          disabled={compareLimitReached}
+          aria-pressed={selected}
+          aria-label={
+            selected
+              ? `Remove ${project.name} from comparison`
+              : compareLimitReached
+                ? `Comparison limit reached; ${project.name} cannot be added`
+                : `Add ${project.name} to comparison`
+          }
+          title={compareLimitReached ? "Choose up to 3 projects" : undefined}
+          className={`${variant === "list" ? "shrink-0 rounded-lg p-2 text-xs" : "min-w-0 flex-1 gap-2 rounded-xl px-4 py-2.5 text-sm"} flex items-center justify-center border font-semibold transition-colors ${
+            selected
+              ? "border-nova/40 bg-nova/15 text-nova-bright hover:bg-nova/25"
+              : "border-dust/30 bg-stardust/50 text-moonlight hover:border-nova/40 hover:text-nova-bright"
+          } disabled:cursor-not-allowed disabled:opacity-45`}
+        >
+          <span aria-hidden="true">{selected ? "✓" : "+"}</span>
+          <span className={variant === "list" ? "sr-only" : undefined}>
+            {selected ? "Added to compare" : "Add to compare"}
+          </span>
+        </button>
+      </div>
     </article>
   );
 }
