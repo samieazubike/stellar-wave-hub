@@ -4,6 +4,7 @@ import Link from "next/link";
 import {useEffect, useState} from "react";
 import ProjectCard from "@/components/ProjectCard";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
+import CountUp from "@/components/CountUp";
 
 interface Project {
 	id: number;
@@ -21,6 +22,12 @@ interface Project {
 	created_at?: string;
 }
 
+interface Stats {
+	projects: number;
+	reviews: number;
+	contributors: number;
+}
+
 export default function Home() {
 	const [spotlights, setSpotlights] = useState<Project[]>([]);
 	const [trending, setTrending] = useState<Project[]>([]);
@@ -28,6 +35,11 @@ export default function Home() {
 	const [newThisWeek, setNewThisWeek] = useState<Project[]>([]);
 	const [featured, setFeatured] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [stats, setStats] = useState<Stats>({
+		projects: 0,
+		reviews: 0,
+		contributors: 0,
+	});
 
 	useEffect(() => {
 		Promise.allSettled([
@@ -36,8 +48,9 @@ export default function Home() {
 			fetch("/api/projects/trending?limit=6").then((r) => r.json()),
 			fetch("/api/projects?limit=6&sort=new-this-week").then((r) => r.json()),
 			fetch("/api/projects?limit=6&sort=top-rated").then((r) => r.json()),
+			fetch("/api/stats").then((r) => r.json()),
 		])
-			.then(([spotlightRes, trendingRes, newRes, topRes]) => {
+			.then(([spotlightRes, trendingRes, newRes, topRes, statsRes]) => {
 				if (spotlightRes.status === "fulfilled") {
 					setSpotlights(spotlightRes.value.spotlights || []);
 				}
@@ -50,6 +63,13 @@ export default function Home() {
 				}
 				if (topRes.status === "fulfilled") {
 					setFeatured(topRes.value.projects || []);
+				}
+				if (statsRes.status === "fulfilled") {
+					setStats({
+						projects: statsRes.value.projects || 0,
+						reviews: statsRes.value.reviews || 0,
+						contributors: statsRes.value.contributors || 0,
+					});
 				}
 			})
 			.catch(() => {})
@@ -134,16 +154,19 @@ export default function Home() {
 				<div className="max-w-4xl mx-auto grid grid-cols-3 gap-6">
 					{[
 						{
-							label: "Wave Projects",
+							label: "Projects",
+							value: stats.projects,
 							icon: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
 						},
 						{
-							label: "Community Ratings",
+							label: "Reviews",
+							value: stats.reviews,
 							icon: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z",
 						},
 						{
-							label: "On-Chain Tracking",
-							icon: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+							label: "Contributors",
+							value: stats.contributors,
+							icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
 						},
 					].map((item, i) => (
 						<div
@@ -163,6 +186,13 @@ export default function Home() {
 								>
 									<path d={item.icon} />
 								</svg>
+							</div>
+							<div className="text-3xl font-bold text-starlight mb-1">
+								{loading ? (
+									<span className="text-moonlight/50">—</span>
+								) : (
+									<CountUp end={item.value} duration={2000} />
+								)}
 							</div>
 							<p className="text-sm font-semibold text-moonlight">
 								{item.label}
