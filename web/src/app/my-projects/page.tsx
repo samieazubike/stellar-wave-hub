@@ -32,7 +32,7 @@ export default function MyProjectsPage() {
 
 	useEffect(() => {
 		if (!token) {
-			setLoading(false);
+			window.setTimeout(() => setLoading(false), 0);
 			return;
 		}
 		fetch("/api/projects/my", {
@@ -163,6 +163,12 @@ export default function MyProjectsPage() {
 									className="btn-ghost text-sm !py-1.5 !px-3"
 								>
 									Edit
+								</Link>
+								<Link
+									href={`/my-projects/${project.id}/analytics`}
+									className="btn-ghost text-sm !py-1.5 !px-3"
+								>
+									Analytics
 								</Link>
 								<Link
 									href={`/projects/${project.slug}`}
