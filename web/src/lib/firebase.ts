@@ -23,6 +23,9 @@ const TABLE_BY_COLLECTION: Record<string, string> = {
 	hero_sponsors: "hero_sponsors",
 	bookmarks: "bookmarks",
 	maintainer_stats: "maintainer_stats",
+	referrals: "referrals",
+	notifications_read: "notifications_read",
+	notifications_read_status: "notifications_read",
 };
 
 export const BOOKMARKS_TABLE: string = TABLE_BY_COLLECTION.bookmarks ?? "bookmarks";
