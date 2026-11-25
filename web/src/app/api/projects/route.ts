@@ -45,7 +45,7 @@ export async function GET(request: Request) {
 		const { data, count, error } = await query;
 		if (error) throw error;
 
-		let projects: Record<string, unknown>[] = (data || []).map((row) => ({
+		const projects: Record<string, unknown>[] = (data || []).map((row) => ({
 			...row,
 			id: row.numericId,
 		}));
@@ -88,21 +88,45 @@ export async function GET(request: Request) {
 			}),
 		);
 
+		const now = Date.now();
+		const isCurrentlyFeatured = (project: Record<string, unknown>) => {
+			if (project.featured !== 1) return false;
+			const featuredUntil = project.featured_until;
+			return (
+				featuredUntil == null ||
+				Date.parse(String(featuredUntil)) > now
+			);
+		};
+
 		// Sort
 		enriched.sort((a, b) => {
 			if (sort === "oldest")
 				return (a.created_at as string) < (b.created_at as string)
 					? -1
 					: 1;
+			if (sort === "featured" || sort === "newest") {
+				const featuredDifference =
+					Number(isCurrentlyFeatured(b)) -
+					Number(isCurrentlyFeatured(a));
+				if (featuredDifference !== 0) return featuredDifference;
+				if (sort === "featured") {
+					const ratingDifference =
+						((b.avg_rating as number) || 0) -
+						((a.avg_rating as number) || 0);
+					if (ratingDifference !== 0) return ratingDifference;
+				}
+				return (b.created_at as string) > (a.created_at as string)
+					? 1
+					: -1;
+			}
 			if (sort === "top-rated")
 				return (
 					((b.avg_rating as number) || 0) -
 					((a.avg_rating as number) || 0)
 				);
-			// newest — featured first, then by date desc
-			if ((b.featured as number) !== (a.featured as number))
-				return (b.featured as number) - (a.featured as number);
-			return (b.created_at as string) > (a.created_at as string) ? 1 : -1;
+			return (b.created_at as string) > (a.created_at as string)
+				? 1
+				: -1;
 		});
 
 		const total = count ?? enriched.length;

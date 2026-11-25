@@ -23,7 +23,7 @@ export default function Home() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		fetch("/api/projects?limit=6&sort=top-rated")
+		fetch("/api/projects?limit=6&sort=featured")
 			.then((r) => r.json())
 			.then((data) => setFeatured(data.projects || []))
 			.catch(() => {})
@@ -152,7 +152,7 @@ export default function Home() {
 								Top Projects
 							</h2>
 							<p className="text-ash mt-1">
-								Highest rated projects in the Wave ecosystem
+								Featured projects and top-rated picks in the Wave ecosystem
 							</p>
 						</div>
 						<Link
