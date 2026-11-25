@@ -27,6 +27,7 @@ export interface PaymentRecordInput {
 export async function verifyStellarPayment(
   txHash: string,
   expectedAmountXlm: number,
+  expectedMemo?: string,
 ): Promise<VerifiedStellarPayment> {
   if (!/^[a-f0-9]{64}$/i.test(txHash)) {
     throw new Error("Invalid Stellar transaction hash");
@@ -49,6 +50,9 @@ export async function verifyStellarPayment(
   const transaction = await server.transactions().transaction(txHash).call();
   if (!transaction.successful) {
     throw new Error("Stellar transaction was not successful");
+  }
+  if (expectedMemo !== undefined && transaction.memo !== expectedMemo) {
+    throw new Error("Stellar transaction does not contain the required memo");
   }
 
   const operations = await server

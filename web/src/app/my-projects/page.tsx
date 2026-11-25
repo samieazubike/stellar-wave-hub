@@ -4,6 +4,7 @@ import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext";
 import {FeatureButton} from "@/components/FeatureButton";
 import {PayFallback} from "@/components/PayFallback";
+import {ProButton} from "@/components/ProButton";
 import ProBadge from "@/components/ProBadge";
 import {payWithFreighter} from "@/lib/payments-client";
 import {
@@ -21,7 +22,6 @@ interface Project {
 	category: string;
 	status: string;
 	featured: number;
-	featured_expires_at?: string;
 	featured_expires_at?: string | null;
 	is_pro?: boolean | number | null;
 	pro_until?: string | null;
@@ -657,6 +657,19 @@ export default function MyProjectsPage() {
 															status: "featured",
 															featured_expires_at: expiresAt,
 														}
+													: item,
+											),
+										)
+									}
+								/>
+								<ProButton
+									projectId={project.id}
+									proUntil={project.pro_until}
+									onActivated={(proUntil) =>
+										setProjects((current) =>
+											current.map((item) =>
+												item.id === project.id
+													? { ...item, pro_until: proUntil }
 													: item,
 											),
 										)

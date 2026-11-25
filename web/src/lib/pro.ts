@@ -1,3 +1,5 @@
+import { xlmToStroops } from "@/lib/featured-pricing";
+
 export interface ProStatusFields {
   is_pro?: boolean | number | null;
   pro_until?: string | null;
@@ -41,4 +43,20 @@ export function getResearchImageLimit(
   return isPro(project, now)
     ? PRO_RESEARCH_IMAGE_LIMIT
     : FREE_RESEARCH_IMAGE_LIMIT;
+}
+
+export function getProPriceXlm(
+  value = process.env.NEXT_PUBLIC_PRICE_PRO_YEAR_XLM,
+): number {
+  const price = (value ?? "200").trim();
+  if (!/^(0|[1-9]\d*)(?:\.\d{1,7})?$/.test(price)) {
+    throw new Error("NEXT_PUBLIC_PRICE_PRO_YEAR_XLM must be a positive XLM amount");
+  }
+
+  const stroops = xlmToStroops(price);
+  const priceXlm = Number(price);
+  if (stroops <= BigInt(0) || !Number.isFinite(priceXlm)) {
+    throw new Error("NEXT_PUBLIC_PRICE_PRO_YEAR_XLM must be a positive XLM amount");
+  }
+  return priceXlm;
 }
