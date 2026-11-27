@@ -20,7 +20,7 @@ export type JobCurrency = (typeof JOB_CURRENCIES)[number];
 export const JOB_PERIODS = ["hour", "month", "year", "fixed"] as const;
 export type JobPeriod = (typeof JOB_PERIODS)[number];
 
-export const JOB_STATUSES = ["active", "closed"] as const;
+export const JOB_STATUSES = ["draft", "active", "closed"] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
 /** Longest a posting may stay open without being renewed. */

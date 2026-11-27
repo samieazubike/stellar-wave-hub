@@ -92,7 +92,7 @@ export default async function JobsPage({ searchParams }: { searchParams: SearchP
               </h1>
               <p className="mt-5 text-base leading-7 text-moonlight/80 sm:text-lg">{description}</p>
             </div>
-            <Link href="/my-projects" className="btn-primary inline-flex shrink-0 items-center justify-center">
+            <Link href="/jobs/new" className="btn-primary inline-flex shrink-0 items-center justify-center">
               Post a job
             </Link>
           </div>

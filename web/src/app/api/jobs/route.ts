@@ -78,10 +78,10 @@ export async function POST(request: Request) {
       location: input.location ?? null,
       remote: input.remote,
       apply_url: input.apply_url,
-      status: "active",
+      status: "draft",
       featured_until: null,
       expires_at: input.expires_at ?? defaultExpiry(),
-      tx_hash: input.tx_hash ?? null,
+      tx_hash: null,
       created_at: now,
       updated_at: now,
     };

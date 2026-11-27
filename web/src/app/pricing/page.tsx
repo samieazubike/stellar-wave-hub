@@ -216,7 +216,7 @@ const PRODUCT_CARDS: ProductCardConfig[] = [
       "Dedicated developer support channel",
     ],
     ctaLabel: "Get API Pro",
-    ctaHref: "/profile",
+    ctaHref: "/developers",
     category: "Developer & Platform",
   },
   {
@@ -341,6 +341,7 @@ export default function PricingPage() {
             return (
               <div
                 key={cardConfig.id}
+                id={`pricing-${cardConfig.id}`}
                 className={`relative flex flex-col justify-between rounded-2xl glass p-6 transition-all duration-300 hover:scale-[1.02] ${
                   cardConfig.highlighted
                     ? "border-nova/50 shadow-lg shadow-nova/10 glow-nova"
