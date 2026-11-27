@@ -41,6 +41,16 @@ export const editProjectSchema = z
     logo_url: z.string().nullable().optional(),
     research_images: z.array(z.string()).optional(),
     banner_url: z.string().url().nullable().optional(),
+    funding_goal_xlm: z
+      .number()
+      .positive("Funding goal must be greater than 0")
+      .nullable()
+      .optional(),
+    funding_goal_label: z
+      .string()
+      .max(120, "Funding goal label must be under 120 characters")
+      .nullable()
+      .optional(),
   })
   .refine(
     (body) =>

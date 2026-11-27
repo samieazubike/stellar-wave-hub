@@ -30,6 +30,8 @@ interface TipDialogProps {
   token: string;
   /** Sender's Stellar public key (from Freighter / user profile). */
   senderAddress: string;
+  /** Called after a tip payment is verified and recorded on the Hub. */
+  onTipSuccess?: (amountXlm: number) => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ export default function TipDialog({
   project,
   token,
   senderAddress,
+  onTipSuccess,
 }: TipDialogProps) {
   const [selectedPreset, setSelectedPreset] = useState<number | null>(10);
   const [customAmount, setCustomAmount] = useState("");
@@ -125,6 +128,9 @@ export default function TipDialog({
         // The payment landed on-chain regardless — surface a warning but
         // don't treat it as a blocking error from the user's perspective.
         console.warn("Tip recording warning:", data.error);
+      } else {
+        const verifiedAmount = parseFloat(data.amount_xlm ?? String(amountXlm));
+        onTipSuccess?.(Number.isFinite(verifiedAmount) ? verifiedAmount : amountXlm);
       }
       setConfirmedAmount(data.amount_xlm ?? String(amountXlm));
     } catch (err) {

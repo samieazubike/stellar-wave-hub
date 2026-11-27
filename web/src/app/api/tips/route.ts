@@ -3,6 +3,7 @@ import { getSupabase } from "@/lib/firebase";
 import { parseJsonBody } from "@/lib/validation/parse-body";
 import { createTipSchema } from "@/lib/validation/schemas/tips";
 import { verifyTipPayment } from "@/lib/tips";
+import { revalidatePublicProjectCache } from "@/lib/public-project-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,8 @@ export async function POST(request: Request) {
       }
       throw insertError;
     }
+
+    revalidatePublicProjectCache();
 
     return Response.json(
       {

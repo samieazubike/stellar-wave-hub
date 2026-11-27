@@ -1,4 +1,5 @@
 import { projectsCol, usersCol, ratingsCol, ratingVotesCol } from "@/lib/db";
+import { getSupabase } from "@/lib/firebase";
 import { getAuthUser } from "@/lib/auth";
 import { getSupporterStatuses } from "@/lib/supporters";
 import { publicProjectCacheHeaders } from "@/lib/public-project-cache";
@@ -44,6 +45,25 @@ export async function GET(
       active_job_url: null,
     },
   );
+
+  // Sum verified tip payments for this project
+  let tipsReceivedXlm = 0;
+  try {
+    const { data: tipRows } = await getSupabase()
+      .from("payments")
+      .select("amount")
+      .eq("project_id", projectId)
+      .eq("product", "tip");
+    if (Array.isArray(tipRows)) {
+      tipsReceivedXlm = tipRows.reduce((sum, row) => {
+        const val = Number(row.amount);
+        return Number.isFinite(val) ? sum + val : sum;
+      }, 0);
+    }
+  } catch {
+    // Non-fatal: default to 0 if payments query fails
+  }
+  projectData.tips_received_xlm = tipsReceivedXlm;
 
   // Fetch user info
   const uid = projectData.user_id as number;
