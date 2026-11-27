@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { FEATURED_DURATIONS, type FeaturedTier } from "@/lib/featured-pricing";
 import { payWithFreighter } from "@/lib/payments-client";
 import { PayFallback } from "@/components/PayFallback";
+import { PromoCodeInput } from "@/components/PromoCodeInput";
 import { XlmPrice } from "@/components/XlmPrice";
 
 interface FeaturedConfig {
@@ -28,6 +29,11 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [promo, setPromo] = useState<{
+    days: number;
+    code: string | null;
+    price: number;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +54,41 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
   }, []);
 
   const selectedTier = config?.tiers.find((tier) => tier.days === selectedDays);
+  const selectedPromo = promo?.days === selectedDays ? promo : null;
+  const priceXlm = selectedPromo?.price ?? selectedTier?.priceXlm ?? 0;
+  const handlePromoApply = useCallback((code: string | null, finalPrice: number) => {
+    setPromo({ days: selectedDays, code, price: finalPrice });
+  }, [selectedDays]);
+
+  async function requestActivation(txHash?: string) {
+    if (!token) return;
+
+    const response = await fetch("/api/featured/activate", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        project_id: projectId,
+        days: selectedDays,
+        ...(txHash ? { tx_hash: txHash } : {}),
+        ...(selectedPromo?.code ? { promo_code: selectedPromo.code } : {}),
+      }),
+    });
+    const data = (await response.json()) as { error?: string; expires_at?: string };
+    if (!response.ok) {
+      throw new Error(data.error || "Featured placement could not be activated.");
+    }
+    if (!data.expires_at || Number.isNaN(Date.parse(data.expires_at))) {
+      throw new Error("Featured placement was activated, but its expiry could not be confirmed.");
+    }
+
+    const expiresAt = data.expires_at;
+    onActivated(expiresAt);
+    setMessage(`Featured until ${new Date(expiresAt).toLocaleString()}.`);
+    setOpen(false);
+  }
 
   async function verifyAndActivate(txHash: string) {
     if (!token) return;
@@ -57,24 +98,10 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
     setMessage("");
 
     try {
-      const response = await fetch("/api/featured/activate", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ project_id: projectId, days: selectedDays, tx_hash: txHash }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Payment was sent but the spotlight could not be activated.");
-      }
-      onActivated(data.expires_at);
-      setMessage(`${selectedDays}-day spotlight activated.`);
-      setOpen(false);
+      await requestActivation(txHash);
     } catch (reason) {
       setError(
-        `${reason instanceof Error ? reason.message : "Spotlight activation failed."} Payment transaction: ${txHash}.`,
+        `${reason instanceof Error ? reason.message : "Featured placement could not be activated."} Payment transaction: ${txHash}.`,
       );
     } finally {
       setBusy(false);
@@ -83,31 +110,37 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
 
   async function activate() {
     if (!token || !config || !selectedTier) return;
-    if (!config.destination) {
-      setError("Spotlight payments are not configured yet.");
-      return;
-    }
 
     setBusy(true);
     setError("");
     setMessage("");
 
-    let txHash: string;
+    let txHash: string | undefined;
     try {
-      txHash = await payWithFreighter({
-        amountXlm: selectedTier.priceXlm,
-        destination: config.destination,
-        network: config.network,
-        horizonUrl: config.horizonUrl,
-        memo: "spotlight",
-      });
+      if (priceXlm > 0) {
+        if (!config.destination) {
+          throw new Error("Featured payments are not configured yet.");
+        }
+        txHash = await payWithFreighter({
+          amountXlm: priceXlm,
+          destination: config.destination,
+          network: config.network,
+          horizonUrl: config.horizonUrl,
+          memo: "spotlight",
+        });
+      }
+      await requestActivation(txHash);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not send spotlight payment.");
+      const message =
+        reason instanceof Error ? reason.message : "Could not activate featured placement.";
+      setError(
+        txHash && !message.includes(txHash)
+          ? `${message} Payment transaction: ${txHash}.`
+          : message,
+      );
+    } finally {
       setBusy(false);
-      return;
     }
-
-    await verifyAndActivate(txHash);
   }
 
   return (
@@ -122,8 +155,13 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
         }}
         aria-expanded={open}
       >
-        {open ? "Close spotlight options" : "Choose spotlight"}
+        {open ? "Close feature options" : "Feature this project"}
       </button>
+      {message && (
+        <p role="status" className="mt-2 text-xs text-aurora-bright">
+          {message}
+        </p>
+      )}
 
       {open && (
         <div className="mt-3 w-full sm:w-[22rem] rounded-xl border border-nova/20 bg-space/90 p-4">
@@ -170,9 +208,21 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
             ))}
           </fieldset>
 
+          {selectedTier && (
+            <div className="mt-4">
+              <PromoCodeInput
+                key={selectedDays}
+                basePrice={selectedTier.priceXlm}
+                onApply={handlePromoApply}
+              />
+            </div>
+          )}
+
           {config && !config.destination && (
-            <p className="mt-3 text-xs text-supernova">
-              Spotlight payments are not configured yet.
+            <p className="mt-3 text-xs text-ash">
+              {priceXlm > 0
+                ? "Payments are not configured yet."
+                : "This promo covers the full price; no payment is needed."}
             </p>
           )}
           {error && (
@@ -180,29 +230,25 @@ export function FeatureButton({ projectId, onActivated }: FeatureButtonProps) {
               {error}
             </p>
           )}
-          {message && (
-            <p role="status" className="mt-3 text-xs text-aurora-bright">
-              {message}
-            </p>
-          )}
-
           <button
             type="button"
             onClick={activate}
-            disabled={busy || !selectedTier || !config?.destination || !token}
+            disabled={busy || !selectedTier || (priceXlm > 0 && !config?.destination) || !token}
             className="btn-nova mt-4 w-full justify-center text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy
-              ? "Confirming payment..."
+              ? "Processing featured placement..."
               : selectedTier
-                ? `Pay ${selectedTier.priceXlm} XLM`
+                ? priceXlm > 0
+                  ? `Pay ${priceXlm} XLM`
+                  : "Activate feature"
                 : "Loading prices..."}
           </button>
 
-          {config?.destination && selectedTier && (
+          {config?.destination && selectedTier && priceXlm > 0 && (
             <PayFallback
               destination={config.destination}
-              amountXlm={selectedTier.priceXlm}
+              amountXlm={priceXlm}
               memo="spotlight"
               disabled={busy || !token}
               onVerifyTxHash={verifyAndActivate}
