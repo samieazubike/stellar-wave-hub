@@ -6,16 +6,24 @@ interface PromoCodeInputProps {
   onApply: (code: string | null, finalPrice: number) => void;
 }
 
+interface PromoQuote {
+  percent_off?: number;
+  final_price?: number;
+  error?: string;
+}
+
 export function PromoCodeInput({ basePrice, onApply }: PromoCodeInputProps) {
   const { token } = useAuth();
   const [code, setCode] = useState("");
   const [isValidating, setIsValidating] = useState(false);
-  const [appliedPromo, setAppliedPromo] = useState<{ code: string; percentOff: number } | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    percentOff: number;
+    finalPrice: number;
+  } | null>(null);
   const [error, setError] = useState("");
 
-  const finalPrice = appliedPromo 
-    ? basePrice - (basePrice * (appliedPromo.percentOff / 100))
-    : basePrice;
+  const finalPrice = appliedPromo?.finalPrice ?? basePrice;
 
   useEffect(() => {
     onApply(appliedPromo ? appliedPromo.code : null, finalPrice);
@@ -30,15 +38,20 @@ export function PromoCodeInput({ basePrice, onApply }: PromoCodeInputProps) {
       const res = await fetch(`/api/featured/quote?code=${encodeURIComponent(code)}&base_price=${encodeURIComponent(basePrice)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await res.json();
+      const data = (await res.json()) as PromoQuote;
 
       if (!res.ok) {
         throw new Error(data.error || "Invalid promo code");
       }
+      const quotedPrice = data.final_price;
+      if (typeof quotedPrice !== "number" || !Number.isFinite(quotedPrice) || quotedPrice < 0) {
+        throw new Error("Could not calculate the promo price");
+      }
 
       setAppliedPromo({
         code: code.trim().toUpperCase(),
-        percentOff: data.percent_off || 0,
+        percentOff: Number(data.percent_off) || 0,
+        finalPrice: quotedPrice,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to apply code");

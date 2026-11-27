@@ -65,13 +65,9 @@ function isPriorityActive(priorityUntil?: string | null): boolean {
 	return new Date(priorityUntil) > new Date();
 }
 
-/** Days purchased per spotlight activation (server default: 30). */
-const SPOTLIGHT_DAYS = 30;
-
 /**
  * A spotlight is active while the project is featured and its expiry is
- * still in the future — this decides between the "Extend" and "Feature"
- * labels (issue #453).
+ * still in the future.
  */
 function isSpotlightActive(project: Project): boolean {
 	return (
@@ -422,9 +418,6 @@ export default function MyProjectsPage() {
 	const {user, token} = useAuth();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [activatingId, setActivatingId] = useState<number | null>(null);
-	const [spotlightReceipt, setSpotlightReceipt] = useState<Record<number, string>>({});
-	const [spotlightErrors, setSpotlightErrors] = useState<Record<number, string>>({});
 	const [fastTrackingId, setFastTrackingId] = useState<number | null>(null);
 	const [fastTrackError, setFastTrackError] = useState<string | null>(null);
 	const [fastTrackSuccess, setFastTrackSuccess] = useState<number | null>(null);
@@ -477,55 +470,6 @@ export default function MyProjectsPage() {
 			setFastTrackingId(null);
 		}
 	}
-
-	/**
-	 * Activate (or extend) the project's featured spotlight. The server adds
-	 * the purchased days to the current expiry while the spotlight is active,
-	 * and responds with the new expiry, which we show as a receipt (issue #453).
-	 */
-	const handleSpotlight = async (project: Project) => {
-		setActivatingId(project.id);
-		setSpotlightErrors((prev) => ({...prev, [project.id]: ""}));
-		try {
-			const res = await fetch("/api/featured/activate", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({
-					project_id: project.id,
-					duration_days: SPOTLIGHT_DAYS,
-				}),
-			});
-			const data = await res.json();
-			if (!res.ok) {
-				throw new Error(data.error || "Spotlight activation failed");
-			}
-			const expiresAt = String(data.expires_at);
-			setSpotlightReceipt((prev) => ({...prev, [project.id]: expiresAt}));
-			setProjects((prev) =>
-				prev.map((p) =>
-					p.id === project.id
-						? {
-								...p,
-								featured: 1,
-								status: "featured",
-								featured_expires_at: expiresAt,
-						  }
-						: p,
-				),
-			);
-		} catch (err) {
-			setSpotlightErrors((prev) => ({
-				...prev,
-				[project.id]:
-					err instanceof Error ? err.message : "Spotlight activation failed",
-			}));
-		} finally {
-			setActivatingId(null);
-		}
-	};
 
 	if (!user) {
 		return (
@@ -681,21 +625,6 @@ export default function MyProjectsPage() {
 										</span>
 									</div>
 								)}
-								{(project.status === "approved" ||
-									isSpotlightActive(project)) && (
-									<button
-										type="button"
-										onClick={() => handleSpotlight(project)}
-										disabled={activatingId === project.id}
-										className="btn-nova text-sm !py-1.5 !px-3"
-									>
-										{activatingId === project.id
-											? "Processing..."
-											: isSpotlightActive(project)
-												? "Extend"
-												: "Feature"}
-									</button>
-								)}
 								{project.status === "submitted" && !isPriorityActive(project.priority_until) && (
 									<button
 										onClick={() => handleFastTrack(project.id)}
@@ -730,23 +659,26 @@ export default function MyProjectsPage() {
 								>
 									View
 								</Link>
-								<FeatureButton
-									projectId={project.id}
-									onActivated={(expiresAt) =>
-										setProjects((current) =>
-											current.map((item) =>
-												item.id === project.id
-													? {
-															...item,
-															featured: 1,
-															status: "featured",
-															featured_expires_at: expiresAt,
-														}
-													: item,
-											),
-										)
-									}
-								/>
+								{(project.status === "approved" ||
+									isSpotlightActive(project)) && (
+									<FeatureButton
+										projectId={project.id}
+										onActivated={(expiresAt) =>
+											setProjects((current) =>
+												current.map((item) =>
+													item.id === project.id
+														? {
+																...item,
+																featured: 1,
+																status: "featured",
+																featured_expires_at: expiresAt,
+															}
+														: item,
+												),
+											)
+										}
+									/>
+								)}
 								<ProButton
 									projectId={project.id}
 									proUntil={project.pro_until}
@@ -761,19 +693,6 @@ export default function MyProjectsPage() {
 									}
 								/>
 							</div>
-							{spotlightErrors[project.id] && (
-								<p className="text-sm text-supernova sm:basis-full">
-									{spotlightErrors[project.id]}
-								</p>
-							)}
-							{spotlightReceipt[project.id] && (
-								<p className="text-xs text-solar-bright sm:basis-full">
-									Spotlight confirmed — new expiry:{" "}
-									{new Date(
-										spotlightReceipt[project.id],
-									).toLocaleString()}
-								</p>
-							)}
 							<SpotlightRenewalBanner
 								expiresAt={project.featured_expires_at}
 								slug={project.slug}
