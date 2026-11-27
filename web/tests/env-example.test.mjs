@@ -40,6 +40,7 @@ describe("Environment Configuration Example (.env.example)", () => {
     "NEXT_PUBLIC_PRICE_PRO_YEAR_XLM",
     "NEXT_PUBLIC_PRICE_JOB_POST_XLM",
     "NEXT_PUBLIC_PRICE_API_PRO_MONTH_XLM",
+    "SUPPORTER_MIN_XLM",
     "HERO_SPONSOR_WALLET",
     "CRON_SECRET",
   ];

@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import RoleBadge from "@/components/RoleBadge";
+import SupporterBadge from "@/components/SupporterBadge";
 import {
   Form,
   FormField,
@@ -28,6 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { Achievement } from "@/lib/achievements";
+import type { SupporterStatus } from "@/lib/supporters";
 
 const ACHIEVEMENT_ICONS = {
   "first-review": FileCheck2,
@@ -144,6 +146,21 @@ export default function ProfilePage() {
   const achievements = achievementsQuery.data ?? [];
   const achievementsLoading = achievementsQuery.isLoading;
   const achievementsError = achievementsQuery.error?.message ?? "";
+
+  const supporterQuery = useQuery<SupporterStatus>({
+    queryKey: ["supporter-status", user?.id],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/supporters/me", {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load supporter status");
+      return data;
+    },
+    enabled: !!user && !!token,
+  });
+  const supporter = supporterQuery.data;
 
   const isModerator = user?.role === "maintainer" || user?.role === "admin";
 
@@ -339,6 +356,10 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3 text-sm text-ash mt-0.5">
               <span>{user.email || "No email"}</span>
               <RoleBadge role={user.role as "contributor" | "maintainer" | "admin"} />
+              <SupporterBadge
+                isSupporter={!!supporter?.is_supporter}
+                totalXlm={supporter?.total_xlm}
+              />
               {user.created_at && (
                 <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
               )}

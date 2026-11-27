@@ -1,5 +1,6 @@
 import { projectsCol, usersCol, ratingsCol, ratingVotesCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { getSupporterStatuses } from "@/lib/supporters";
 import { publicProjectCacheHeaders } from "@/lib/public-project-cache";
 import { getActiveJobsByProject } from "@/lib/active-jobs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,10 @@ export async function GET(
     .where("project_id", "==", projectData.id)
     .get();
 
+  const supporterStatuses = await getSupporterStatuses(
+    rSnap.docs.map((d) => d.data().user_id),
+  );
+
   let ratings: Record<string, unknown>[] = await Promise.all(
     rSnap.docs.map(async (d) => {
       const r = d.data();
@@ -78,6 +83,7 @@ export async function GET(
       const has_voted = currentUserId
         ? votesSnap.docs.some((doc) => doc.data().user_id === currentUserId)
         : false;
+      const supporter = supporterStatuses.get(Number(r.user_id));
 
       return {
         ...r,
@@ -85,6 +91,8 @@ export async function GET(
         username,
         helpful_count,
         has_voted,
+        is_supporter: supporter?.is_supporter ?? false,
+        donation_total_xlm: supporter?.total_xlm ?? 0,
       };
     })
   );

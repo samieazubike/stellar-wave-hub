@@ -9,6 +9,7 @@ import EmbedSnippet from "@/components/EmbedSnippet";
 import Avatar from "@/components/Avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import ProBadge from "@/components/ProBadge";
+import SupporterBadge from "@/components/SupporterBadge";
 import BookmarkButton from "@/components/BookmarkButton";
 import CopyButton from "@/components/CopyButton";
 import ShareButtons from "@/components/ShareButtons";
@@ -91,6 +92,8 @@ interface Rating {
 	created_at: string;
 	helpful_count?: number;
 	has_voted?: boolean;
+	is_supporter?: boolean;
+	donation_total_xlm?: number;
 	owner_reply?: string | null;
 	owner_reply_at?: string | null;
 }
@@ -2052,11 +2055,15 @@ export default function ProjectDetailPage({
 													avatarUrl={rating.avatar_url}
 													className="w-9 h-9 text-xs"
 												/>
-												<div>
-													<span className="font-medium text-starlight text-sm">
-														{rating.username}
-													</span>
-												</div>
+											<div className="flex items-center gap-2">
+												<span className="font-medium text-starlight text-sm">
+													{rating.username}
+												</span>
+												<SupporterBadge
+													isSupporter={!!rating.is_supporter}
+													totalXlm={rating.donation_total_xlm}
+												/>
+											</div>
 											</div>
 											<div className="flex items-center gap-1">
 												<svg

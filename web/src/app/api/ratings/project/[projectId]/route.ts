@@ -1,5 +1,6 @@
 import { ratingsCol, usersCol, ratingVotesCol } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { getSupporterStatuses } from "@/lib/supporters";
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -16,6 +17,10 @@ export async function GET(
   const snap = await ratingsCol.ref
     .where("project_id", "==", Number(projectId))
     .get();
+
+  const supporterStatuses = await getSupporterStatuses(
+    snap.docs.map((d) => d.data().user_id),
+  );
 
   let ratings = await Promise.all(
     snap.docs.map(async (d) => {
@@ -39,6 +44,7 @@ export async function GET(
       const has_voted = currentUserId
         ? votesSnap.docs.some((vote) => vote.data().user_id === currentUserId)
         : false;
+      const supporter = supporterStatuses.get(Number(r.user_id));
 
       return {
         ...r,
@@ -49,6 +55,8 @@ export async function GET(
         avatar_url,
         helpful_count,
         has_voted,
+        is_supporter: supporter?.is_supporter ?? false,
+        donation_total_xlm: supporter?.total_xlm ?? 0,
       };
     })
   );
